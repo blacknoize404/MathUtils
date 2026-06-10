@@ -1,5 +1,7 @@
 # MathUtils
 
+> **This library was born as a study project to link university mathematics coursework with programming.**
+
 Java library for mathematical computation with **algebraic expressions as first-class objects** and evaluable expression trees.
 
 > **Main documentation in Spanish**: [README.md](README.md)
@@ -36,7 +38,7 @@ Generic inheritance `Vector<V extends Vector<V>>` with:
 
 ---
 
-## What it does NOT include (explicit roadmap)
+## Roadmap
 
 > These topics are **planned** but **not implemented**. See `TODO.md` for details.
 

@@ -1,5 +1,7 @@
 # MathUtils
 
+> **Esta librería nació como un proyecto de estudio para vincular el estudio de la matemática universitaria en mis años de la universidad con la programación.**
+
 Librería Java para computación matemática con **expresiones algebraicas como objetos de primera clase** y árboles de expresión evaluables.
 
 > **Documentación principal en inglés**: [README.en.md](README.en.md)
@@ -36,7 +38,7 @@ Herencia genérica `Vector<V extends Vector<V>>` con:
 
 ---
 
-## Qué NO trae (roadmap explícito)
+## Roadmap
 
 > Estos temas están **planificados** pero **no implementados**. Ver `TODO.md` para detalle.
 
