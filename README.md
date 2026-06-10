@@ -1,145 +1,98 @@
 # MathUtils
 
-Librería Java para operaciones matemáticas y expresiones algebraicas.
+Librería Java para computación matemática con **expresiones algebraicas como objetos de primera clase** y árboles de expresión evaluables.
 
+> **Documentación principal en inglés**: [README.en.md](README.en.md)
+> 
 ## Características
 
-- **Álgebra**: Constantes, variables, operadores (+, -, *, /), funciones (sen, cos, tan, log, sqrt, pow, etc.)
-- **Vectores**: Operaciones con vectores 2D y 3D
-- **Geometría**: Puntos, líneas, planos, curvas
-- **Estadísticas**: Media ponderada, combinatoria (factorial, combinaciones)
-- **Series y Sucesiones**: Series y sucesiones matemáticas
-- **Ángulos**: Conversiones grado/radian y operaciones
+### 1. Árboles de expresión tipados y evaluables
+Construyes fórmulas encadenando métodos sobre `Function`, no con strings:
+```java
+Var x = new Var("x");
+Function f = new Function(x).sin().pow(2).mult(3).add(new Cos(x)); // 3·sen²(x) + cos(x)
+double y = f.eval(new Evaluation("x", Math.PI)); // → 3·0 + (-1) = -1
+```
+- **Evaluación perezosa con sustitución de variables** vía `Evaluation` (record inmutable).
+- **Igualdad estructural** (`equalsTo`): dos árboles son iguales si tienen la misma forma y operandos, no solo el mismo valor numérico.
+- **Operadores n-arios** (`SumOperator`, `MultOperator`, …): aceptan ≥2 operandos, no solo binarios.
 
-## Compilar
+### 2. Catálogo de funciones elementales listo para usar
+`Const`, `Var`, `Sin`, `Cos`, `Tan`, `Cot`, `Log`, `LogN`, `Sqrt`, `Cbrt`, `Root`, `Pow`, `Fraction` — cada uno es un `MathElement` y compone con los operadores.
+
+### 3. Vectores 2D/3D con contratos matemáticos documentados
+Herencia genérica `Vector<V extends Vector<V>>` con:
+- Suma, resta, producto escalar, producto cruz, norma, ángulo, vector unitario, ortogonalidad.
+- **Documentación con referencias a Stewart Cálculo 7.ª ed.** (sección y página) en cada método.
+
+### 4. Geometría analítica básica
+`Point2D`, `Point3D`, `Line2D`, `Line3D`, `Plane`, `Space`, `Curve` — operaciones de distancia, intersección, proyección.
+
+### 5. Combinatoria y estadística
+`Factorial`, `Combinatory` (binomial, multinomial), `WeightedMean`.
+
+### 6. Series, sucesiones y utilidades
+`Serie`, `Sequence`, conversiones de base (`Conversions`), ángulos (`Angle` con grados/radianes/gradianes).
+
+---
+
+## Qué NO trae (roadmap explícito)
+
+> Estos temas están **planificados** pero **no implementados**. Ver `TODO.md` para detalle.
+
+- Cálculo: derivadas simbólicas, integrales numéricas/simbólicas, gradiente, jacobiano
+- Parser Shunting Yard (texto → `Function`) y serializador (`Function` → texto/LaTeX)
+- Álgebra lineal: matrices, autovalores, SVD, solvers lineales
+- Números complejos
+- EDOs / análisis numérico (raíces, interpolación, cuadratura adaptativa)
+- Probabilidad avanzada, optimización, transformadas de Fourier, funciones especiales, álgebra tensorial
+
+---
+
+## Inicio rápido
 
 ```bash
 mvn compile
-```
-
-## Tests
-
-```bash
 mvn test
 ```
 
-## TODO
+```java
+// Ejemplo completo
+Var x = new Var("x"), y = new Var("y");
+Function f = new Function(x).mult(y).add(new Sin(x)).div(new Const(2));
+double r = f.eval(new Evaluation("x", 1.0), new Evaluation("y", 4.0));
+// r = (1·4 + sen(1)) / 2 ≈ 2.4207
+```
 
-- [ ] **Integrales y Derivadas**
-  - Diferenciación simbólica
-  - Integración numérica (regla de Simpson, regla del trapecio, cuadratura gaussiana)
-  - Integrales definidas e indefinidas
-  - Derivadas parciales y gradiente
+---
 
-- [ ] **Parser de Expresiones (Algoritmo Shunting Yard)**
-  - Parser texto-a-función: Convertir expresiones en string (ej. `"3 * x + sen(y)"`) a objetos `Function` ejecutables
-  - Manejo de precedencia y asociatividad de operadores
-  - Soporte para funciones, constantes y variables
-  - Paréntesis y expresiones anidadas
-
-- [ ] **Conversor Función-a-Texto**
-  - Serializar objetos `Function` a expresiones string legibles
-  - Pretty-printing con formato opcional (LaTeX, texto plano)
-  - Simplificación antes de salida (ej. `x + 0` → `x`)
-
-- [ ] **Álgebra Lineal**
-  - Operaciones con matrices (suma, multiplicación, traspuesta, inversa, determinante)
-  - Autovalores y autovectores
-  - Solvers de sistemas lineales (eliminación gaussiana, descomposición LU)
-  - Espacios vectoriales, base, dimensión
-  - Descomposición en Valores Singulares (SVD)
-
-- [ ] **Números Complejos**
-  - Aritmética compleja (suma, resta, mult, div, pot, raíz)
-  - Funciones complejas (exp, log, sen, cos, etc.)
-  - Conversión polar/rectangular
-  - Helpers para visualización en plano complejo
-
-- [ ] **Ecuaciones Diferenciales**
-  - Solvers ODE (Euler, Runge-Kutta 4º orden, paso adaptativo)
-  - Sistemas de EDOs
-  - Problemas de valores en la frontera
-
-- [ ] **Análisis Numérico**
-  - Búsqueda de raíces (Newton-Raphson, bisección, secante, método de Brent)
-  - Interpolación (Lagrange, Newton, splines)
-  - Diferenciación numérica
-  - Integración numérica (cuadratura adaptativa)
-
-- [ ] **Cálculo Multivariable**
-  - Derivadas parciales
-  - Gradiente, divergencia, rotacional
-  - Integrales múltiples (doble, triple)
-  - Integrales de línea y superficie
-  - Matrices Jacobiana y Hessiana
-
-- [ ] **Probabilidad y Estadística**
-  - Distribuciones de probabilidad (normal, binomial, Poisson, exponencial, etc.)
-  - Generación de números aleatorios
-  - Tests de hipótesis (t-test, chi-cuadrado, ANOVA)
-  - Regresión (lineal, polinomial, logística)
-  - Estadísticos descriptivos (media, mediana, moda, varianza, asimetría, curtosis)
-
-- [ ] **Matemáticas Discretas**
-  - Teoría de números (primos, MCD/MCM, aritmética modular, función φ de Euler)
-  - Teoría de grafos (recorrido, camino más corto, MST, flujo)
-  - Combinatoria (permutaciones, combinaciones, particiones)
-  - Relaciones de recurrencia
-
-- [ ] **Optimización**
-  - Descenso de gradiente (y variantes: momentum, Adam)
-  - Programación lineal (método Simplex)
-  - Optimización convexa
-  - Optimización con restricciones (multiplicadores de Lagrange)
-
-- [ ] **Análisis de Fourier y Procesamiento de Señales**
-  - Implementación DFT / FFT
-  - Transformadas discretas de coseno/seno
-  - Filtrado (paso bajo, paso alto, paso banda)
-  - Convolución y correlación
-
-- [ ] **Funciones Especiales**
-  - Funciones Gamma, Beta
-  - Funciones de Bessel
-  - Función de error (erf)
-  - Funciones hipergeométricas
-  - Integrales elípticas
-
-- [ ] **Álgebra Simbólica**
-  - Simplificación de expresiones (combinar términos semejantes, factorizar, expandir)
-  - Pattern matching y reglas de reescritura
-  - Identidades algebraicas
-  - Exportación a LaTeX
-
-- [ ] **Álgebra Tensorial**
-  - Tensores N-dimensionales
-  - Operaciones tensoriales (contracción, producto exterior)
-  - Soporte notación Einstein
-
-## Estructura del Proyecto
+## Estructura del proyecto
 
 ```
 src/main/java/MathUtils/
-├── algebra/           # Expresiones y funciones algebraicas
-│   ├── primitives/    # Clases base (Expression, MathElement, Operator)
-│   ├── operators/     # Operadores aritméticos
-│   ├── trigonometrics/# Funciones trigonométricas
-│   ├── exponentials/  # Potencias, raíces
-│   ├── logarithmics/  # Logaritmos
-│   ├── Const.java     # Constantes (PI, E, etc.)
-│   ├── Var.java       # Variables
-│   ├── Function.java  # Abstracción de función
-│   └── Evaluation.java# Evaluación de expresiones
-├── vector/            # Operaciones vectoriales (2D, 3D)
-├── point/             # Geometría de puntos
-├── line/              # Geometría de líneas
-├── combinatory/       # Factoriales, combinaciones
-├── statistics/        # Funciones estadísticas
-├── series/            # Series matemáticas
-├── sequences/         # Sucesiones matemáticas
-├── informatics/       # Conversiones de base numérica
-└── exceptions/        # Excepciones personalizadas
+├── algebra/
+│   ├── primitives/     # MathElement, Expression, Operator (base)
+│   ├── operators/      # Sum, Sub, Mult, Div (n-arios)
+│   ├── trigonometrics/ # Sin, Cos, Tan, Cot
+│   ├── exponentials/   # Pow, Root, Sqrt, Cbrt
+│   ├── logarithmics/   # Log, LogN
+│   ├── Const.java
+│   ├── Var.java
+│   ├── Function.java   # Flujo encadenado + eval(Evaluation...)
+│   └── Evaluation.java # record(var, value)
+├── vector/             # Vector, Vector2D, Vector3D
+├── point/              # Point, Point2D, Point3D
+├── line/               # Line, Line2D, Line3D, Plane, Space, Curve
+├── combinatory/        # Factorial, Combinatory
+├── statistics/         # WeightedMean
+├── series/             # Serie
+├── sequences/          # Sequence
+├── informatics/        # Conversions
+├── Angle.java
+└── exceptions/
 ```
+
+---
 
 ## Licencia
 
@@ -147,4 +100,4 @@ CC-BY-NC-SA 4.0
 
 ---
 
-**Versión en inglés**: [README.en.md](README.en.md)
+**English version**: [README.en.md](README.en.md)
