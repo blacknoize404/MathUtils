@@ -4,7 +4,7 @@ import MathUtils.Angle;
 import MathUtils.exceptions.ZeroVectorException;
 import MathUtils.point.Point3D;
 
-public class Vector3D extends Vector<Vector3D> {
+public class Vector3D extends Vector<Vector3D> implements Cloneable {
     private double x;
     private double y;
     private double z;
@@ -87,11 +87,10 @@ public class Vector3D extends Vector<Vector3D> {
 
     @Override
     public Vector3D sum(Vector3D a) {
-        this.origin = this.destination;
         this.destination = new Point3D(
-                x + a.getX(),
-                y + a.getY(),
-                z + a.getZ()
+                this.destination.getX() + a.getX(),
+                this.destination.getY() + a.getY(),
+                this.destination.getZ() + a.getZ()
         );
         updateComponents();
         return this;
@@ -99,11 +98,10 @@ public class Vector3D extends Vector<Vector3D> {
 
     @Override
     public Vector3D subtract(Vector3D a) {
-        this.origin = this.destination;
         this.destination = new Point3D(
-                x - a.getX(),
-                y - a.getY(),
-                z - a.getZ());
+                this.destination.getX() - a.getX(),
+                this.destination.getY() - a.getY(),
+                this.destination.getZ() - a.getZ());
         updateComponents();
         return this;
     }
@@ -171,7 +169,7 @@ public class Vector3D extends Vector<Vector3D> {
     public Angle getAngleBetween(Vector3D a) throws ZeroVectorException {
         if (isZero() || a.isZero()) throw new ZeroVectorException();
 
-        return Angle.fromRadians((long) Math.acos(getScalarProduct(a) / (getLength() * a.getLength())));
+        return Angle.fromRadians(Math.acos(getScalarProduct(a) / (getLength() * a.getLength())));
     }
 
     public Angle getAngleBetweenX() throws ZeroVectorException {
@@ -179,7 +177,7 @@ public class Vector3D extends Vector<Vector3D> {
         if (isZero()) throw new ZeroVectorException();
 
         return Angle.fromRadians(
-                (long) Math.acos(
+                Math.acos(
                         this.getX() / getLength()
                 )
         );
@@ -190,7 +188,7 @@ public class Vector3D extends Vector<Vector3D> {
         if (isZero()) throw new ZeroVectorException();
 
         return Angle.fromRadians(
-                (long) Math.acos(
+                Math.acos(
                         this.getY() / getLength()
                 )
         );
@@ -202,7 +200,7 @@ public class Vector3D extends Vector<Vector3D> {
         if (isZero()) throw new ZeroVectorException();
 
         return Angle.fromRadians(
-                (long) Math.acos(
+                Math.acos(
                         this.getZ() / getLength()
                 )
         );

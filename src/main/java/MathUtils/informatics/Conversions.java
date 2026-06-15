@@ -14,6 +14,7 @@ public class Conversions {
             decimal /= 2;
         }
 
+        java.util.Collections.reverse(lst);
         return lst.stream().map(Object::toString)
                 .collect(Collectors.joining());
 

@@ -7,6 +7,8 @@ import MathUtils.exceptions.FunctionEvaluationException;
 import MathUtils.algebra.primitives.Expression;
 import MathUtils.algebra.primitives.MathElement;
 
+
+
 // TODO: 12/12/2023 ¿Debería usar Pow como un operador en vez de una expresión?
 //  al final, una potencia puede admitir una base y n cantidad de exponentes elevando
 //  uno al otro de forma recursiva.
@@ -41,6 +43,13 @@ public class Pow extends Expression<MathElement> {
     @Override
     public double eval(Evaluation... variables) throws FunctionEvaluationException {
         return Math.pow(argument.eval(variables), exponent.eval(variables));
+    }
+
+    @Override
+    public boolean equalsTo(MathElement mathElement) {
+        if (mathElement == null) return false;
+        if (!(mathElement instanceof Pow pow)) return false;
+        return super.equalsTo(mathElement) && exponent.equalsTo(pow.exponent);
     }
 
     public Root toRoot() {

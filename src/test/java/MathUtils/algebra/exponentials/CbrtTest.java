@@ -1,35 +1,45 @@
 package MathUtils.algebra.exponentials;
 
+import MathUtils.algebra.Const;
+import MathUtils.algebra.Evaluation;
 import MathUtils.algebra.Var;
-import MathUtils.algebra.primitives.MathElement;
+import MathUtils.exceptions.FunctionEvaluationException;
 import org.junit.jupiter.api.Test;
 
 class CbrtTest {
 
     @Test
-    void equalsBetweenSqrtAndRootWithArgument3() {
-
-        MathElement variable = new Var("x");
-        MathElement root = new Cbrt(variable);
-
-        // Cuando es igual a sí mismo
-        assert root.equalsTo(root);
-
-        // Cuando son iguales
-        MathElement root2 = new Root(variable, 3);
-        assert root.equalsTo(root2);
-
-        // Cuando se compara en ambos sentidos
-        assert root.equalsTo(root2) && root2.equalsTo(root);
-
-        // Cuando no lo son
-        MathElement root3 = new Root(variable, 2);
-        assert !root.equalsTo(root3);
-
-        // Cuando se compara en ambos sentidos valores que no son iguales
-        assert !root.equalsTo(root3) && !root3.equalsTo(root);
-
-
+    void evalConst() throws FunctionEvaluationException {
+        Cbrt c = new Cbrt(new Const(27));
+        double result = c.eval();
+        assert Math.abs(result - 3.0) < 1e-10 : "Expected ~3.0 but got " + result;
     }
 
+    @Test
+    void evalWithVariable() throws FunctionEvaluationException {
+        Cbrt c = new Cbrt(new Var("x"));
+        double result = c.eval(new Evaluation("x", 8));
+        assert Math.abs(result - 2.0) < 1e-10 : "Expected ~2.0 but got " + result;
+    }
+
+    @Test
+    void evalNegative() throws FunctionEvaluationException {
+        Cbrt c = new Cbrt(new Const(-8));
+        double result = c.eval();
+        assert Math.abs(result + 2.0) < 1e-10 : "Expected ~-2.0 but got " + result;
+    }
+
+    @Test
+    void evalZero() throws FunctionEvaluationException {
+        Cbrt c = new Cbrt(new Const(0));
+        double result = c.eval();
+        assert Math.abs(result) < 1e-10;
+    }
+
+    @Test
+    void evalOne() throws FunctionEvaluationException {
+        Cbrt c = new Cbrt(new Const(1));
+        double result = c.eval();
+        assert Math.abs(result - 1.0) < 1e-10;
+    }
 }

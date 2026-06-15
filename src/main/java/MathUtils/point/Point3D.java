@@ -27,9 +27,9 @@ public final class Point3D extends Point<Point3D, Vector3D> {
 
     @Override
     public boolean isEqualTo(Point3D point) {
-        return point.x == getX() &&
-                point.y == getY() &&
-                point.z == getZ();
+        return point.x.doubleValue() == getX().doubleValue() &&
+                point.y.doubleValue() == getY().doubleValue() &&
+                point.z.doubleValue() == getZ().doubleValue();
     }
 
     public Double getX() {

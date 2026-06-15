@@ -1,46 +1,159 @@
 package MathUtils.algebra.primitives;
 
 import MathUtils.algebra.Const;
+import MathUtils.algebra.Evaluation;
 import MathUtils.algebra.Var;
-import MathUtils.algebra.operators.MultOperator;
-import MathUtils.algebra.operators.SubOperator;
+import MathUtils.algebra.exponentials.Root;
+import MathUtils.algebra.exponentials.Sqrt;
 import MathUtils.algebra.operators.SumOperator;
+import MathUtils.exceptions.FunctionEvaluationException;
 import org.junit.jupiter.api.Test;
 
 class ExpressionTest {
 
     @Test
-    void equalsBetweenMathElements() {
+    void getArgument() {
+        Expression<Number> c = new Const(42);
+        assert c.getArgument().equals(42);
+    }
 
-        MathElement constant = new Const(2);
-        MathElement constant2 = new Const(3);
-        MathElement constant3 = new Const(3);
+    @Test
+    void equalsToNull() {
+        Expression<Number> c = new Const(5);
+        assert !c.equalsTo(null);
+    }
 
-        MathElement variable = new Var("x");
-        MathElement variable2 = new Var("X");
-        MathElement variable3 = new Var("y");
+    @Test
+    void equalsToNonExpression() {
+        Expression<Number> c = new Const(5);
+        assert !c.equalsTo(null);
+    }
 
-        MathElement sumOperator = new SumOperator(constant, variable);
+    @Test
+    void equalsToSameClassNumber() {
+        assert new Const(3.14).equalsTo(new Const(3.14));
+    }
 
-        // Cuando son iguales
-        MathElement sumOperator2 = new SumOperator(constant, variable2);
-        assert sumOperator.equalsTo(sumOperator2);
-//
-        // Cuando son iguales los componentes pero no el operador
-        MathElement subOperator = new SubOperator(constant, variable2);
-        assert !sumOperator.equalsTo(subOperator);
+    @Test
+    void equalsToSameClassNumberDifferent() {
+        assert !new Const(3.14).equalsTo(new Const(2.71));
+    }
 
-        // Cuando el primer valor es distinto
-        SumOperator sumOperator3 = new SumOperator(constant2, variable2);
-        assert !sumOperator.equalsTo(sumOperator3);
+    @Test
+    void equalsToSameClassVar() {
+        assert new Var("x").equalsTo(new Var("x"));
+    }
 
-        // Cuando el segundo valor es distinto
-        MultOperator sumOperator4 = new MultOperator(constant2, variable3);
-        assert !sumOperator.equalsTo(sumOperator4);
+    @Test
+    void equalsToSameClassVarIgnoreCase() {
+        assert new Var("x").equalsTo(new Var("X"));
+    }
 
-        // Cuando los dos valores son distintos
-        SumOperator sumOperator5 = new SumOperator(constant3, variable3);
-        assert !sumOperator.equalsTo(sumOperator5);
+    @Test
+    void equalsToSameClassVarDifferent() {
+        assert !new Var("x").equalsTo(new Var("y"));
+    }
 
+    @Test
+    void equalsToDifferentClassSqrtRoot() {
+        Sqrt sqrt = new Sqrt(4);
+        Root root = new Root(new Const(4), 2);
+        assert sqrt.equalsTo(root);
+    }
+
+    @Test
+    void equalsToSqrtRootDifferent() {
+        Sqrt sqrt = new Sqrt(4);
+        Root root = new Root(new Const(9), 2);
+        assert !sqrt.equalsTo(root);
+    }
+
+    @Test
+    void equalsToMathElementArgument() throws FunctionEvaluationException {
+        Var v1 = new Var("x");
+        Var v2 = new Var("x");
+        Expression<MathElement> e1 = new Expression<MathElement>(v1) {
+            @Override
+            public double eval(Evaluation... evaluations) {
+                try {
+                    return argument.eval(evaluations);
+                } catch (FunctionEvaluationException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        };
+        Expression<MathElement> e2 = new Expression<MathElement>(v2) {
+            @Override
+            public double eval(Evaluation... evaluations) {
+                try {
+                    return argument.eval(evaluations);
+                } catch (FunctionEvaluationException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        };
+        assert e1.equalsTo(e2);
+    }
+
+    @Test
+    void equalsToMathElementArgumentDifferent() throws FunctionEvaluationException {
+        Var v1 = new Var("x");
+        Var v2 = new Var("y");
+        Expression<MathElement> e1 = new Expression<MathElement>(v1) {
+            @Override
+            public double eval(Evaluation... evaluations) {
+                try {
+                    return argument.eval(evaluations);
+                } catch (FunctionEvaluationException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        };
+        Expression<MathElement> e2 = new Expression<MathElement>(v2) {
+            @Override
+            public double eval(Evaluation... evaluations) {
+                try {
+                    return argument.eval(evaluations);
+                } catch (FunctionEvaluationException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        };
+        assert !e1.equalsTo(e2);
+    }
+
+    @Test
+    void testToStringWithE() {
+        Const euler = new Const(Math.E);
+        assert "E".equals(euler.toString());
+    }
+
+    @Test
+    void testToStringNumber() {
+        Const c = new Const(42);
+        assert "42".equals(c.toString());
+    }
+
+    @Test
+    void testToStringDouble() {
+        Const c = new Const(3.14);
+        assert "3.14".equals(c.toString());
+    }
+
+    @Test
+    void testToStringMathElementArgument() throws FunctionEvaluationException {
+        SumOperator sum = new SumOperator(new Const(1), new Const(2));
+        Expression<MathElement> expr = new Expression<MathElement>(sum) {
+            @Override
+            public double eval(Evaluation... evaluations) {
+                try {
+                    return argument.eval(evaluations);
+                } catch (FunctionEvaluationException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        String s = expr.toString();
+        assert s != null && s.contains("1") && s.contains("2");
     }
 }

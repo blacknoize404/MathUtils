@@ -72,3 +72,4 @@ local.properties
 
 # Annotation processors
 *.apt_generated/
+/.maven

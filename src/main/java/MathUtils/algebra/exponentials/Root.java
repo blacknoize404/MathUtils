@@ -33,7 +33,12 @@ public class Root extends Expression<MathElement> {
 
     @Override
     public double eval(Evaluation... variables) throws FunctionEvaluationException {
-        return Math.pow(argument.eval(variables), 1/root.eval(variables));
+        double arg = argument.eval(variables);
+        double exp = 1.0 / root.eval(variables);
+        if (arg < 0) {
+            return -Math.pow(-arg, exp);
+        }
+        return Math.pow(arg, exp);
     }
 
     public MathElement getRoot() {

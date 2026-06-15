@@ -148,7 +148,7 @@ public class Vector2D extends Vector<Vector2D> implements Cloneable {
     public Angle getAngleBetween(Vector2D a) throws ZeroVectorException {
         if (isZero() || a.isZero()) throw new ZeroVectorException();
 
-        return Angle.fromRadians((long) Math.acos(getScalarProduct(a) / (getLength() * a.getLength())));
+        return Angle.fromRadians(Math.acos(getScalarProduct(a) / (getLength() * a.getLength())));
     }
 
     private void updateComponents() {
