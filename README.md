@@ -14,8 +14,6 @@ En Java, la matemática tradicional se evalúa de forma estática. Tú entregas 
 
 Las ecuaciones necesitan una estructura jerárquica. Las expresiones algebraicas deben ser **objetos de primera clase**. MathUtils es la respuesta a ese desafío técnico.
 
-
-
 > **Documentación en inglés / English version**: [README.en.md](README.en.md)
 
 ## Características Principales
