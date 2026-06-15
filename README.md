@@ -8,11 +8,13 @@
 
 ¿Por qué estudiar matemáticas y programación por separado si puedes unificarlas? 
 
-MathUtils resuelve un desafío concreto: conectar el cálculo avanzado y el álgebra lineal con el desarrollo de software modular.
+MathUtils resuelve un desafío concreto: conectar el cálculo avanzado y el álgebra lineal con el desarrollo de software modular. Permite la computación matemática a través **expresiones algebraicas como objetos de primera clase** y árboles de expresión evaluables.
 
 En Java, la matemática tradicional se evalúa de forma estática. Tú entregas los valores, el entorno ejecuta la operación y devuelve un resultado numérico. Este enfoque funciona para operaciones simples. El esquema tradicional limita por completo la manipulación algebraica profunda.
 
 Las ecuaciones necesitan una estructura jerárquica. Las expresiones algebraicas deben ser **objetos de primera clase**. MathUtils es la respuesta a ese desafío técnico.
+
+
 
 > **Documentación en inglés / English version**: [README.en.md](README.en.md)
 
