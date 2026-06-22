@@ -14,14 +14,17 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
 
     private int denominator;
 
-    private boolean isImproper;
-
+    /**
+     * @throws ArithmeticException si el denominador es 0
+     */
     public Fraction(int numerator, int denominator) {
-
+        if (denominator == 0) throw new ArithmeticException("The denominator cannot be 0");
+        if (denominator < 0) {
+            numerator = Math.negateExact(numerator);
+            denominator = Math.negateExact(denominator);
+        }
         this.numerator = numerator;
         this.denominator = denominator;
-        this.isImproper = numerator > denominator;
-
     }
 
     /**
@@ -31,12 +34,11 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
      */
     public Fraction sum(Fraction to) {
         int mcm = getMinimumCommonMultiplier(this.denominator, to.denominator);
-
-        this.setNumerator(
-                this.getNumerator() * (mcm / this.getDenominator())
-                + (to.getNumerator() * (mcm / to.getDenominator()))
-        );
-        this.setDenominator(mcm);
+        int num = Math.addExact(
+                Math.multiplyExact(this.numerator, mcm / this.denominator),
+                Math.multiplyExact(to.numerator, mcm / to.denominator));
+        this.numerator = num;
+        this.denominator = mcm;
         return this;
     }
 
@@ -46,14 +48,12 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
      * @return una instancia del resultado de la operación
      */
     public Fraction sub(Fraction to) {
-        int mcm = getMinimumCommonMultiplier(this.getDenominator(), to.getDenominator());
-
-        this.setNumerator(
-                this.getNumerator() * (mcm / this.getDenominator())
-                - to.getNumerator() * (mcm / to.getDenominator())
-        );
-        this.setDenominator(mcm);
-
+        int mcm = getMinimumCommonMultiplier(this.denominator, to.denominator);
+        int num = Math.subtractExact(
+                Math.multiplyExact(this.numerator, mcm / this.denominator),
+                Math.multiplyExact(to.numerator, mcm / to.denominator));
+        this.numerator = num;
+        this.denominator = mcm;
         return this;
     }
 
@@ -63,8 +63,7 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
      * @return una instancia del resultado de la operación
      */
     public Fraction mult(Integer to) {
-        this.setNumerator(this.numerator * to);
-        this.setDenominator(this.denominator * to);
+        this.numerator = Math.multiplyExact(this.numerator, to);
         return this;
     }
 
@@ -74,8 +73,10 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
      * @return una instancia del resultado de la operación
      */
     public Fraction mult(Fraction to) {
-        this.setNumerator(this.numerator * to.numerator);
-        this.setDenominator(this.denominator * to.denominator);
+        int num = Math.multiplyExact(this.numerator, to.numerator);
+        int den = Math.multiplyExact(this.denominator, to.denominator);
+        this.numerator = num;
+        this.denominator = den;
         return this;
     }
 
@@ -83,10 +84,18 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
      * Realiza una división entre la fracción de la instancia y la pasada como argumento
      * @param to fracción a dividir
      * @return una instancia del resultado de la operación
+     * @throws ArithmeticException si se divide entre una fracción nula
      */
     public Fraction div(Fraction to) {
-        this.numerator *= to.denominator;
-        this.denominator *= to.numerator;
+        if (to.numerator == 0) throw new ArithmeticException("Cannot divide by a zero fraction");
+        int num = Math.multiplyExact(this.numerator, to.denominator);
+        int den = Math.multiplyExact(this.denominator, to.numerator);
+        if (den < 0) {
+            num = Math.negateExact(num);
+            den = Math.negateExact(den);
+        }
+        this.numerator = num;
+        this.denominator = den;
         return this;
     }
 
@@ -111,19 +120,24 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
      * @return el mínimo común múltiplo de dichos números
      */
     private int getMinimumCommonMultiplier(int a, int b) {
-        return (a * b) / getGreatestCommonDivisor(Math.abs(a), Math.abs(b));
+        return Math.multiplyExact(a / getGreatestCommonDivisor(a, b), b);
     }
 
     /**
      * Calcula el mayor común divisor de dos números usando el algoritmo euclidiano
-     * en su forma recursiva
      * @param numerator numerador
      * @param denominator denominador
-     * @return el máximo común divisor.
+     * @return el máximo común divisor (siempre no negativo).
      */
     private int getGreatestCommonDivisor(int numerator, int denominator) {
-        if (denominator == 0) return numerator;
-        return getGreatestCommonDivisor(denominator, numerator % denominator);
+        int a = Math.abs(numerator);
+        int b = Math.abs(denominator);
+        while (b != 0) {
+            int t = a % b;
+            a = b;
+            b = t;
+        }
+        return a;
     }
 
     /**
@@ -134,7 +148,7 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
      */
     @Override
     public int compareTo(Fraction o) {
-        return Double.compare(eval(), o.eval());
+        return Long.compare((long) numerator * o.denominator, (long) o.numerator * denominator);
     }
 
     public int getNumerator() {
@@ -143,7 +157,6 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
 
     public void setNumerator(int numerator) {
         this.numerator = numerator;
-        this.isImproper = this.numerator > this.denominator;
     }
 
     public int getDenominator() {
@@ -152,8 +165,11 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
 
     public void setDenominator(int denominator) throws ArithmeticException {
         if (denominator == 0) throw new ArithmeticException("The denominator cannot be 0");
+        if (denominator < 0) {
+            this.numerator = Math.negateExact(this.numerator);
+            denominator = Math.negateExact(denominator);
+        }
         this.denominator = denominator;
-        this.isImproper = numerator > denominator;
     }
 
     /**
@@ -162,7 +178,7 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
      * @return si es impropia devuelve true, en caso contrario, false
      */
     public boolean isImproper() {
-        return isImproper;
+        return Math.abs((long) numerator) > denominator;
     }
 
     @Override
@@ -181,7 +197,7 @@ public class Fraction extends MathElement implements Comparable<Fraction> {
 
     @Override
     public boolean equalsTo(MathElement mathElement) {
-        return false;
+        return mathElement instanceof Fraction other && compareTo(other) == 0;
     }
 
 }

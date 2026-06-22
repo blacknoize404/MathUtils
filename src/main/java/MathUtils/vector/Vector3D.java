@@ -126,14 +126,7 @@ public class Vector3D extends Vector<Vector3D> implements Cloneable {
 
     @Override
     public double getLength() {
-        // FIXME: 26/11/2023 Esto devuelve un valor con precisión perdida
-        //  elevarlo al cuadrado no devolverá el mismo resultado.
-        return Math.pow(
-                Math.pow(destination.getX() - origin.getX(), 2) +
-                        Math.pow(destination.getY() - origin.getY(), 2) +
-                        Math.pow(destination.getZ() - origin.getZ(), 2),
-                (double) 1 / 2
-        );
+        return Math.sqrt(getDotProduct(this));
     }
 
     @Override
@@ -154,14 +147,7 @@ public class Vector3D extends Vector<Vector3D> implements Cloneable {
 
     @Override
     public boolean isEqualTo(Vector3D a) {
-        // Tuve que hacer este procedimiento para evitar perder precisión
-        // al calcular su raíz y luego elevarlo al cuadrado.
-        double lengthSquared =
-                Math.pow(destination.getX() - origin.getX(), 2D) +
-                        Math.pow(destination.getY() - origin.getY(), 2D) +
-                        Math.pow(destination.getZ() - origin.getZ(), 2D);
-
-        return this.getScalarProduct(a) == lengthSquared;
+        return getX() == a.getX() && getY() == a.getY() && getZ() == a.getZ();
     }
 
     // TODO: 9/12/2023 Documentar estas funciones
@@ -213,6 +199,11 @@ public class Vector3D extends Vector<Vector3D> implements Cloneable {
         setZ(destination.getZ() - origin.getZ());
     }
 
+
+    @Override
+    public Vector3D copy() {
+        return clone();
+    }
 
     @Override
     public Vector3D clone() {

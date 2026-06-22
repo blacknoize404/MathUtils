@@ -18,4 +18,6 @@ module MathUtils {
     exports MathUtils.informatics;
     exports MathUtils.statistics;
     exports MathUtils.series;
+    exports MathUtils.sequences;
+    exports MathUtils.combinatory;
 }

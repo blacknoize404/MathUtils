@@ -1,34 +1,24 @@
 package MathUtils.informatics;
 
-import java.util.ArrayList;
-import java.util.stream.Collectors;
-
 public class Conversions {
 
+    /**
+     * Convierte un entero a su representación binaria. Los negativos conservan el signo ("-101").
+     * @param decimal valor a convertir
+     * @return la cadena binaria ("0" para el cero)
+     */
     public static String decimalToBinary(int decimal) {
-
-        ArrayList<Integer> lst = new ArrayList<>();
-
-        while (decimal != 0) {
-            lst.add(decimal % 2);
-            decimal /= 2;
-        }
-
-        java.util.Collections.reverse(lst);
-        return lst.stream().map(Object::toString)
-                .collect(Collectors.joining());
-
+        return (decimal < 0 ? "-" : "") + Long.toBinaryString(Math.abs((long) decimal));
     }
 
+    /**
+     * Convierte una cadena binaria (con signo opcional) a entero.
+     * @param binary cadena compuesta por 0 y 1
+     * @return el valor decimal
+     * @throws NumberFormatException si la cadena no es binaria o no cabe en un int
+     */
     public static int binaryToDecimal(String binary) {
-
-        int sum = 0;
-
-        for (int i = 0; i < binary.length(); i++) {
-            sum += Integer.parseInt(String.valueOf(binary.charAt(i))) * (int) Math.pow(2, binary.length() - 1 - i);
-        }
-
-        return sum;
+        return Integer.parseInt(binary, 2);
     }
 
 }

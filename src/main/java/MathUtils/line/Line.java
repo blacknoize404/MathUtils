@@ -35,17 +35,17 @@ public abstract class Line <
     // Relaciones entre rectas
 
     /**
-     * Comprueba si es una recta paralela evaluando si los
-     * vectores direccionales unitarios son iguales.
+     * Comprueba si es una recta paralela evaluando si el producto cruz
+     * de los vectores direccionales es nulo (mismo sentido u opuesto).
      * @param line la recta a comparar
      * @return true si es paralelo, de lo contrario, false
      */
     public boolean isParallelTo(L line) {
-        return getUnitDirectionVector().isEqualTo(line.getUnitDirectionVector());
+        return getDirectionVector().getCrossProduct(line.getDirectionVector()).isZero();
     }
 
     /**
-     * Comprueba si es una recta paralela evaluando si los
+     * Comprueba si es una recta perpendicular evaluando si los
      * vectores direccionales son ortogonales.
      * @param line la recta a comparar
      * @return true si es perpendicular, de lo contrario, false
@@ -56,20 +56,21 @@ public abstract class Line <
 
     /**
      * Comprueba si ambas rectas son coincidentes
-     * Para ello sus vectores direccionales unitarios deben ser iguales
-     * y dos valores evaluados en ambas rectas también deben ser iguales
+     * Para ello deben ser paralelas y el vector que une un punto de cada
+     * una también debe ser paralelo a la dirección
      * @param line recta a comprobar
      * @return un booleano como respuesta al predicado
      */
     public boolean isCoincidentTo(L line) {
         if (!isParallelTo(line)) return false;
-        return line.eval(0).isEqualTo(eval(0)) && line.eval(1).isEqualTo(eval(1));
+        V between = line.eval(0).AsVector().subtract(eval(0).AsVector());
+        return between.getCrossProduct(direction).isZero();
     }
 
     public abstract boolean isIntersectedBy(L line);
 
     public V getUnitDirectionVector() {
-        return direction.divide(direction.getLength());
+        return direction.copy().divide(direction.getLength());
     }
 
     public V getDirectionVector() { return direction; }

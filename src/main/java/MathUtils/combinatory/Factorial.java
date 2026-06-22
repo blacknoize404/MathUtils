@@ -20,12 +20,14 @@ public class Factorial extends Expression<Number> {
     @Override
     public double eval(Evaluation... evaluations) throws FunctionEvaluationException {
 
-        int factSum = 1;
         int value = argument.intValue();
+        if (value < 0) throw new IllegalArgumentException("El factorial no está definido para negativos");
+
+        double result = 1;
         for (int i = 2; i <= value; i++) {
-            factSum *= i;
+            result *= i;
         }
 
-        return factSum;
+        return result;
     }
 }

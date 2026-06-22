@@ -14,11 +14,17 @@ public class Angle {
     private static double angleToRadian(double angle) {
         return angle * Math.PI / 180D;
     }
+
     public static Angle fromAngle(double angle) {
-        return new Angle() {{setAngle(angle);}};
+        Angle result = new Angle();
+        result.setAngle(angle);
+        return result;
     }
+
     public static Angle fromRadians(double radians) {
-        return new Angle() {{setRadian(radians);}};
+        Angle result = new Angle();
+        result.setRadian(radians);
+        return result;
     }
 
     public double getRadian() {
@@ -41,7 +47,7 @@ public class Angle {
 
     @Override
     public String toString() {
-        return "Vectorial.Angle {" +
+        return "Angle {" +
                 "radian=" + radian +
                 ", angle=" + angle +
                 '}';

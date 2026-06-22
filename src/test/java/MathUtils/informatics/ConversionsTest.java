@@ -7,7 +7,7 @@ class ConversionsTest {
     @Test
     void decimalToBinaryZero() {
         String result = Conversions.decimalToBinary(0);
-        assert "".equals(result) : "Expected empty string but got " + result;
+        assert "0".equals(result) : "Expected \"0\" but got " + result;
     }
 
     @Test

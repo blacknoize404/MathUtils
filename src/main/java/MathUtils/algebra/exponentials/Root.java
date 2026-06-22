@@ -34,8 +34,13 @@ public class Root extends Expression<MathElement> {
     @Override
     public double eval(Evaluation... variables) throws FunctionEvaluationException {
         double arg = argument.eval(variables);
-        double exp = 1.0 / root.eval(variables);
+        double index = root.eval(variables);
+        if (index == 0) throw new ArithmeticException("El índice de la raíz no puede ser 0");
+        double exp = 1.0 / index;
         if (arg < 0) {
+            // Solo existe raíz real de un negativo cuando el índice es un entero impar
+            boolean oddIndex = index % 1 == 0 && Math.abs(index % 2) == 1;
+            if (!oddIndex) throw new ArithmeticException("No existe raíz real de un número negativo con índice " + index);
             return -Math.pow(-arg, exp);
         }
         return Math.pow(arg, exp);

@@ -49,7 +49,7 @@ public class WeightedMean {
     public WeightedMean(double[][] table) {
 
         weights = new double[table.length];
-        frequencies = new double[table[0].length];
+        frequencies = new double[table.length];
 
         for (int i = 0; i < table.length; i++) {
             weights[i] = table[i][0];

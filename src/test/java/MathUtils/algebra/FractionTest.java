@@ -46,7 +46,7 @@ class FractionTest {
         Fraction a = new Fraction(1, 4);
         a.mult(2);
         assert a.getNumerator() == 2;
-        assert a.getDenominator() == 8;
+        assert a.getDenominator() == 4;
     }
 
     @Test
@@ -115,6 +115,55 @@ class FractionTest {
         Fraction f = new Fraction(3, 4);
         String s = f.toString();
         assert s.contains("3") && s.contains("4");
+    }
+
+    @Test
+    void constructorNormalizesSign() {
+        Fraction f = new Fraction(1, -2);
+        assert f.getNumerator() == -1 && f.getDenominator() == 2;
+    }
+
+    @Test
+    void constructorZeroDenominator() {
+        try {
+            new Fraction(1, 0);
+            assert false;
+        } catch (ArithmeticException e) {
+            assert true;
+        }
+    }
+
+    @Test
+    void divByZeroFraction() {
+        try {
+            new Fraction(1, 2).div(new Fraction(0, 3));
+            assert false;
+        } catch (ArithmeticException e) {
+            assert true;
+        }
+    }
+
+    @Test
+    void simplifyNegative() {
+        Fraction f = new Fraction(-6, 8).simplify();
+        assert f.getNumerator() == -3 && f.getDenominator() == 4;
+    }
+
+    @Test
+    void sumOverflowThrows() {
+        try {
+            new Fraction(1, 100_000).sum(new Fraction(1, 99_999));
+            assert false;
+        } catch (ArithmeticException e) {
+            assert true;
+        }
+    }
+
+    @Test
+    void equalsToIsValueBased() {
+        assert new Fraction(1, 2).equalsTo(new Fraction(2, 4));
+        assert !new Fraction(1, 2).equalsTo(new Fraction(1, 3));
+        assert !new Fraction(1, 2).equalsTo(null);
     }
 
     @Test

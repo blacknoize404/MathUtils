@@ -145,11 +145,16 @@ public abstract class Vector<V extends Vector<V>> implements Comparable<V> {
         return getCrossProduct(a);
     }
 
-    public V getUnitNormalVector(V a) {
-        @SuppressWarnings("unchecked")
-        V normal = (V) this.getCrossProduct(a);
+    public Vector3D getUnitNormalVector(V a) {
+        Vector3D normal = this.getCrossProduct(a);
         return normal.divide(normal.getLength());
     }
+
+    /**
+     * Crea una copia independiente de este vector, útil para operar sin mutar el original.
+     * @return la copia del vector
+     */
+    public abstract V copy();
 
     /**
      * <p>Comprueba si los vectores son iguales usando la propiedad del producto punto.
@@ -195,8 +200,7 @@ public abstract class Vector<V extends Vector<V>> implements Comparable<V> {
      */
     @Override
     public int compareTo(V o) {
-        // Multiplico por 100 para no perder tanta precisión al convertir a entero.
-        return (int) ((this.getLength() - o.getLength()) * 100);
+        return Double.compare(this.getLength(), o.getLength());
     }
 
     /**

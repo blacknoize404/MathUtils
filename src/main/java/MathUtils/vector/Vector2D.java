@@ -116,9 +116,7 @@ public class Vector2D extends Vector<Vector2D> implements Cloneable {
 
     @Override
     public double getLength() {
-        return Math.sqrt(
-                Math.pow(to.getX() - from.getX(), 2) +
-                        Math.pow(to.getY() - from.getY(), 2));
+        return Math.hypot(getX(), getY());
     }
 
     @Override
@@ -134,14 +132,7 @@ public class Vector2D extends Vector<Vector2D> implements Cloneable {
     // TODO: 26/11/2023 Terminar esto
     @Override
     public boolean isEqualTo(Vector2D a) {
-
-        // Tuve que hacer este procedimiento para evitar perder precisión
-        // al calcular su raíz y luego elevarlo al cuadrado.
-        double lengthSquared =
-                Math.pow(to.getX() - from.getX(), 2D) +
-                        Math.pow(to.getY() - from.getY(), 2D);
-
-        return this.getScalarProduct(a) == lengthSquared;
+        return getX() == a.getX() && getY() == a.getY();
     }
 
     @Override
@@ -192,6 +183,11 @@ public class Vector2D extends Vector<Vector2D> implements Cloneable {
 
     public Point2D AsPoint() {
         return new Point2D(x, y);
+    }
+
+    @Override
+    public Vector2D copy() {
+        return clone();
     }
 
     @Override

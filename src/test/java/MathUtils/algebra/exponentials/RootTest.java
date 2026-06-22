@@ -9,6 +9,16 @@ import org.junit.jupiter.api.Test;
 class RootTest {
 
     @Test
+    void evenRootOfNegativeThrows() {
+        try {
+            new Root(-16, 2).eval();
+            assert false;
+        } catch (ArithmeticException | FunctionEvaluationException e) {
+            assert true;
+        }
+    }
+
+    @Test
     void evalElementNumber() throws FunctionEvaluationException {
         Root r = new Root(new Const(8), 3);
         double result = r.eval();

@@ -13,9 +13,10 @@ public class Plane {
 
     public Plane(double xSlope, double ySlope, double zSlope) {
         this.normalVector = new Vector3D(xSlope, ySlope, zSlope);
+        this.displacement = Point3D.ZERO();
     }
 
-    public Plane(double xSlope, double ySlope, double zSlope, double xDisplacement, double yDisplacement, double zDisplacement, double ...zdi) {
+    public Plane(double xSlope, double ySlope, double zSlope, double xDisplacement, double yDisplacement, double zDisplacement) {
         this.normalVector = new Vector3D(xSlope, ySlope, zSlope);
         this.displacement = new Point3D(xDisplacement, yDisplacement, zDisplacement);
     }
@@ -51,7 +52,7 @@ public class Plane {
      * @return devuelve el resultado de la evaluación del punto (valor de z)
      */
     public double eval(Point2D point) {
-        return (-( getXSlope() * ( point.getX() - getXDisplacement() ) + getYSlope() * ( point.getY() - getYDisplacement() )) / getZSlope()) + getYDisplacement();
+        return (-( getXSlope() * ( point.getX() - getXDisplacement() ) + getYSlope() * ( point.getY() - getYDisplacement() )) / getZSlope()) + getZDisplacement();
     }
 
     /**
@@ -90,7 +91,7 @@ public class Plane {
     }
 
     public Vector3D getUnitNormalVector() {
-        return normalVector.divide(normalVector.getLength());
+        return normalVector.copy().divide(normalVector.getLength());
     }
     public Vector3D getNormalVector() {
         return normalVector;
