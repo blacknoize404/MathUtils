@@ -16,4 +16,8 @@ public final class Sin extends Expression<MathElement> {
         return Math.sin(argument.eval(variables));
     }
 
+    @Override
+    public String toString() {
+        return "sin(" + argument + ")";
+    }
 }

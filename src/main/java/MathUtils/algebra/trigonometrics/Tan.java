@@ -14,4 +14,9 @@ public final class Tan extends Expression<MathElement> {
 
         return Math.tan(argument.eval(variables));
     }
+
+    @Override
+    public String toString() {
+        return "tan(" + argument + ")";
+    }
 }

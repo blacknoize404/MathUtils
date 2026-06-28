@@ -21,4 +21,8 @@ public class Cot extends Expression<MathElement> {
         return Math.cos(value) / Math.sin(value);
     }
 
+    @Override
+    public String toString() {
+        return "cot(" + argument + ")";
+    }
 }

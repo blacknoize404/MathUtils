@@ -107,4 +107,9 @@ public final class Function extends MathElement {
     public MathElement getContent() {
         return content;
     }
+
+    @Override
+    public String toString() {
+        return content.toString();
+    }
 }

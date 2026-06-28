@@ -52,6 +52,10 @@ public class Pow extends Expression<MathElement> {
         return super.equalsTo(mathElement) && exponent.equalsTo(pow.exponent);
     }
 
+    public MathElement getExponent() {
+        return exponent;
+    }
+
     public Root toRoot() {
         return new Root(argument, new DivOperator(1, exponent));
     }

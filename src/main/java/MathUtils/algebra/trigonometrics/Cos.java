@@ -15,4 +15,9 @@ public final class Cos extends Expression<MathElement> {
     public double eval(Evaluation... variables) throws FunctionEvaluationException {
         return Math.cos(argument.eval(variables));
     }
+
+    @Override
+    public String toString() {
+        return "cos(" + argument + ")";
+    }
 }

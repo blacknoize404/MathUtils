@@ -26,6 +26,10 @@ public class Log extends Expression<MathElement> {
         this.base = base;
     }
 
+    public MathElement getBase() {
+        return base;
+    }
+
     /**
      * Evalúa el logaritmo para una base dada usando las propiedades de cambio de base
      * de logaritmo.

@@ -16,4 +16,12 @@ public final class Const extends Expression<Number> {
         return argument.doubleValue();
     }
 
+    @Override
+    public String toString() {
+        double value = argument.doubleValue();
+        if (value == Math.E) return "E";
+        if (value % 1 == 0 && Math.abs(value) < 1e15) return String.valueOf((long) value);
+        return argument.toString();
+    }
+
 }
