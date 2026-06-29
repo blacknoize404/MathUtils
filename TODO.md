@@ -3,40 +3,40 @@
 ---
 
 ## Cálculo (Integrales y Derivadas)
-- [ ] Diferenciación simbólica (reglas de derivación, regla de la cadena)
-- [ ] Integración numérica: regla del trapecio, Simpson 1/3, Simpson 3/8, cuadratura gaussiana
+- [x] Diferenciación simbólica (reglas de derivación, regla de la cadena)
+- [x] Integración numérica: regla del trapecio, Simpson 1/3, Simpson 3/8, cuadratura gaussiana (implementado: trapecio, Simpson 1/3, Simpson 3/8 y Gauss-Legendre de 5 puntos)
 - [ ] Integrales definidas e indefinidas
-- [ ] Derivadas parciales y gradiente
-- [ ] Jacobiano y Hessiana
+- [x] Derivadas parciales y gradiente
+- [x] Jacobiano y Hessiana
 
 ## Parser de Expresiones (Shunting Yard)
-- [ ] Tokenizer (números, variables, funciones, operadores, paréntesis)
-- [ ] Algoritmo Shunting Yard: infijo → postfijo (RPN)
-- [ ] Constructor de árbol `Function` desde RPN
-- [ ] Soporte: precedencia, asociatividad, funciones n-arias, constantes (PI, E), variables
-- [ ] Manejo de errores con posiciones (línea/columna)
+- [x] Tokenizer (números, variables, funciones, operadores, paréntesis)
+- [x] Algoritmo Shunting Yard: infijo → postfijo (RPN)
+- [x] Constructor de árbol `Function` desde RPN
+- [x] Soporte: precedencia, asociatividad, funciones n-arias, constantes (PI, E), variables (funciones de aridad fija: sin, cos, tan, cot, sqrt, cbrt, ln, exp, log, root, pow)
+- [x] Manejo de errores con posiciones (línea/columna)
 
 ## Conversor Función-a-Texto
-- [ ] Serialización a string legible
+- [x] Serialización a string legible
 - [ ] Pretty-printing: texto plano, LaTeX, MathML
-- [ ] Simplificación antes de salida (`x + 0` → `x`, `x * 1` → `x`, `x^1` → `x`)
+- [x] Simplificación antes de salida (`x + 0` → `x`, `x * 1` → `x`, `x^1` → `x`)
 
 ## Álgebra Lineal
-- [ ] Clase `Matrix` (genérica, mutable/inmutable)
-- [ ] Operaciones: suma, resta, multiplicación, traspuesta, traza
-- [ ] Determinante (expansión por cofactores, LU)
-- [ ] Inversa (Gauss-Jordan, adjunta)
+- [x] Clase `Matrix` (genérica, mutable/inmutable) (inmutable)
+- [x] Operaciones: suma, resta, multiplicación, traspuesta, traza
+- [x] Determinante (expansión por cofactores, LU) (LU con pivoteo; cofactores pendiente)
+- [x] Inversa (Gauss-Jordan, adjunta) (vía LU; Gauss-Jordan/adjunta pendiente)
 - [ ] Autovalores y autovectores (método QR, potencia)
-- [ ] Solvers: Gauss, LU, Cholesky, QR
+- [ ] Solvers: Gauss, LU (hecho), Cholesky, QR (pendiente)
 - [ ] SVD (descomposición en valores singulares)
 - [ ] Espacios vectoriales: base, dimensión, rango, nulidad
 
 ## Números Complejos
-- [ ] `Complex` (record o class inmutable)
-- [ ] Aritmética: +, -, *, /, pow, root, exp, log
-- [ ] Trigonométricas e hiperbólicas complejas
-- [ ] Conversión rectangular ↔ polar
-- [ ] Raíces n-ésimas, logaritmo complejo
+- [x] `Complex` (record o class inmutable)
+- [x] Aritmética: +, -, *, /, pow, root, exp, log
+- [x] Trigonométricas e hiperbólicas complejas (sin, cos, tan, sinh, cosh, tanh)
+- [x] Conversión rectangular ↔ polar
+- [x] Raíces n-ésimas, logaritmo complejo
 
 ## Ecuaciones Diferenciales
 - [ ] ODE solver base (interfaz `ODESolver`)
@@ -46,17 +46,17 @@
 - [ ] Problemas de valores en la frontera (shooting, diferencias finitas)
 
 ## Análisis Numérico
-- [ ] Búsqueda de raíces: bisección, Newton-Raphson, secante, Brent, Muller
+- [ ] Búsqueda de raíces: bisección, Newton-Raphson, secante (hecho), Brent, Muller (pendiente)
 - [ ] Interpolación: Lagrange, Newton (diferencias divididas), splines cúbicos
-- [ ] Diferenciación numérica (diferencias finitas, Richardson)
+- [x] Diferenciación numérica (diferencias finitas, Richardson)
 - [ ] Cuadratura adaptativa (Gauss-Kronrod)
 
 ## Cálculo Multivariable
-- [ ] Derivadas parciales (orden superior)
-- [ ] Gradiente, divergencia, rotacional
+- [x] Derivadas parciales (orden superior)
+- [ ] Gradiente (hecho), divergencia, rotacional (pendiente)
 - [ ] Integrales dobles/triples (iteradas, cambio de variables)
 - [ ] Integrales de línea y superficie (teoremas de Green, Stokes, Gauss)
-- [ ] Jacobiano y Hessiana (matrices, determinantes)
+- [x] Jacobiano y Hessiana (matrices, determinantes)
 
 ## Probabilidad y Estadística
 - [ ] Distribuciones: Normal, Binomial, Poisson, Exponencial, Gamma, Beta, Chi-cuadrado, t-Student, F, Uniforme

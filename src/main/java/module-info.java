@@ -19,5 +19,9 @@ module MathUtils {
     exports MathUtils.statistics;
     exports MathUtils.series;
     exports MathUtils.sequences;
+    exports MathUtils.complex;
+    exports MathUtils.matrix;
+    exports MathUtils.parser;
+    exports MathUtils.calculus;
     exports MathUtils.combinatory;
 }
