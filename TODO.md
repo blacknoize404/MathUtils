@@ -18,7 +18,7 @@
 
 ## Conversor Función-a-Texto
 - [x] Serialización a string legible
-- [ ] Pretty-printing: texto plano, LaTeX, MathML
+- [ ] Pretty-printing: texto plano y LaTeX (hechos), MathML (pendiente)
 - [x] Simplificación antes de salida (`x + 0` → `x`, `x * 1` → `x`, `x^1` → `x`)
 
 ## Álgebra Lineal
@@ -39,11 +39,11 @@
 - [x] Raíces n-ésimas, logaritmo complejo
 
 ## Ecuaciones Diferenciales
-- [ ] ODE solver base (interfaz `ODESolver`)
-- [ ] Euler, Heun, Punto medio, Runge-Kutta 4 (RK4)
-- [ ] Paso adaptativo (RK45, Dormand-Prince)
-- [ ] Sistemas de EDOs (vectoriales)
-- [ ] Problemas de valores en la frontera (shooting, diferencias finitas)
+- [x] ODE solver base (interfaz `ODESolver`)
+- [x] Euler, Heun, Punto medio, Runge-Kutta 4 (RK4)
+- [x] Paso adaptativo (RK45, Dormand-Prince)
+- [x] Sistemas de EDOs (vectoriales)
+- [x] Problemas de valores en la frontera (shooting, diferencias finitas)
 
 ## Análisis Numérico
 - [ ] Búsqueda de raíces: bisección, Newton-Raphson, secante (hecho), Brent, Muller (pendiente)
@@ -59,16 +59,16 @@
 - [x] Jacobiano y Hessiana (matrices, determinantes)
 
 ## Probabilidad y Estadística
-- [ ] Distribuciones: Normal, Binomial, Poisson, Exponencial, Gamma, Beta, Chi-cuadrado, t-Student, F, Uniforme
-- [ ] PDF, CDF, cuantiles, generación de muestras (Box-Muller, Ziggurat)
+- [ ] Distribuciones: Normal, Binomial, Poisson, Exponencial, Uniforme (hechas); Gamma, Beta, Chi-cuadrado, t-Student, F (pendientes)
+- [ ] PDF, CDF, cuantiles, generación de muestras: Box-Muller y transformada inversa (hecho), Ziggurat (pendiente)
 - [ ] Tests: t-test (1/2 muestras, pareado), chi-cuadrado (bondad, independencia), ANOVA (1/2 vías)
 - [ ] Regresión: lineal simple/múltiple, polinomial, logística, ridge/LASSO
-- [ ] Descriptivos: media, mediana, moda, varianza, desviación, asimetría, curtosis, percentiles
+- [x] Descriptivos: media, mediana, moda, varianza, desviación, asimetría, curtosis, percentiles
 
 ## Matemáticas Discretas
-- [ ] Teoría de números: criba de Eratóstenes, factorización, MCD/MCM extendido, φ(n), congruencias, teorema chino del residuo
+- [x] Teoría de números: criba de Eratóstenes, factorización, MCD/MCM extendido, φ(n), congruencias, teorema chino del residuo
 - [ ] Grafos: BFS/DFS, Dijkstra, A*, Floyd-Warshall, Kruskal/Prim (MST), Ford-Fulkerson (max flow)
-- [ ] Combinatoria: permutaciones, combinaciones, particiones, números de Stirling, catalanes
+- [x] Combinatoria: permutaciones, combinaciones, particiones, números de Stirling (2.ª especie), catalanes
 - [ ] Relaciones de recurrencia: solución cerrada, función generadora
 
 ## Optimización
@@ -87,7 +87,7 @@
 ## Funciones Especiales
 - [ ] Gamma, log-Gamma, Beta, Beta incompleta
 - [ ] Bessel (J, Y, I, K), esféricas, de Hankel
-- [ ] Error function (erf, erfc, erfi, inversa)
+- [ ] Error function: erf y erfc (hechas); erfi e inversa (pendientes)
 - [ ] Hipergeométricas (₁F₁, ₂F₁, pFq)
 - [ ] Integrales elípticas (F, E, Π de Legendre; formas de Carlson)
 
@@ -96,7 +96,7 @@
 - [ ] Expandir: distributiva, binomio de Newton, multinomial
 - [ ] Factorizar: común, diferencia de cuadrados, trinomios, agrupación
 - [ ] Sustitución y pattern matching
-- [ ] Exportación LaTeX / MathML / ASCIIMath
+- [ ] Exportación LaTeX (hecha), MathML / ASCIIMath (pendientes)
 
 ## Álgebra Tensorial
 - [ ] Tensor N-dimensional (índices covariantes/contravariantes)

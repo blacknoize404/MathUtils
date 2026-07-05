@@ -23,5 +23,8 @@ module MathUtils {
     exports MathUtils.matrix;
     exports MathUtils.parser;
     exports MathUtils.calculus;
+    exports MathUtils.ode;
+    exports MathUtils.special;
+    exports MathUtils.discrete;
     exports MathUtils.combinatory;
 }
