@@ -2,7 +2,6 @@
  * Librería orientada a las matemáticas, estadísticas, construcción y cálculo computacional en general.
  */
 module MathUtils {
-    requires java.desktop;
     exports MathUtils;
     exports MathUtils.vector;
     exports MathUtils.algebra;
