@@ -25,5 +25,6 @@ module MathUtils {
     exports MathUtils.ode;
     exports MathUtils.special;
     exports MathUtils.discrete;
+    exports MathUtils.cas.expr;
     exports MathUtils.combinatory;
 }
