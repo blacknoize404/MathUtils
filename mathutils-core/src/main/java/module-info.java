@@ -26,5 +26,7 @@ module MathUtils {
     exports MathUtils.special;
     exports MathUtils.discrete;
     exports MathUtils.cas.expr;
+    exports MathUtils.cas.steps;
+    exports MathUtils.cas.diff;
     exports MathUtils.combinatory;
 }

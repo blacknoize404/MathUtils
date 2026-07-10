@@ -177,6 +177,14 @@ public sealed interface Expr permits Expr.Num, Expr.Const, Expr.Sym, Expr.Add, E
         return func(Fn.ABS, e);
     }
 
+    /**
+     * Ordena los factores de un producto como se escriben a mano (números, variables,
+     * funciones, exponenciales). Es el orden con el que se imprimen los productos.
+     */
+    static List<Expr> displayOrder(List<Expr> factors) {
+        return Display.sortedFactors(factors);
+    }
+
     // ---------------------------------------------------------------- Consultas
 
     default boolean isZero() {

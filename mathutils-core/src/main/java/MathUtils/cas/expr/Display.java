@@ -51,7 +51,31 @@ final class Display {
                 numerator.add(f);
             }
         }
-        return new Fraction(negative, numerator, denominator);
+        return new Fraction(negative, sortedFactors(numerator), sortedFactors(denominator));
+    }
+
+    /**
+     * Ordena los factores de un producto como se escriben a mano: números, constantes, variables
+     * y potencias de variables, otras expresiones, funciones y, al final, exponenciales.
+     */
+    static List<Expr> sortedFactors(List<Expr> factors) {
+        List<Expr> sorted = new ArrayList<>(factors);
+        sorted.sort(Comparator.comparingInt(Display::factorRank).thenComparing(ExprOrder.INSTANCE));
+        return sorted;
+    }
+
+    private static int factorRank(Expr e) {
+        return switch (e) {
+            case Expr.Num n -> 0;
+            case Expr.Const c -> 1;
+            case Expr.Sym s -> 2;
+            case Expr.Pow p -> p.base() instanceof Expr.Sym || p.base() instanceof Expr.Const && !p.base().equals(Expr.E)
+                    ? 2
+                    : (p.base().equals(Expr.E) ? 5 : 4);
+            case Expr.Add a -> 3;
+            case Expr.Mul m -> 3;
+            case Expr.Func f -> 4;
+        };
     }
 
     /** Ordena los términos de una suma para mostrarlos: mayor grado primero, constantes al final. */
