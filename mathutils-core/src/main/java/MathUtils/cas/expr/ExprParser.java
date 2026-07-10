@@ -3,6 +3,7 @@ package MathUtils.cas.expr;
 import MathUtils.exceptions.ExpressionParseException;
 import MathUtils.parser.ExpressionParser;
 
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -22,6 +23,14 @@ public final class ExprParser {
      */
     public static Expr parse(String source) {
         return ExpressionParser.parse(source, new ExprBuilder(), true);
+    }
+
+    /**
+     * Interpreta el texto con funciones definidas por el usuario y una unidad de ángulo.
+     * @throws ExpressionParseException si la expresión es inválida
+     */
+    public static Expr parse(String source, Map<String, UserFunction> userFunctions, AngleUnit angleUnit) {
+        return ExpressionParser.parse(source, new ExprBuilder(userFunctions, angleUnit), true);
     }
 
     /**

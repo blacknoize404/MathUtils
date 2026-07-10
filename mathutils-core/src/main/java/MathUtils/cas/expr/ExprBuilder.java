@@ -3,14 +3,35 @@ package MathUtils.cas.expr;
 import MathUtils.parser.TreeBuilder;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * Construye {@link Expr} desde el análisis sintáctico de {@link MathUtils.parser.ExpressionParser}.
+ * Admite funciones definidas por el usuario y una unidad de ángulo para las funciones
+ * trigonométricas (con grados, {@code sin(30)} vale {@code 1/2}).
  */
-final class ExprBuilder implements TreeBuilder<Expr> {
+public final class ExprBuilder implements TreeBuilder<Expr> {
 
     private static final Set<String> SPECIAL_FUNCTIONS = Set.of("sqrt", "cbrt", "exp", "log", "root", "pow");
+    private static final Set<Fn> DIRECT_TRIGONOMETRIC = Set.of(Fn.SIN, Fn.COS, Fn.TAN, Fn.COT, Fn.SEC, Fn.CSC);
+    private static final Set<Fn> INVERSE_TRIGONOMETRIC = Set.of(Fn.ASIN, Fn.ACOS, Fn.ATAN);
+
+    private final Map<String, UserFunction> userFunctions;
+    private final AngleUnit angleUnit;
+
+    public ExprBuilder() {
+        this(Map.of(), AngleUnit.RADIANS);
+    }
+
+    /**
+     * @param userFunctions funciones definidas por el usuario, por nombre exacto (sensible a mayúsculas)
+     * @param angleUnit     unidad de los ángulos de entrada y de salida de las funciones trigonométricas
+     */
+    public ExprBuilder(Map<String, UserFunction> userFunctions, AngleUnit angleUnit) {
+        this.userFunctions = Map.copyOf(userFunctions);
+        this.angleUnit = angleUnit;
+    }
 
     @Override
     public Expr number(String text) {
@@ -53,6 +74,15 @@ final class ExprBuilder implements TreeBuilder<Expr> {
 
     @Override
     public Expr function(String name, List<Expr> args) {
+        UserFunction user = userFunctions.get(name);
+        if (user != null) {
+            try {
+                return user.apply(args);
+            } catch (ArithmeticException e) {
+                throw new IllegalArgumentException("División por cero");
+            }
+        }
+
         String lower = name.toLowerCase();
         try {
             switch (lower) {
@@ -80,7 +110,7 @@ final class ExprBuilder implements TreeBuilder<Expr> {
                 }
                 default -> {
                     Fn fn = Fn.bySymbol(name).orElseThrow(() -> new IllegalArgumentException("Función desconocida '" + name + "'"));
-                    return Expr.func(fn, one(name, args));
+                    return trigonometric(fn, one(name, args));
                 }
             }
         } catch (ArithmeticException e) {
@@ -88,9 +118,18 @@ final class ExprBuilder implements TreeBuilder<Expr> {
         }
     }
 
+    /** Aplica la unidad de ángulo: las directas convierten la entrada a radianes y las inversas la salida. */
+    private Expr trigonometric(Fn fn, Expr argument) {
+        if (angleUnit == AngleUnit.RADIANS) return Expr.func(fn, argument);
+        Expr factor = angleUnit.toRadiansFactor();
+        if (DIRECT_TRIGONOMETRIC.contains(fn)) return Expr.func(fn, Expr.mul(argument, factor));
+        if (INVERSE_TRIGONOMETRIC.contains(fn)) return Expr.div(Expr.func(fn, argument), factor);
+        return Expr.func(fn, argument);
+    }
+
     @Override
     public boolean isFunction(String name) {
-        return SPECIAL_FUNCTIONS.contains(name.toLowerCase()) || Fn.bySymbol(name).isPresent();
+        return userFunctions.containsKey(name) || SPECIAL_FUNCTIONS.contains(name.toLowerCase()) || Fn.bySymbol(name).isPresent();
     }
 
     private static Expr one(String name, List<Expr> args) {
