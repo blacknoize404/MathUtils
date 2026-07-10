@@ -24,6 +24,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Convierte texto en un árbol de {@link MathElement}.
@@ -37,6 +38,8 @@ import java.util.List;
  *       {@code log} (base 10, o {@code log(x, base)}), {@code root(x, n)} y {@code pow(x, y)}.</li>
  * </ul>
  * Los errores se reportan con {@link ExpressionParseException}, con línea y columna.
+ * <p>El mismo análisis sintáctico se puede usar para construir otros tipos de árbol con
+ * {@link #parse(String, TreeBuilder, boolean)}.
  */
 public final class ExpressionParser {
 
@@ -48,7 +51,7 @@ public final class ExpressionParser {
      * @throws ExpressionParseException si la expresión es inválida
      */
     public static MathElement parse(String source) {
-        return build(source, toRpn(source));
+        return parse(source, new ElementBuilder(), false);
     }
 
     /**
@@ -57,6 +60,16 @@ public final class ExpressionParser {
      */
     public static Function parseFunction(String source) {
         return new Function(parse(source));
+    }
+
+    /**
+     * Interpreta la expresión construyendo el árbol con el constructor dado.
+     * @param implicitMultiplication si es {@code true}, acepta {@code 2x}, {@code 3(x+1)},
+     *                               {@code (x+1)(x-1)} y {@code x sin(x)} como productos
+     * @throws ExpressionParseException si la expresión es inválida
+     */
+    public static <T> T parse(String source, TreeBuilder<T> builder, boolean implicitMultiplication) {
+        return build(source, toRpn(source, builder, implicitMultiplication), builder);
     }
 
     /**
@@ -115,7 +128,37 @@ public final class ExpressionParser {
      * @throws ExpressionParseException si la expresión es inválida
      */
     public static List<String> toPostfix(String source) {
-        return toRpn(source).stream().map(Rpn::describe).toList();
+        return toRpn(source, new ElementBuilder(), false).stream().map(Rpn::describe).toList();
+    }
+
+    /**
+     * Inserta el operador {@code *} donde hay una multiplicación implícita:
+     * entre un operando (número, identificador, {@code )}) y otro que empieza
+     * (identificador, {@code (}, o número tras identificador o {@code )}).
+     */
+    private static List<Token> withImplicitMultiplication(List<Token> tokens, TreeBuilder<?> builder) {
+        List<Token> result = new ArrayList<>();
+        for (Token t : tokens) {
+            if (!result.isEmpty()) {
+                Token previous = result.get(result.size() - 1);
+                if (endsOperand(previous) && startsOperand(t)
+                        && !(previous.type() == Token.Type.NUMBER && t.type() == Token.Type.NUMBER)
+                        && !(previous.type() == Token.Type.IDENTIFIER && builder.isFunction(previous.text())
+                        && t.type() == Token.Type.LEFT_PAREN)) {
+                    result.add(new Token(Token.Type.OPERATOR, "*", t.position()));
+                }
+            }
+            result.add(t);
+        }
+        return result;
+    }
+
+    private static boolean endsOperand(Token t) {
+        return t.type() == Token.Type.NUMBER || t.type() == Token.Type.IDENTIFIER || t.type() == Token.Type.RIGHT_PAREN;
+    }
+
+    private static boolean startsOperand(Token t) {
+        return t.type() == Token.Type.NUMBER || t.type() == Token.Type.IDENTIFIER || t.type() == Token.Type.LEFT_PAREN;
     }
 
     // ---------------------------------------------------------------- Shunting Yard
@@ -146,9 +189,10 @@ public final class ExpressionParser {
         };
     }
 
-    private static List<Rpn> toRpn(String source) {
+    private static List<Rpn> toRpn(String source, TreeBuilder<?> builder, boolean implicit) {
         List<Token> tokens = tokenize(source);
         if (tokens.isEmpty()) throw new ExpressionParseException("La expresión está vacía", source, 0);
+        if (implicit) tokens = withImplicitMultiplication(tokens, builder);
 
         List<Rpn> output = new ArrayList<>();
         Deque<StackItem> ops = new ArrayDeque<>();
@@ -167,7 +211,8 @@ public final class ExpressionParser {
 
                 case IDENTIFIER -> {
                     if (!expectOperand) throw unexpected(source, t);
-                    boolean isCall = idx + 1 < tokens.size() && tokens.get(idx + 1).type() == Token.Type.LEFT_PAREN;
+                    boolean isCall = idx + 1 < tokens.size() && tokens.get(idx + 1).type() == Token.Type.LEFT_PAREN
+                            && (!implicit || builder.isFunction(t.text()));
                     if (isCall) {
                         ops.push(new StackItem(StackKind.FUNCTION, t.text(), t.position(), true));
                     } else {
@@ -276,84 +321,112 @@ public final class ExpressionParser {
 
     // ---------------------------------------------------------------- Árbol
 
-    private static MathElement build(String source, List<Rpn> rpn) {
-        Deque<MathElement> stack = new ArrayDeque<>();
+    private static <T> T build(String source, List<Rpn> rpn, TreeBuilder<T> builder) {
+        Deque<T> stack = new ArrayDeque<>();
 
         for (Rpn item : rpn) {
-            switch (item.kind()) {
-                case NUMBER -> {
-                    try {
-                        stack.push(new Const(Double.parseDouble(item.text())));
-                    } catch (NumberFormatException e) {
-                        throw new ExpressionParseException("Número inválido '" + item.text() + "'", source, item.position());
+            try {
+                switch (item.kind()) {
+                    case NUMBER -> stack.push(builder.number(item.text()));
+                    case VARIABLE -> stack.push(builder.variable(item.text()));
+                    case NEGATE -> stack.push(builder.negate(stack.pop()));
+                    case BINARY -> {
+                        T right = stack.pop();
+                        T left = stack.pop();
+                        stack.push(builder.binary(item.text().charAt(0), left, right));
+                    }
+                    case FUNCTION -> {
+                        List<T> args = new ArrayList<>(item.arity());
+                        for (int i = 0; i < item.arity(); i++) args.add(0, stack.pop());
+                        stack.push(builder.function(item.text(), args));
                     }
                 }
-
-                case VARIABLE -> {
-                    if (item.text().equalsIgnoreCase("pi")) stack.push(new Const(Math.PI));
-                    else if (item.text().equalsIgnoreCase("e")) stack.push(new Const(Math.E));
-                    else stack.push(new Var(item.text()));
-                }
-
-                case NEGATE -> stack.push(new MultOperator(-1, stack.pop()));
-
-                case BINARY -> {
-                    MathElement right = stack.pop();
-                    MathElement left = stack.pop();
-                    stack.push(switch (item.text()) {
-                        case "+" -> new SumOperator(left, right);
-                        case "-" -> new SubOperator(left, right);
-                        case "*" -> new MultOperator(left, right);
-                        case "/" -> new DivOperator(left, right);
-                        default -> new Pow(left, right);
-                    });
-                }
-
-                case FUNCTION -> {
-                    MathElement[] args = new MathElement[item.arity()];
-                    for (int i = args.length - 1; i >= 0; i--) args[i] = stack.pop();
-                    stack.push(buildFunction(source, item, args));
-                }
+            } catch (IllegalArgumentException e) {
+                throw new ExpressionParseException(e.getMessage(), source, item.position());
             }
         }
         return stack.pop();
     }
 
-    private static MathElement buildFunction(String source, Rpn item, MathElement[] args) {
-        String name = item.text().toLowerCase();
+    // ---------------------------------------------------------------- Constructor de MathElement
 
-        return switch (name) {
-            case "sin" -> new Sin(arg(source, item, args, 1)[0]);
-            case "cos" -> new Cos(arg(source, item, args, 1)[0]);
-            case "tan" -> new Tan(arg(source, item, args, 1)[0]);
-            case "cot" -> new Cot(arg(source, item, args, 1)[0]);
-            case "sqrt" -> new Sqrt(arg(source, item, args, 1)[0]);
-            case "cbrt" -> new Cbrt(arg(source, item, args, 1)[0]);
-            case "ln" -> new LogN(arg(source, item, args, 1)[0]);
-            case "exp" -> new Pow(Math.E, arg(source, item, args, 1)[0]);
-            case "root" -> {
-                MathElement[] a = arg(source, item, args, 2);
-                yield new Root(a[0], a[1]);
-            }
-            case "pow" -> {
-                MathElement[] a = arg(source, item, args, 2);
-                yield new Pow(a[0], a[1]);
-            }
-            case "log" -> {
-                if (args.length == 1) yield new Log(args[0], 10);
-                MathElement[] a = arg(source, item, args, 2);
-                yield new Log(a[0], a[1]);
-            }
-            default -> throw new ExpressionParseException("Función desconocida '" + item.text() + "'", source, item.position());
-        };
-    }
+    /** Construye árboles {@link MathElement} con las clases de {@code MathUtils.algebra}. */
+    private static final class ElementBuilder implements TreeBuilder<MathElement> {
 
-    private static MathElement[] arg(String source, Rpn item, MathElement[] args, int expected) {
-        if (args.length != expected) {
-            throw new ExpressionParseException(
-                    "La función '" + item.text() + "' espera " + expected + " argumento(s) y recibió " + args.length,
-                    source, item.position());
+        private static final Set<String> FUNCTIONS =
+                Set.of("sin", "cos", "tan", "cot", "sqrt", "cbrt", "ln", "exp", "log", "root", "pow");
+
+        @Override
+        public MathElement number(String text) {
+            try {
+                return new Const(Double.parseDouble(text));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Número inválido '" + text + "'");
+            }
         }
-        return args;
+
+        @Override
+        public MathElement variable(String name) {
+            if (name.equalsIgnoreCase("pi")) return new Const(Math.PI);
+            if (name.equalsIgnoreCase("e")) return new Const(Math.E);
+            return new Var(name);
+        }
+
+        @Override
+        public MathElement negate(MathElement operand) {
+            return new MultOperator(-1, operand);
+        }
+
+        @Override
+        public MathElement binary(char operator, MathElement left, MathElement right) {
+            return switch (operator) {
+                case '+' -> new SumOperator(left, right);
+                case '-' -> new SubOperator(left, right);
+                case '*' -> new MultOperator(left, right);
+                case '/' -> new DivOperator(left, right);
+                default -> new Pow(left, right);
+            };
+        }
+
+        @Override
+        public MathElement function(String name, List<MathElement> args) {
+            return switch (name.toLowerCase()) {
+                case "sin" -> new Sin(args(name, args, 1).get(0));
+                case "cos" -> new Cos(args(name, args, 1).get(0));
+                case "tan" -> new Tan(args(name, args, 1).get(0));
+                case "cot" -> new Cot(args(name, args, 1).get(0));
+                case "sqrt" -> new Sqrt(args(name, args, 1).get(0));
+                case "cbrt" -> new Cbrt(args(name, args, 1).get(0));
+                case "ln" -> new LogN(args(name, args, 1).get(0));
+                case "exp" -> new Pow(Math.E, args(name, args, 1).get(0));
+                case "root" -> {
+                    List<MathElement> a = args(name, args, 2);
+                    yield new Root(a.get(0), a.get(1));
+                }
+                case "pow" -> {
+                    List<MathElement> a = args(name, args, 2);
+                    yield new Pow(a.get(0), a.get(1));
+                }
+                case "log" -> {
+                    if (args.size() == 1) yield new Log(args.get(0), 10);
+                    List<MathElement> a = args(name, args, 2);
+                    yield new Log(a.get(0), a.get(1));
+                }
+                default -> throw new IllegalArgumentException("Función desconocida '" + name + "'");
+            };
+        }
+
+        @Override
+        public boolean isFunction(String name) {
+            return FUNCTIONS.contains(name.toLowerCase());
+        }
+
+        private static List<MathElement> args(String name, List<MathElement> args, int expected) {
+            if (args.size() != expected) {
+                throw new IllegalArgumentException(
+                        "La función '" + name + "' espera " + expected + " argumento(s) y recibió " + args.size());
+            }
+            return args;
+        }
     }
 }
