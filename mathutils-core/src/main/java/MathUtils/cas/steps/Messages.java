@@ -62,6 +62,21 @@ public final class Messages {
     }
 
     /**
+     * Interpola una plantilla sustituyendo cada {@code ${nombre}} por un texto. Un marcador sin
+     * valor se deja literal.
+     */
+    public static String interpolateText(String template, Map<String, String> values) {
+        Matcher m = PLACEHOLDER.matcher(template);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            String value = values.get(m.group(1));
+            m.appendReplacement(sb, Matcher.quoteReplacement(value != null ? value : m.group()));
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    /**
      * Interpola una plantilla con parámetros; ver {@link #explanation(Rule, Map, Locale)}.
      */
     public static List<Segment> interpolate(String template, Map<String, Expr> params) {

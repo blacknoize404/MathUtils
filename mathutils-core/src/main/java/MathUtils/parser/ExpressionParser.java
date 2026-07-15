@@ -165,7 +165,11 @@ public final class ExpressionParser {
 
     private enum Kind {NUMBER, VARIABLE, NEGATE, BINARY, FUNCTION}
 
-    private record Rpn(Kind kind, String text, int position, int arity) {
+    private record Rpn(Kind kind, String text, int position, int arity, int groups) {
+        Rpn withGroup() {
+            return new Rpn(kind, text, position, arity, groups + 1);
+        }
+
         String describe() {
             return switch (kind) {
                 case NEGATE -> "neg";
@@ -205,7 +209,7 @@ public final class ExpressionParser {
             switch (t.type()) {
                 case NUMBER -> {
                     if (!expectOperand) throw unexpected(source, t);
-                    output.add(new Rpn(Kind.NUMBER, t.text(), t.position(), 0));
+                    output.add(new Rpn(Kind.NUMBER, t.text(), t.position(), 0, 0));
                     expectOperand = false;
                 }
 
@@ -216,7 +220,7 @@ public final class ExpressionParser {
                     if (isCall) {
                         ops.push(new StackItem(StackKind.FUNCTION, t.text(), t.position(), true));
                     } else {
-                        output.add(new Rpn(Kind.VARIABLE, t.text(), t.position(), 0));
+                        output.add(new Rpn(Kind.VARIABLE, t.text(), t.position(), 0, 0));
                         expectOperand = false;
                     }
                 }
@@ -290,7 +294,10 @@ public final class ExpressionParser {
                     StackItem paren = ops.pop();
                     if (paren.call()) {
                         StackItem function = ops.pop();
-                        output.add(new Rpn(Kind.FUNCTION, function.text(), function.position(), argCounts.pop()[0]));
+                        output.add(new Rpn(Kind.FUNCTION, function.text(), function.position(), argCounts.pop()[0], 0));
+                    } else {
+                        // Paréntesis de agrupación: el último elemento de salida es la raíz del grupo
+                        output.add(output.remove(output.size() - 1).withGroup());
                     }
                     expectOperand = false;
                 }
@@ -312,7 +319,7 @@ public final class ExpressionParser {
     }
 
     private static Rpn toRpnItem(StackItem item) {
-        return new Rpn(item.kind() == StackKind.NEGATE ? Kind.NEGATE : Kind.BINARY, item.text(), item.position(), 0);
+        return new Rpn(item.kind() == StackKind.NEGATE ? Kind.NEGATE : Kind.BINARY, item.text(), item.position(), 0, 0);
     }
 
     private static ExpressionParseException unexpected(String source, Token t) {
@@ -341,6 +348,7 @@ public final class ExpressionParser {
                         stack.push(builder.function(item.text(), args));
                     }
                 }
+                for (int g = 0; g < item.groups(); g++) stack.push(builder.group(stack.pop()));
             } catch (IllegalArgumentException e) {
                 throw new ExpressionParseException(e.getMessage(), source, item.position());
             }

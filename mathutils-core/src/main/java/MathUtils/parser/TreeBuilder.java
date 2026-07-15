@@ -33,6 +33,15 @@ public interface TreeBuilder<T> {
     T function(String name, List<T> arguments);
 
     /**
+     * Se llama cuando un operando estaba entre paréntesis en el texto original (no cuando son
+     * los paréntesis de una llamada a función). Por defecto no hace nada; los constructores que
+     * quieren conservar la estructura escrita (como el árbol sintáctico) lo sobrescriben.
+     */
+    default T group(T inner) {
+        return inner;
+    }
+
+    /**
      * Indica si {@code name} es una función conocida. Se usa con la multiplicación implícita para
      * distinguir {@code sin(x)} (llamada) de {@code x(x+1)} (producto).
      */

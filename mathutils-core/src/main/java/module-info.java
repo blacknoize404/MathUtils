@@ -28,5 +28,9 @@ module MathUtils {
     exports MathUtils.cas.expr;
     exports MathUtils.cas.steps;
     exports MathUtils.cas.diff;
+    exports MathUtils.cas.syntax;
+    exports MathUtils.cas.order;
+    exports MathUtils.cas.tree;
+    exports MathUtils.cas.calc;
     exports MathUtils.combinatory;
 }
