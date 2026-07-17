@@ -1,0 +1,47 @@
+/* Generado por tools/build_assets.py desde el sistema de diseño barnesinside. No editar a mano. */
+.root {
+    -bi-bg: #000000;
+    -bi-fg: #FFFFFF;
+    -bi-muted: #737373;
+    -bi-border: #2D2D2D;
+    -bi-bg-elevated: #1F1F1F;
+    -bi-bg-secondary: #111111;
+    -bi-bg-tertiary: #1F1F1F;
+    -bi-accent: #00FF88;
+    -bi-accent-hover: #00CC6A;
+    -bi-accent-bg: rgba(0, 255, 136, 0.1);
+    -bi-on-accent: #000000;
+    -bi-fg-5: rgba(255, 255, 255, 0.05);
+    -bi-fg-10: rgba(255, 255, 255, 0.1);
+    -bi-fg-15: rgba(255, 255, 255, 0.15);
+    -bi-fg-50: rgba(255, 255, 255, 0.5);
+    -bi-fg-60: rgba(255, 255, 255, 0.6);
+    -bi-fg-70: rgba(255, 255, 255, 0.7);
+    -bi-fg-80: rgba(255, 255, 255, 0.8);
+    -bi-fg-90: rgba(255, 255, 255, 0.9);
+    -bi-bg-70: rgba(0, 0, 0, 0.7);
+    -bi-bg-80: rgba(0, 0, 0, 0.8);
+    -bi-bg-90: rgba(0, 0, 0, 0.9);
+    -bi-violet: #8B5CF6;
+    -bi-violet-dim: #7C3AED;
+    -bi-violet-bg: rgba(139, 92, 246, 0.1);
+    -bi-cyan: #06B6D4;
+    -bi-cyan-dim: #0891B2;
+    -bi-cyan-bg: rgba(6, 182, 212, 0.1);
+    -bi-magenta: #EC4899;
+    -bi-magenta-dim: #DB2777;
+    -bi-magenta-bg: rgba(236, 72, 153, 0.1);
+    -bi-amber: #FBBF24;
+    -bi-amber-dim: #F59E0B;
+    -bi-amber-bg: rgba(251, 191, 36, 0.1);
+    -bi-red: #EF4444;
+    -bi-red-dim: #DC2626;
+    -bi-red-bg: rgba(239, 68, 68, 0.1);
+    -bi-emerald: #10B981;
+    -bi-emerald-dim: #059669;
+    -bi-emerald-bg: rgba(16, 185, 129, 0.1);
+    -bi-success: #00FF88;
+    -bi-warning: #FBBF24;
+    -bi-error: #EF4444;
+    -bi-info: #06B6D4;
+}

@@ -5,9 +5,10 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Utilidades comunes a los impresores: orden de visualización y separación de fracciones.
+ * Utilidades de presentación compartidas por los impresores y por cualquier interfaz que dibuje
+ * expresiones: orden natural de términos y factores y separación de un producto en fracción.
  */
-final class Display {
+public final class Display {
 
     private Display() {
     }
@@ -16,20 +17,20 @@ final class Display {
      * Resultado de separar un producto en parte entera de numerador y denominador:
      * {@code sign · numerator / denominator}.
      */
-    record Fraction(boolean negative, List<Expr> numerator, List<Expr> denominator) {
-        boolean hasDenominator() {
+    public record Fraction(boolean negative, List<Expr> numerator, List<Expr> denominator) {
+        public boolean hasDenominator() {
             return !denominator.isEmpty();
         }
     }
 
     /** Un número negativo, o un producto con coeficiente negativo, se imprime con signo menos. */
-    static boolean isNegative(Expr e) {
+    public static boolean isNegative(Expr e) {
         if (e instanceof Expr.Num n) return n.value().signum() < 0;
         return e instanceof Expr.Mul m && m.factors().get(0) instanceof Expr.Num n && n.value().signum() < 0;
     }
 
     /** Separa un producto (o una potencia negativa) en numerador y denominador positivos. */
-    static Fraction split(Expr e) {
+    public static Fraction split(Expr e) {
         List<Expr> factors = e instanceof Expr.Mul m ? m.factors() : List.of(e);
 
         boolean negative = false;
@@ -58,7 +59,7 @@ final class Display {
      * Ordena los factores de un producto como se escriben a mano: números, constantes, variables
      * y potencias de variables, otras expresiones, funciones y, al final, exponenciales.
      */
-    static List<Expr> sortedFactors(List<Expr> factors) {
+    public static List<Expr> sortedFactors(List<Expr> factors) {
         List<Expr> sorted = new ArrayList<>(factors);
         sorted.sort(Comparator.comparingInt(Display::factorRank).thenComparing(ExprOrder.INSTANCE));
         return sorted;
@@ -79,7 +80,7 @@ final class Display {
     }
 
     /** Ordena los términos de una suma para mostrarlos: mayor grado primero, constantes al final. */
-    static List<Expr> sortedTerms(List<Expr> terms) {
+    public static List<Expr> sortedTerms(List<Expr> terms) {
         List<Expr> sorted = new ArrayList<>(terms);
         sorted.sort(Comparator
                 .comparingDouble((Expr t) -> -degree(t))
