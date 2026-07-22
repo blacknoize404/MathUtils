@@ -27,6 +27,8 @@ module MathUtils {
     exports MathUtils.discrete;
     exports MathUtils.cas.expr;
     exports MathUtils.cas.steps;
+    exports MathUtils.cas.poly;
+    exports MathUtils.cas.limit;
     exports MathUtils.cas.diff;
     exports MathUtils.cas.syntax;
     exports MathUtils.cas.order;

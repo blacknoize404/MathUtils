@@ -25,6 +25,16 @@ public final class Derivatives {
     }
 
     /**
+     * Deriva registrando las reglas en la traza dada, para que otros motores (límites, integrales)
+     * incluyan los pasos de la derivada como subpasos.
+     */
+    public static Expr differentiate(Expr f, String variable, Trace trace) {
+        Set<String> taken = new HashSet<>(f.variables());
+        taken.add(variable);
+        return new Differentiator(variable, taken, trace).diff(f);
+    }
+
+    /**
      * Deriva respecto a {@code variable}.
      * @return la solución con el resultado y los pasos; si se agota el tiempo o la profundidad
      * el estado es {@link Solution.Status#UNSOLVED}

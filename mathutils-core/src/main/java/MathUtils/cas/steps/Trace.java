@@ -66,6 +66,30 @@ public final class Trace {
         return after;
     }
 
+    /**
+     * Como {@link #step}, pero el cuerpo puede fallar devolviendo vacío: en ese caso el intento
+     * y todo lo que registró se descartan y no queda rastro en los pasos.
+     *
+     * @return el resultado del cuerpo, o vacío si el intento no funcionó
+     * @throws BudgetExceededException si se supera la profundidad o el tiempo
+     */
+    public java.util.Optional<Expr> attempt(Rule rule, Expr before, Map<String, Expr> params,
+                                            Supplier<java.util.Optional<Expr>> body) {
+        checkBudget();
+        if (frames.size() > maxDepth) throw new BudgetExceededException("Se superó la profundidad máxima de " + maxDepth);
+
+        frames.push(new ArrayList<>());
+        java.util.Optional<Expr> result;
+        List<Step> children;
+        try {
+            result = body.get();
+        } finally {
+            children = frames.pop();
+        }
+        result.ifPresent(after -> frames.peek().add(new Step(rule, before, after, params, children)));
+        return result;
+    }
+
     /** Registra un paso sin subpasos y devuelve su resultado. */
     public Expr leaf(Rule rule, Expr before, Expr after, Map<String, Expr> params) {
         checkBudget();

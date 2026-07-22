@@ -39,13 +39,60 @@ public enum Rule {
     DIFF_TANH(Category.DERIVATIVE),
     DIFF_ABS(Category.DERIVATIVE),
     DIFF_ERF(Category.DERIVATIVE),
-    DIFF_ORDER(Category.DERIVATIVE);
+    DIFF_ORDER(Category.DERIVATIVE),
+
+    // ---- Límites
+    LIMIT_CONSTANT(Category.LIMIT),
+    LIMIT_DIRECT(Category.LIMIT),
+    LIMIT_ALGEBRA(Category.LIMIT),
+    LIMIT_INFINITY_RATIONAL(Category.LIMIT),
+    LIMIT_LHOPITAL_ZERO(Category.LIMIT),
+    LIMIT_LHOPITAL_INFINITY(Category.LIMIT),
+    LIMIT_PRODUCT_TO_QUOTIENT(Category.LIMIT),
+    LIMIT_COMBINE_FRACTIONS(Category.LIMIT),
+    LIMIT_CONJUGATE(Category.LIMIT),
+    LIMIT_EXPONENTIAL_FORM(Category.LIMIT),
+    LIMIT_SIDES(Category.LIMIT),
+    LIMIT_OSCILLATES(Category.LIMIT),
+    LIMIT_DIFFERENT_SIDES(Category.LIMIT),
+    LIMIT_DOMINANT_TERMS(Category.LIMIT),
+    LIMIT_ABSOLUTE_VALUE(Category.LIMIT),
+
+    // ---- Integrales
+    INT_CONSTANT(Category.INTEGRAL),
+    INT_CONSTANT_MULTIPLE(Category.INTEGRAL),
+    INT_SUM(Category.INTEGRAL),
+    INT_POWER(Category.INTEGRAL),
+    INT_RECIPROCAL(Category.INTEGRAL),
+    INT_EXPONENTIAL_E(Category.INTEGRAL),
+    INT_EXPONENTIAL(Category.INTEGRAL),
+    INT_SIN(Category.INTEGRAL),
+    INT_COS(Category.INTEGRAL),
+    INT_TAN(Category.INTEGRAL),
+    INT_COT(Category.INTEGRAL),
+    INT_SEC(Category.INTEGRAL),
+    INT_CSC(Category.INTEGRAL),
+    INT_SEC_SQUARED(Category.INTEGRAL),
+    INT_CSC_SQUARED(Category.INTEGRAL),
+    INT_SEC_TAN(Category.INTEGRAL),
+    INT_CSC_COT(Category.INTEGRAL),
+    INT_SINH(Category.INTEGRAL),
+    INT_COSH(Category.INTEGRAL),
+    INT_TANH(Category.INTEGRAL),
+    INT_ATAN_FORM(Category.INTEGRAL),
+    INT_ASIN_FORM(Category.INTEGRAL),
+    INT_LOG_FORM(Category.INTEGRAL),
+    INT_ASINH_FORM(Category.INTEGRAL),
+    INT_EXPAND(Category.INTEGRAL),
+    INT_SUBSTITUTION(Category.INTEGRAL),
+    INT_PARTS(Category.INTEGRAL),
+    INT_CYCLE(Category.INTEGRAL);
 
     /**
      * Familia de la regla; el renderizador la usa para mostrar la operación
-     * ({@code d/dx[...]} para derivadas, {@code ∫ ... dx} para integrales).
+     * ({@code d/dx[...]} para derivadas, {@code ∫ ... dx} para integrales, {@code lim} para límites).
      */
-    public enum Category {GENERAL, DERIVATIVE}
+    public enum Category {GENERAL, DERIVATIVE, LIMIT, INTEGRAL}
 
     private final Category category;
 

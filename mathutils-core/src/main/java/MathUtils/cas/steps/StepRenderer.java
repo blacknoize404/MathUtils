@@ -2,6 +2,7 @@ package MathUtils.cas.steps;
 
 import MathUtils.cas.expr.Expr;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -43,47 +44,108 @@ public final class StepRenderer {
     // ================================================================ Enunciado y ecuaciones
 
     private static List<Segment> problemText(Solution s, Locale locale) {
-        String key = "solution.kind." + s.kind().name() + (s.order() > 1 ? ".problem.order" : ".problem");
-        String template = Messages.get(key, locale);
-        return Messages.interpolate(template,
-                Map.of("f", s.problem(), "x", Expr.sym(s.variable()), "k", Expr.num(s.order())));
-    }
-
-    /** Operación de la solución completa (puede ser una derivada de orden superior), en texto plano. */
-    private static String resultOperationPlain(Solution s) {
-        String d = s.order() > 1 ? "d^" + s.order() + "/d" + s.variable() + "^" + s.order() : "d/d" + s.variable();
-        return d + "[" + s.problem() + "]";
-    }
-
-    private static String resultOperationLatex(Solution s) {
-        String v = Expr.sym(s.variable()).toLatex();
-        String frac = s.order() > 1
-                ? "\\frac{d^{" + s.order() + "}}{d" + v + "^{" + s.order() + "}}"
-                : "\\frac{d}{d" + v + "}";
-        return frac + "\\left[" + s.problem().toLatex() + "\\right]";
-    }
-
-    /** Operación de una familia de reglas aplicada a una expresión, en texto plano. */
-    private static String operationPlain(Rule.Category category, Expr variable, Expr before) {
-        if (category == Rule.Category.DERIVATIVE && variable != null) return "d/d" + variable + "[" + before + "]";
-        return before.toString();
-    }
-
-    private static String operationLatex(Rule.Category category, Expr variable, Expr before) {
-        if (category == Rule.Category.DERIVATIVE && variable != null) {
-            return "\\frac{d}{d" + variable.toLatex() + "}\\left[" + before.toLatex() + "\\right]";
+        String base = "solution.kind." + s.kind().name();
+        String key = base + (s.order() > 1 ? ".problem.order" : ".problem");
+        if (s.kind() == Solution.Kind.LIMIT) {
+            Expr direction = s.extras().get("direction");
+            if (direction instanceof Expr.Num n && n.value().signum() != 0) {
+                key = base + ".problem." + (n.value().signum() > 0 ? "RIGHT" : "LEFT");
+            }
         }
-        return before.toLatex();
+
+        Map<String, Expr> params = new HashMap<>(s.extras());
+        params.put("f", s.problem());
+        params.put("x", Expr.sym(s.variable()));
+        params.put("k", Expr.num(s.order()));
+        return Messages.interpolate(Messages.get(key, locale), params);
+    }
+
+    /** Operación de un paso aplicada a una expresión, en texto plano. */
+    private static String operationPlain(Rule.Category category, Map<String, Expr> params, Expr before) {
+        Expr x = params.get("x");
+        if (x == null) return before.toString();
+        return switch (category) {
+            case DERIVATIVE -> "d/d" + x + "[" + before + "]";
+            case LIMIT -> "lim[" + x + " -> " + params.getOrDefault("a", Expr.ZERO) + "] " + before;
+            case INTEGRAL -> "∫ " + before + " d" + x;
+            default -> before.toString();
+        };
+    }
+
+    private static String operationLatex(Rule.Category category, Map<String, Expr> params, Expr before) {
+        Expr x = params.get("x");
+        if (x == null) return before.toLatex();
+        return switch (category) {
+            case DERIVATIVE -> "\\frac{d}{d" + x.toLatex() + "}\\left[" + before.toLatex() + "\\right]";
+            case LIMIT -> "\\lim_{" + x.toLatex() + " \\to " + params.getOrDefault("a", Expr.ZERO).toLatex() + "} "
+                    + before.toLatex();
+            case INTEGRAL -> "\\int " + before.toLatex() + " \\, d" + x.toLatex();
+            default -> before.toLatex();
+        };
     }
 
     private static String equationPlain(Step step) {
         if (step.before() == null || step.after() == null) return null;
-        return operationPlain(step.rule().category(), step.variable(), step.before()) + " = " + step.after();
+        return operationPlain(step.rule().category(), step.params(), step.before()) + " = " + step.after();
     }
 
     private static String equationLatex(Step step) {
         if (step.before() == null || step.after() == null) return null;
-        return operationLatex(step.rule().category(), step.variable(), step.before()) + " = " + step.after().toLatex();
+        return operationLatex(step.rule().category(), step.params(), step.before()) + " = " + step.after().toLatex();
+    }
+
+    // ---------------------------------------------------------------- Resultado final
+
+    private static Map<String, Expr> resultParams(Solution s) {
+        Map<String, Expr> params = new HashMap<>(s.extras());
+        params.put("x", Expr.sym(s.variable()));
+        return params;
+    }
+
+    private static String directionSuffixPlain(Solution s) {
+        if (s.extras().get("direction") instanceof Expr.Num n && n.value().signum() != 0) {
+            return n.value().signum() > 0 ? "+" : "-";
+        }
+        return "";
+    }
+
+    /** Operación de la solución completa, en texto plano (puede ser una derivada de orden superior). */
+    private static String resultOperationPlain(Solution s) {
+        return switch (s.kind()) {
+            case DERIVATIVE -> {
+                String d = s.order() > 1 ? "d^" + s.order() + "/d" + s.variable() + "^" + s.order() : "d/d" + s.variable();
+                yield d + "[" + s.problem() + "]";
+            }
+            case LIMIT -> "lim[" + s.variable() + " -> " + s.extras().getOrDefault("a", Expr.ZERO)
+                    + directionSuffixPlain(s) + "] " + s.problem();
+            case INTEGRAL -> "∫ " + s.problem() + " d" + s.variable();
+        };
+    }
+
+    private static String resultSuffixPlain(Solution s) {
+        return s.kind() == Solution.Kind.INTEGRAL ? " + C" : "";
+    }
+
+    private static String resultOperationLatex(Solution s) {
+        String v = Expr.sym(s.variable()).toLatex();
+        return switch (s.kind()) {
+            case DERIVATIVE -> {
+                String frac = s.order() > 1
+                        ? "\\frac{d^{" + s.order() + "}}{d" + v + "^{" + s.order() + "}}"
+                        : "\\frac{d}{d" + v + "}";
+                yield frac + "\\left[" + s.problem().toLatex() + "\\right]";
+            }
+            case LIMIT -> {
+                String sign = directionSuffixPlain(s).isEmpty() ? "" : "^{" + directionSuffixPlain(s) + "}";
+                yield "\\lim_{" + v + " \\to " + s.extras().getOrDefault("a", Expr.ZERO).toLatex() + sign + "} "
+                        + s.problem().toLatex();
+            }
+            case INTEGRAL -> "\\int " + s.problem().toLatex() + " \\, d" + v;
+        };
+    }
+
+    private static String resultSuffixLatex(Solution s) {
+        return s.kind() == Solution.Kind.INTEGRAL ? " + C" : "";
     }
 
     private static String segmentsPlain(List<Segment> segments) {
@@ -114,7 +176,7 @@ public final class StepRenderer {
         StringBuilder sb = new StringBuilder();
         sb.append(segmentsPlain(problemText(s, locale))).append('\n');
 
-        if (s.status() == Solution.Status.SOLVED || !s.steps().isEmpty()) {
+        if (!s.steps().isEmpty()) {
             sb.append('\n').append(Messages.get("solution.steps", locale)).append(":\n");
             plainSteps(sb, s.steps(), "", locale);
         }
@@ -123,7 +185,7 @@ public final class StepRenderer {
         if (s.isSolved()) {
             sb.append(Messages.get("solution.result", locale)).append(": ")
                     .append(resultOperationPlain(s))
-                    .append(" = ").append(s.result()).append('\n');
+                    .append(" = ").append(s.result()).append(resultSuffixPlain(s)).append('\n');
         } else {
             sb.append(Messages.get("solution.status." + s.status().name(), locale)).append('\n');
         }
@@ -152,7 +214,7 @@ public final class StepRenderer {
         StringBuilder sb = new StringBuilder();
         sb.append(segmentsMath(problemText(s, locale), false)).append("\n\n");
 
-        if (s.status() == Solution.Status.SOLVED || !s.steps().isEmpty()) {
+        if (!s.steps().isEmpty()) {
             sb.append("**").append(Messages.get("solution.steps", locale)).append("**\n\n");
             markdownSteps(sb, s.steps(), 0, locale);
         }
@@ -161,7 +223,7 @@ public final class StepRenderer {
         if (s.isSolved()) {
             sb.append("**").append(Messages.get("solution.result", locale)).append("**\n\n$$")
                     .append(resultOperationLatex(s))
-                    .append(" = ").append(s.result().toLatex()).append("$$\n");
+                    .append(" = ").append(s.result().toLatex()).append(resultSuffixLatex(s)).append("$$\n");
         } else {
             sb.append(Messages.get("solution.status." + s.status().name(), locale)).append('\n');
         }
@@ -185,7 +247,7 @@ public final class StepRenderer {
         StringBuilder sb = new StringBuilder();
         sb.append(segmentsMath(problemText(s, locale), true)).append("\n\n");
 
-        if (s.status() == Solution.Status.SOLVED || !s.steps().isEmpty()) {
+        if (!s.steps().isEmpty()) {
             sb.append("\\textbf{").append(escapeLatex(Messages.get("solution.steps", locale))).append("}\n");
             latexSteps(sb, s.steps(), locale);
         }
@@ -194,7 +256,7 @@ public final class StepRenderer {
         if (s.isSolved()) {
             sb.append("\\textbf{").append(escapeLatex(Messages.get("solution.result", locale))).append("}\n\\[")
                     .append(resultOperationLatex(s))
-                    .append(" = ").append(s.result().toLatex()).append("\\]\n");
+                    .append(" = ").append(s.result().toLatex()).append(resultSuffixLatex(s)).append("\\]\n");
         } else {
             sb.append(escapeLatex(Messages.get("solution.status." + s.status().name(), locale))).append('\n');
         }
@@ -238,7 +300,14 @@ public final class StepRenderer {
         sb.append(",\"order\":").append(s.order());
         sb.append(",\"problem\":").append(jsonExpr(s.problem()));
         sb.append(",\"result\":").append(s.result() == null ? "null" : jsonExpr(s.result()));
-        sb.append(",\"steps\":[");
+        sb.append(",\"extras\":{");
+        boolean first = true;
+        for (Map.Entry<String, Expr> e : s.extras().entrySet()) {
+            if (!first) sb.append(',');
+            first = false;
+            sb.append(quote(e.getKey())).append(':').append(jsonExpr(e.getValue()));
+        }
+        sb.append("},\"steps\":[");
         jsonSteps(sb, s.steps(), locale);
         sb.append("]}");
         return sb.toString();
