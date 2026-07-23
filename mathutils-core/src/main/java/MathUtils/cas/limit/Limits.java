@@ -50,9 +50,9 @@ public final class Limits {
         Trace trace = new Trace();
         LimitEngine engine = new LimitEngine(variable, trace);
         LimitEngine.Context context = new LimitEngine.Context(point, direction);
-        Map<String, Expr> extras = Map.of(
-                "a", point,
-                "direction", Expr.num(direction == Direction.RIGHT ? 1 : direction == Direction.LEFT ? -1 : 0));
+        Map<String, Expr> extras = new java.util.LinkedHashMap<>();
+        extras.put("a", point);
+        extras.put("direction", Expr.num(direction == Direction.RIGHT ? 1 : direction == Direction.LEFT ? -1 : 0));
 
         try {
             LimitEngine.Outcome outcome = engine.solve(function, context, 0);
