@@ -84,6 +84,7 @@ public enum Rule {
     INT_LOG_FORM(Category.INTEGRAL),
     INT_ASINH_FORM(Category.INTEGRAL),
     INT_EXPAND(Category.INTEGRAL),
+    INT_POLYNOMIAL_DIVISION(Category.INTEGRAL),
     INT_SUBSTITUTION(Category.INTEGRAL),
     INT_PARTS(Category.INTEGRAL),
     INT_CYCLE(Category.INTEGRAL);
