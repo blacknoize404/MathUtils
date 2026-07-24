@@ -154,6 +154,10 @@ final class Table {
     }
 
     /** Si {@code e} es {@code x² + c} con {@code c} libre de x, devuelve {@code c}; si no, {@code null}. */
+    static Expr squarePlusConstant(Expr e, Expr x) {
+        return constantTermOfSquarePlus(e, x);
+    }
+
     private static Expr constantTermOfSquarePlus(Expr e, Expr x) {
         if (!(e instanceof Expr.Add sum) || sum.terms().size() != 2) return null;
         Expr square = Expr.pow(x, Expr.num(2));

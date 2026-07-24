@@ -85,6 +85,9 @@ final class Integrator {
             if (result.isEmpty()) result = sum(f, v, depth);
             if (result.isEmpty()) result = constantMultiple(f, v, depth);
             if (result.isEmpty()) result = table(f, v);
+            if (result.isEmpty()) result = reduction(f, v, depth);
+            if (result.isEmpty()) result = quadraticDenominator(f, v, depth);
+            if (result.isEmpty()) result = partialFractions(f, v, depth);
             if (result.isEmpty()) result = substitution(f, v, depth);
             if (result.isEmpty()) result = polynomialDivision(f, v, depth);
             if (result.isEmpty()) result = expand(f, v, depth);
@@ -166,6 +169,113 @@ final class Integrator {
         return trace.attempt(Rule.INT_POLYNOMIAL_DIVISION, f,
                 params(v, "n", fraction.numerator(), "d", fraction.denominator(), "q", quotient, "r", remainder),
                 () -> integrate(rewritten, v, depth + 1));
+    }
+
+    // ================================================================ Funciones racionales
+
+    /** Factoriza el denominador y descompone en fracciones parciales (grado del numerador menor). */
+    private Optional<Expr> partialFractions(Expr f, String v, int depth) {
+        Algebra.Fraction fraction = Algebra.fraction(f);
+        Optional<Polynomial> n = Polynomial.from(fraction.numerator(), v);
+        Optional<Polynomial> d = Polynomial.from(fraction.denominator(), v);
+        if (n.isEmpty() || d.isEmpty() || d.get().degree() < 2 || n.get().degree() >= d.get().degree()) {
+            return Optional.empty();
+        }
+        Optional<Rationals.Factorization> factored = Rationals.factor(d.get());
+        if (factored.isEmpty() || isSubstitutionCase(n.get(), factored.get())) return Optional.empty();
+        Optional<List<Rationals.Term>> terms = Rationals.partialFractions(n.get(), factored.get());
+        if (terms.isEmpty() || terms.get().isEmpty()) return Optional.empty();
+
+        Expr parts = Expr.add(terms.get().stream().map(t -> t.toExpr(v)).toList());
+        if (parts.equals(f)) return Optional.empty();
+        return trace.attempt(Rule.INT_PARTIAL_FRACTIONS, f,
+                params(v, "n", fraction.numerator(), "d", fraction.denominator(),
+                        "factored", factored.get().toExpr(v), "parts", parts),
+                () -> integrate(parts, v, depth + 1));
+    }
+
+    /**
+     * Una sola potencia {@code base^m} en el denominador y, si el numerador es un múltiplo de la
+     * derivada de la base (o la base es lineal), basta una sustitución {@code u = base}.
+     */
+    private static boolean isSubstitutionCase(Polynomial numerator, Rationals.Factorization denominator) {
+        if (denominator.factors().size() != 1) return false;
+        Polynomial base = denominator.factors().get(0).base();
+        if (base.degree() == 1) return numerator.degree() <= 0;
+        Polynomial derivative = base.derivative();
+        if (numerator.degree() != derivative.degree()) return numerator.isZero();
+        Rational ratio = numerator.leading().divide(derivative.leading());
+        return numerator.equals(derivative.scale(ratio));
+    }
+
+    /**
+     * {@code (Bx + C) / (x² + bx + c)^k} con el cuadrático sin raíces reales: separa la parte
+     * logarítmica o completa el cuadrado para llegar a la forma de arcotangente.
+     */
+    private Optional<Expr> quadraticDenominator(Expr f, String v, int depth) {
+        Algebra.Fraction fraction = Algebra.fraction(f);
+        Optional<Polynomial> n = Polynomial.from(fraction.numerator(), v);
+        Optional<Polynomial> d = Polynomial.from(fraction.denominator(), v);
+        if (n.isEmpty() || d.isEmpty() || d.get().degree() < 2 || n.get().degree() > 1) return Optional.empty();
+        Optional<Rationals.Factorization> factored = Rationals.factor(d.get());
+        if (factored.isEmpty() || factored.get().factors().size() != 1
+                || factored.get().factors().get(0).base().degree() != 2
+                || isSubstitutionCase(n.get(), factored.get())) {
+            return Optional.empty();
+        }
+
+        Rationals.Factor factor = factored.get().factors().get(0);
+        Rational c = factored.get().constant();
+        Rational leading = n.get().coefficient(1);
+        Rational constant = n.get().coefficient(0);
+        Rational b = factor.base().coefficient(1);
+        Rational cc = factor.base().coefficient(0);
+        Expr x = Expr.sym(v);
+        Expr q = factor.base().toExpr(v);
+        Expr power = Expr.pow(q, Expr.num(factor.multiplicity()));
+
+        if (!leading.isZero()) {
+            // Bx + C = (B/2)(2x + b) + (C - B·b/2)
+            Expr dq = Expr.add(Expr.mul(Expr.num(2), x), Expr.num(b));
+            Rational lambda = leading.divide(Rational.of(2)).divide(c);
+            Rational mu = constant.subtract(leading.multiply(b).divide(Rational.of(2))).divide(c);
+            Expr rewritten = Expr.add(Expr.div(Expr.mul(Expr.num(lambda), dq), power),
+                    Expr.div(Expr.num(mu), power));
+            if (rewritten.equals(f)) return Optional.empty();
+            return trace.attempt(Rule.INT_QUADRATIC_SPLIT, f, params(v, "q", q, "dq", dq),
+                    () -> integrate(rewritten, v, depth + 1));
+        }
+
+        if (b.isZero()) return Optional.empty();
+        Rational p = b.divide(Rational.of(2));
+        Rational remaining = cc.subtract(p.multiply(p));
+        Expr shifted = Expr.add(x, Expr.num(p));
+        Expr square = Expr.add(Expr.pow(shifted, Expr.num(2)), Expr.num(remaining));
+        Expr rewritten = Expr.mul(Expr.num(constant.divide(c)), Expr.pow(square, Expr.num(-factor.multiplicity())));
+        return trace.attempt(Rule.INT_COMPLETE_SQUARE, f, params(v, "q", q, "s", square, "u", shifted),
+                () -> integrate(rewritten, v, depth + 1));
+    }
+
+    /** {@code 1/(x² + d)^k} con {@code k ≥ 2}: fórmula de reducción que baja la potencia. */
+    private Optional<Expr> reduction(Expr f, String v, int depth) {
+        if (!(f instanceof Expr.Pow p) || !(p.exponent() instanceof Expr.Num e) || !e.value().isInteger()
+                || e.value().signum() >= 0 || !e.value().fitsInt()) {
+            return Optional.empty();
+        }
+        int k = -e.value().intValueExact();
+        if (k < 2 || k > 12) return Optional.empty();
+        Expr x = Expr.sym(v);
+        if (!(Table.squarePlusConstant(p.base(), x) instanceof Expr.Num dn) || dn.value().signum() <= 0) {
+            return Optional.empty();
+        }
+
+        Rational d = dn.value();
+        Expr lower = Expr.pow(p.base(), Expr.num(-(k - 1)));
+        Rational factor = Rational.of(2L * k - 3).divide(Rational.of(2L * (k - 1)).multiply(d));
+        Expr first = Expr.div(x, Expr.mul(Expr.num(Rational.of(2L * (k - 1)).multiply(d)),
+                Expr.pow(p.base(), Expr.num(k - 1))));
+        return trace.attempt(Rule.INT_REDUCTION, f, params(v, "d", dn, "k", Expr.num(k)), () ->
+                integrate(lower, v, depth + 1).map(rest -> Expr.add(first, Expr.mul(Expr.num(factor), rest))));
     }
 
     private Optional<Expr> expand(Expr f, String v, int depth) {

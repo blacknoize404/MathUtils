@@ -87,7 +87,11 @@ public enum Rule {
     INT_POLYNOMIAL_DIVISION(Category.INTEGRAL),
     INT_SUBSTITUTION(Category.INTEGRAL),
     INT_PARTS(Category.INTEGRAL),
-    INT_CYCLE(Category.INTEGRAL);
+    INT_CYCLE(Category.INTEGRAL),
+    INT_PARTIAL_FRACTIONS(Category.INTEGRAL),
+    INT_QUADRATIC_SPLIT(Category.INTEGRAL),
+    INT_COMPLETE_SQUARE(Category.INTEGRAL),
+    INT_REDUCTION(Category.INTEGRAL);
 
     /**
      * Familia de la regla; el renderizador la usa para mostrar la operación
