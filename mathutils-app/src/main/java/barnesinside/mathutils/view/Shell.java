@@ -55,6 +55,8 @@ public final class Shell extends StackPane {
         modules.add(new ExpressionTreeView(workspace));
         modules.add(new OrderView(workspace));
         modules.add(new DerivativeView(workspace));
+        modules.add(new LimitView(workspace));
+        modules.add(new IntegralView(workspace));
 
         BorderPane layout = new BorderPane();
         layout.setTop(header());

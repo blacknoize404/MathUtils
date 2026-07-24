@@ -345,12 +345,12 @@ final class Integrator {
 
         if (!result.isFreeOf(name)) {
             // La integral original reaparece: I = A + c·I  =>  I = A / (1 - c)
-            Expr a = result.substitute(name, Expr.ZERO);
-            Expr c = Expr.sub(result.substitute(name, Expr.ONE), a);
+            Expr a = Expand.expand(result.substitute(name, Expr.ZERO));
+            Expr c = Expand.expand(Expr.sub(result.substitute(name, Expr.ONE), a));
             if (!c.isFreeOf(name) || c.equals(Expr.ONE)) return Optional.empty();
             Expr solved;
             try {
-                solved = Expr.div(a, Expr.sub(Expr.ONE, c));
+                solved = Expr.div(a, Expand.expand(Expr.sub(Expr.ONE, c)));
             } catch (ArithmeticException e) {
                 return Optional.empty();
             }

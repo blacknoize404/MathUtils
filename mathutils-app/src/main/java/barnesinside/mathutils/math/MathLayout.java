@@ -328,6 +328,58 @@ public final class MathLayout {
         }
     }
 
+    /** Signo de integral: una S alargada que se estira con el integrando. */
+    private static final class IntegralSignBox extends Box {
+        IntegralSignBox(double size) {
+            super(null);
+            this.width = size * 0.62;
+            this.ascent = size * 1.15;
+            this.descent = size * 0.55;
+        }
+
+        @Override
+        void draw(GraphicsContext g, double x, double baseline, Context ctx) {
+            double top = baseline - ascent;
+            double bottom = baseline + descent;
+            double h = bottom - top;
+            double w = width;
+
+            g.setStroke(ctx.color);
+            g.setLineWidth(Math.max(1.3, h / 22));
+            g.setLineCap(StrokeLineCap.ROUND);
+            g.setLineJoin(StrokeLineJoin.ROUND);
+            g.beginPath();
+            g.moveTo(x + w * 0.92, top + h * 0.1);
+            g.bezierCurveTo(x + w * 0.88, top - h * 0.01, x + w * 0.58, top - h * 0.01, x + w * 0.56, top + h * 0.17);
+            g.lineTo(x + w * 0.42, bottom - h * 0.17);
+            g.bezierCurveTo(x + w * 0.4, bottom + h * 0.01, x + w * 0.1, bottom + h * 0.01, x + w * 0.08, bottom - h * 0.1);
+            g.stroke();
+        }
+    }
+
+    /** Una caja principal con otra pequeña debajo (por ejemplo, {@code lim} con {@code x → a}). */
+    private static final class UnderBox extends Box {
+        final Box main;
+        final Box under;
+        final double gap;
+
+        UnderBox(Box main, Box under, double size) {
+            super(null);
+            this.main = main;
+            this.under = under;
+            this.gap = size * 0.08;
+            this.width = Math.max(main.width, under.width);
+            this.ascent = main.ascent;
+            this.descent = main.descent + gap + under.height();
+        }
+
+        @Override
+        void draw(GraphicsContext g, double x, double baseline, Context ctx) {
+            main.paint(g, x + (width - main.width) / 2, baseline, ctx);
+            under.paint(g, x + (width - under.width) / 2, baseline + main.descent + gap + under.ascent, ctx);
+        }
+    }
+
     // ================================================================ Medición
 
     private static final Text MEASURER = new Text();
@@ -397,6 +449,55 @@ public final class MathLayout {
             items.add(text("=", size));
             items.add(space(size * 0.35));
             items.add(of(after, size));
+        }
+        return new RowBox(items, null);
+    }
+
+    /**
+     * Notación de límite: {@code lim} con {@code x → a} debajo, la función y, si se da, el resultado.
+     *
+     * @param direction 1 por la derecha, -1 por la izquierda, 0 por ambos lados
+     */
+    public static Box limitEquation(Expr variable, Expr point, int direction, Expr function, Expr result, double size) {
+        List<Box> subscript = new ArrayList<>();
+        subscript.add(of(variable, size * 0.75));
+        subscript.add(text(" → ", size * 0.75));
+        subscript.add(of(point, size * 0.75));
+        if (direction != 0) subscript.add(script(text(direction > 0 ? "+" : "−", size * 0.55), size * 0.75));
+
+        List<Box> items = new ArrayList<>();
+        items.add(new UnderBox(text("lim", size), new RowBox(subscript, null), size));
+        items.add(space(size * 0.25));
+        items.add(of(function, size));
+        if (result != null) {
+            items.add(space(size * 0.35));
+            items.add(text("=", size));
+            items.add(space(size * 0.35));
+            items.add(of(result, size));
+        }
+        return new RowBox(items, null);
+    }
+
+    /**
+     * Notación de integral indefinida: {@code ∫ f dx} y, si se da, {@code = F (+ C)}.
+     */
+    public static Box integralEquation(Expr variable, Expr integrand, Expr result, boolean plusConstant, double size) {
+        List<Box> items = new ArrayList<>();
+        items.add(new IntegralSignBox(size));
+        items.add(space(size * 0.12));
+        items.add(of(integrand, size));
+        items.add(space(size * 0.2));
+        items.add(text("d", size));
+        items.add(of(variable, size));
+        if (result != null) {
+            items.add(space(size * 0.35));
+            items.add(text("=", size));
+            items.add(space(size * 0.35));
+            items.add(of(result, size));
+            if (plusConstant) {
+                items.add(space(size * 0.2));
+                items.add(text("+ C", size));
+            }
         }
         return new RowBox(items, null);
     }

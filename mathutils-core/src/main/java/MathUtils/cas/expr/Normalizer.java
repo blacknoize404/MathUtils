@@ -326,7 +326,28 @@ final class Normalizer {
         };
     }
 
+    /** Indica si la expresión nunca es negativa (cuadrados, exponenciales, raíces y sumas o productos de ellos). */
+    private static boolean isNonNegative(Expr e) {
+        return switch (e) {
+            case Expr.Num n -> n.value().signum() >= 0;
+            case Expr.Const c -> c.kind() != Expr.Const.Kind.INFINITY;
+            case Expr.Pow p -> {
+                if (p.base().equals(Expr.E)) yield true;
+                if (p.base() instanceof Expr.Num b && b.value().signum() > 0) yield true;
+                if (!(p.exponent() instanceof Expr.Num n)) yield false;
+                Rational r = n.value();
+                if (r.isInteger()) yield !r.numerator().testBit(0) || isNonNegative(p.base());
+                yield !r.denominator().testBit(0) || isNonNegative(p.base());
+            }
+            case Expr.Func f -> f.fn() == Fn.ABS || f.fn() == Fn.COSH;
+            case Expr.Add a -> a.terms().stream().allMatch(Normalizer::isNonNegative);
+            case Expr.Mul m -> m.factors().stream().allMatch(Normalizer::isNonNegative);
+            case Expr.Sym s -> false;
+        };
+    }
+
     private static Expr simplifyAbs(Expr arg) {
+        if (arg instanceof Expr.Add && isNonNegative(arg)) return arg;
         switch (arg) {
             case Expr.Num n -> {
                 return new Expr.Num(n.value().abs());

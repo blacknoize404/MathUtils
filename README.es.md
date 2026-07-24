@@ -70,6 +70,37 @@ double r = f.eval(new Evaluation("x", 1.0), new Evaluation("y", 4.0));
 
 ---
 
+## Motor simbólico y MathUtils Studio
+
+El repositorio es un build Maven multi-módulo: `mathutils-core` (la librería reutilizable, sin
+dependencias de interfaz, Java 21) y `mathutils-app` (la aplicación de escritorio JavaFX).
+
+**Solucionadores paso a paso** (`MathUtils.cas.*`): cada resultado incluye la regla aplicada en
+cada paso, explicada en español e inglés y renderizable como texto plano, Markdown, LaTeX o JSON.
+
+```java
+Solution d = Derivatives.derivative("x^2*sin(x)", "x");
+Solution l = Limits.limit("(1 + 1/x)^x", "x", "oo");            // e
+Solution i = Integrals.indefinite("e^x*sin(x)", "x");           // (e^x (sin x - cos x))/2
+i.render(Locale.forLanguageTag("es"), Format.LATEX);
+```
+
+- **Derivadas:** suma, producto, cociente, potencia, cadena, exponencial, logarítmica,
+  trigonométricas e inversas, hiperbólicas, parciales y de orden superior.
+- **Límites:** sustitución directa, cocientes de polinomios y términos dominantes en el infinito,
+  L'Hôpital, `0·∞`, `∞−∞`, `1^∞` y límites laterales. Los resultados se comprueban numéricamente.
+- **Integrales:** tabla, linealidad, división de polinomios, expansión, sustitución e integración
+  por partes (incluidos los casos cíclicos). Cada resultado se verifica derivándolo, así que el
+  motor responde "no resuelta" o "no elemental" en vez de devolver una antiderivada incorrecta.
+
+**MathUtils Studio** (`mathutils-app`): calculadora con resultado exacto y decimal, árbol de
+expresión interactivo, orden de operaciones y los solucionadores de derivadas, límites e
+integrales, con la identidad visual de barnesinside. Para ejecutarla:
+
+```bash
+mvn javafx:run -pl mathutils-app
+```
+
 ## Estructura del proyecto
 
 ```

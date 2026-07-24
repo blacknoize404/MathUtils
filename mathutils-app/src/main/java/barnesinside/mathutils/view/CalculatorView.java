@@ -208,6 +208,7 @@ public final class CalculatorView implements Module {
                 Ui.secondary(t.bind("calc.sendTree"), "network", () -> workspace.sendTo("tree", input.getText())),
                 Ui.secondary(t.bind("calc.sendOrder"), "list-ordered", () -> workspace.sendTo("order", input.getText())),
                 Ui.secondary(t.bind("calc.sendDerivative"), "sigma", () -> workspace.sendTo("derivatives", input.getText())),
+                Ui.secondary(t.bind("calc.sendIntegral"), "chart-line", () -> workspace.sendTo("integrals", input.getText())),
                 Ui.ghost(t.bind("calc.copyResult"), "copy", () -> {
                     Ui.copy(r.decimalText() != null ? r.decimalText() : r.exactText());
                     Toasts.show(t.get("calc.copied"));

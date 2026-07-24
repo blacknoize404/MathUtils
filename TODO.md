@@ -5,7 +5,7 @@
 ## Cálculo (Integrales y Derivadas)
 - [x] Diferenciación simbólica (reglas de derivación, regla de la cadena)
 - [x] Integración numérica: regla del trapecio, Simpson 1/3, Simpson 3/8, cuadratura gaussiana (implementado: trapecio, Simpson 1/3, Simpson 3/8 y Gauss-Legendre de 5 puntos)
-- [ ] Integrales definidas e indefinidas
+- [ ] Integrales definidas e indefinidas (indefinidas por tabla, sustitución y partes: hecho; definidas, impropias, fracciones parciales y trigonométricas: pendiente)
 - [x] Derivadas parciales y gradiente
 - [x] Jacobiano y Hessiana
 
@@ -92,7 +92,7 @@
 - [ ] Integrales elípticas (F, E, Π de Legendre; formas de Carlson)
 
 ## Álgebra Simbólica
-- [ ] Simplificador: reglas de reescritura, normalización
+- [x] Simplificador: reglas de reescritura, normalización (núcleo exacto en `cas.expr`)
 - [ ] Expandir: distributiva, binomio de Newton, multinomial
 - [ ] Factorizar: común, diferencia de cuadrados, trinomios, agrupación
 - [ ] Sustitución y pattern matching

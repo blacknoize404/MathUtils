@@ -18,24 +18,35 @@ import javafx.scene.paint.Color;
  */
 public final class MathView extends Region {
 
-    private static final double PADDING = 3;
+    private static final double DEFAULT_PADDING = 3;
 
     private final Canvas canvas = new Canvas();
     private final ObjectProperty<Expr> hovered = new SimpleObjectProperty<>();
     private MathLayout.Box box;
     private double fontSize;
+    private final double padding;
     private boolean muted;
     private boolean interactive = true;
     private java.util.List<MathLayout.Hit> hits = java.util.List.of();
 
     public MathView(Expr expr, double fontSize) {
+        this(expr, fontSize, DEFAULT_PADDING);
+    }
+
+    /** Fórmula para intercalar en un texto: casi sin relleno, para que no separe las palabras. */
+    public static MathView inline(Expr expr, double fontSize) {
+        return new MathView(expr, fontSize, 1);
+    }
+
+    private MathView(Expr expr, double fontSize, double padding) {
         this.fontSize = fontSize;
+        this.padding = padding;
         getChildren().add(canvas);
         setMouseTransparent(false);
 
         setOnMouseMoved(e -> {
             if (!interactive) return;
-            hovered.set(find(e.getX() - PADDING, e.getY()));
+            hovered.set(find(e.getX() - padding, e.getY()));
         });
         setOnMouseExited(e -> hovered.set(null));
 
@@ -94,12 +105,12 @@ public final class MathView extends Region {
 
     @Override
     protected double computePrefWidth(double height) {
-        return box == null ? 0 : Math.ceil(box.width()) + 2 * PADDING;
+        return box == null ? 0 : Math.ceil(box.width()) + 2 * padding;
     }
 
     @Override
     protected double computePrefHeight(double width) {
-        return box == null ? 0 : Math.ceil(box.height()) + 2 * PADDING;
+        return box == null ? 0 : Math.ceil(box.height()) + 2 * padding;
     }
 
     @Override
@@ -124,7 +135,7 @@ public final class MathView extends Region {
 
     @Override
     public double getBaselineOffset() {
-        return box == null ? 0 : PADDING + box.ascent();
+        return box == null ? 0 : padding + box.ascent();
     }
 
     @Override
@@ -144,7 +155,7 @@ public final class MathView extends Region {
         Palette palette = AppContext.theme().palette();
         Color color = muted ? palette.muted() : palette.fg();
         MathLayout.Context ctx = new MathLayout.Context(palette, color, hovered.get());
-        MathLayout.paint(box, g, PADDING, PADDING + box.ascent(), ctx);
+        MathLayout.paint(box, g, padding, padding + box.ascent(), ctx);
         hits = ctx.hits();
     }
 

@@ -4,6 +4,8 @@ import barnesinside.mathutils.theme.ThemeManager;
 import barnesinside.mathutils.view.CalculatorView;
 import barnesinside.mathutils.view.DerivativeView;
 import barnesinside.mathutils.view.ExpressionTreeView;
+import barnesinside.mathutils.view.IntegralView;
+import barnesinside.mathutils.view.LimitView;
 import barnesinside.mathutils.view.OrderView;
 import barnesinside.mathutils.view.Shell;
 import javafx.scene.Scene;
@@ -27,6 +29,10 @@ class VisualSnapshotTest {
     }
 
     private static Rendered open(ThemeManager.Mode mode, String moduleId) {
+        return open(mode, moduleId, 860);
+    }
+
+    private static Rendered open(ThemeManager.Mode mode, String moduleId, int height) {
         return FxTestSupport.onFx(() -> {
             ThemeManager theme = new ThemeManager();
             theme.modeProperty().set(mode);
@@ -35,7 +41,7 @@ class VisualSnapshotTest {
 
             Workspace workspace = new Workspace();
             Shell shell = new Shell(workspace);
-            Scene scene = new Scene(shell, 1360, 860);
+            Scene scene = new Scene(shell, 1360, height);
             theme.install(scene);
             shell.navigate(moduleId);
             shell.settle();
@@ -96,6 +102,32 @@ class VisualSnapshotTest {
                 ((OrderView) r.shell().activeModule()).solve("2 + 3*4^2 - (6 - 2)/2");
                 r.shell().settle();
                 return FxTestSupport.snapshot(r.scene(), "order-" + mode.name().toLowerCase());
+            });
+            assertRendered(file);
+        }
+    }
+
+    @Test
+    void limitModule() {
+        for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {
+            Rendered r = open(mode, "limits", 1500);
+            File file = FxTestSupport.onFx(() -> {
+                ((LimitView) r.shell().activeModule()).solve("(1 + 1/x)^x", "oo", MathUtils.cas.limit.Limits.Direction.BOTH);
+                r.shell().settle();
+                return FxTestSupport.snapshot(r.scene(), "limits-" + mode.name().toLowerCase());
+            });
+            assertRendered(file);
+        }
+    }
+
+    @Test
+    void integralModule() {
+        for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {
+            Rendered r = open(mode, "integrals", 1500);
+            File file = FxTestSupport.onFx(() -> {
+                ((IntegralView) r.shell().activeModule()).solve("e^x*sin(x)");
+                r.shell().settle();
+                return FxTestSupport.snapshot(r.scene(), "integrals-" + mode.name().toLowerCase());
             });
             assertRendered(file);
         }

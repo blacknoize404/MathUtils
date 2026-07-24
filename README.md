@@ -70,6 +70,37 @@ double r = f.eval(new Evaluation("x", 1.0), new Evaluation("y", 4.0));
 
 ---
 
+## Symbolic engine and MathUtils Studio
+
+The repository is a Maven multi-module build: `mathutils-core` (the reusable library, no UI
+dependencies, Java 21) and `mathutils-app` (the JavaFX desktop app).
+
+**Step-by-step solvers** (`MathUtils.cas.*`): every result comes with the rule applied at each
+step, explained in Spanish and English and renderable as plain text, Markdown, LaTeX or JSON.
+
+```java
+Solution d = Derivatives.derivative("x^2*sin(x)", "x");
+Solution l = Limits.limit("(1 + 1/x)^x", "x", "oo");            // e
+Solution i = Integrals.indefinite("e^x*sin(x)", "x");           // (e^x (sin x - cos x))/2
+i.render(Locale.ENGLISH, Format.LATEX);
+```
+
+- **Derivatives:** sum, product, quotient, power, chain, exponential, logarithmic, trigonometric,
+  inverse, hyperbolic, partial and higher-order.
+- **Limits:** direct substitution, polynomial ratios and dominant terms at infinity, L'Hôpital,
+  `0·∞`, `∞−∞`, `1^∞`, one-sided limits. Results are checked numerically.
+- **Integrals:** table, linearity, polynomial division, expansion, substitution and integration by
+  parts (including cyclic cases). Every result is verified by differentiating it, so the engine
+  reports "unsolved" or "non-elementary" instead of returning a wrong antiderivative.
+
+**MathUtils Studio** (`mathutils-app`): calculator with exact and decimal results, interactive
+expression tree, order of operations, and the derivative, limit and integral solvers, with the
+barnesinside visual identity. Run it with:
+
+```bash
+mvn javafx:run -pl mathutils-app
+```
+
 ## Project Structure
 
 ```
