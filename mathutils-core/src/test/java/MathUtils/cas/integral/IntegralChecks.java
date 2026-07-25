@@ -37,6 +37,10 @@ final class IntegralChecks {
      * Comprueba con dos oráculos independientes: la derivada del resultado debe ser el integrando
      * y la integral definida por Barrow debe coincidir con la cuadratura numérica en [a, b].
      */
+    static Solution check(String integrand) {
+        return check(integrand, 0.4, 1.3);
+    }
+
     static Solution check(String integrand, double a, double b) {
         Solution s = Integrals.indefinite(integrand, "x");
         assert s.isSolved() : integrand + " -> " + s.status() + "\n" + s;

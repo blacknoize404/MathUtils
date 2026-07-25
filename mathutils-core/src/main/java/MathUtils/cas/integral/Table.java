@@ -83,6 +83,16 @@ final class Table {
             if (fn.fn() == Fn.CSC) return hit(Rule.INT_CSC_SQUARED, Expr.neg(Expr.func(Fn.COT, x)), base);
         }
 
+        // 1/cos, 1/sin, 1/cos² y 1/sin²
+        if (f instanceof Expr.Pow p && p.base() instanceof Expr.Func fn && fn.arg().equals(x)
+                && p.exponent() instanceof Expr.Num e) {
+            int n = e.value().equals(Rational.MINUS_ONE) ? 1 : e.value().equals(Rational.of(-2)) ? 2 : 0;
+            if (fn.fn() == Fn.COS && n == 1) return lookup(Expr.func(Fn.SEC, x), variable);
+            if (fn.fn() == Fn.SIN && n == 1) return lookup(Expr.func(Fn.CSC, x), variable);
+            if (fn.fn() == Fn.COS && n == 2) return hit(Rule.INT_SEC_SQUARED, Expr.func(Fn.TAN, x), base);
+            if (fn.fn() == Fn.SIN && n == 2) return hit(Rule.INT_CSC_SQUARED, Expr.neg(Expr.func(Fn.COT, x)), base);
+        }
+
         // sec·tan y csc·cot
         if (f.equals(Expr.mul(Expr.func(Fn.SEC, x), Expr.func(Fn.TAN, x)))) {
             return hit(Rule.INT_SEC_TAN, Expr.func(Fn.SEC, x), base);

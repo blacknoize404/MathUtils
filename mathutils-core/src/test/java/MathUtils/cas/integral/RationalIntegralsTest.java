@@ -48,6 +48,15 @@ class RationalIntegralsTest {
     }
 
     @Test
+    void quadraticsWithIrrationalRoots() {
+        check("1/(x^2-2)", 2, 4);
+        check("1/(x^2-2x-1)", 3, 5);
+        check("(x+1)/(x^2-3)", 2, 4);
+        check("1/(x^2-2)^2", 2, 4);
+        check("1/((x-1)*(x^2-2))", 2, 4);
+    }
+
+    @Test
     void divisionThenPartialFractions() {
         check("x^3/(x^2-1)", 2, 4);
         check("(x^4+1)/(x^3+x)", 1, 3);

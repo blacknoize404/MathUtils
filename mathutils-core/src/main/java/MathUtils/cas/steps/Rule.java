@@ -91,7 +91,16 @@ public enum Rule {
     INT_PARTIAL_FRACTIONS(Category.INTEGRAL),
     INT_QUADRATIC_SPLIT(Category.INTEGRAL),
     INT_COMPLETE_SQUARE(Category.INTEGRAL),
-    INT_REDUCTION(Category.INTEGRAL);
+    INT_REDUCTION(Category.INTEGRAL),
+    INT_TRIG_ODD_POWER(Category.INTEGRAL),
+    INT_TRIG_HALF_ANGLE(Category.INTEGRAL),
+    INT_TRIG_TAN_SUBSTITUTION(Category.INTEGRAL),
+    INT_TRIG_TAN_REDUCTION(Category.INTEGRAL),
+    INT_TRIG_COT_REDUCTION(Category.INTEGRAL),
+    INT_TRIG_SEC_REDUCTION(Category.INTEGRAL),
+    INT_TRIG_CSC_REDUCTION(Category.INTEGRAL),
+    INT_TRIG_PRODUCT_TO_SUM(Category.INTEGRAL),
+    INT_TRIG_WEIERSTRASS(Category.INTEGRAL);
 
     /**
      * Familia de la regla; el renderizador la usa para mostrar la operación

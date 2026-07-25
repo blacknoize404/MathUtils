@@ -88,7 +88,9 @@ final class Integrator {
             if (result.isEmpty()) result = reduction(f, v, depth);
             if (result.isEmpty()) result = quadraticDenominator(f, v, depth);
             if (result.isEmpty()) result = partialFractions(f, v, depth);
+            if (result.isEmpty()) result = productToSum(f, v, depth);
             if (result.isEmpty()) result = substitution(f, v, depth);
+            if (result.isEmpty()) result = trigonometric(f, v, depth);
             if (result.isEmpty()) result = polynomialDivision(f, v, depth);
             if (result.isEmpty()) result = expand(f, v, depth);
             if (result.isEmpty()) result = parts(f, v, depth);
@@ -146,6 +148,83 @@ final class Integrator {
         if (hit.isEmpty()) return Optional.empty();
         Table.Hit h = hit.get();
         return Optional.of(trace.leaf(h.rule(), f, h.antiderivative(), h.params()));
+    }
+
+    // ================================================================ Trigonométricas
+
+    private Optional<Expr> trigonometric(Expr f, String v, int depth) {
+        Optional<Trig.Form> form = Trig.parse(f, v);
+        if (form.isPresent()) {
+            Optional<Expr> result = trigonometricPower(f, v, depth, form.get());
+            if (result.isPresent()) return result;
+        }
+        return weierstrass(f, v, depth);
+    }
+
+    /** Un producto de ángulos lineales distintos se pasa a suma antes de intentar sustituciones. */
+    private Optional<Expr> productToSum(Expr f, String v, int depth) {
+        Optional<Trig.Rewrite> product = Trig.productToSum(f, v);
+        return product.isPresent() ? rewrite(f, v, depth, product.get()) : Optional.empty();
+    }
+
+    private Optional<Expr> rewrite(Expr f, String v, int depth, Trig.Rewrite rewrite) {
+        if (rewrite.expression().equals(f)) return Optional.empty();
+        return trace.attempt(rewrite.rule(), f, rewrite.params(), () -> integrate(rewrite.expression(), v, depth + 1));
+    }
+
+    private Optional<Expr> trigonometricPower(Expr f, String v, int depth, Trig.Form form) {
+        Expr x = Expr.sym(v);
+        int sin = form.sin();
+        int cos = form.cos();
+
+        // tan^n y cot^n: se baja la potencia en dos con la identidad pitagórica
+        if (sin + cos == 0 && Math.abs(sin) >= 2) {
+            int n = Math.abs(sin);
+            boolean tangent = sin > 0;
+            Expr base = Expr.func(tangent ? Fn.TAN : Fn.COT, x);
+            Expr lower = Expr.pow(base, Expr.num(n - 2));
+            Expr first = Expr.div(Expr.pow(base, Expr.num(n - 1)), Expr.num(n - 1));
+            return trace.attempt(tangent ? Rule.INT_TRIG_TAN_REDUCTION : Rule.INT_TRIG_COT_REDUCTION, f,
+                    params(v, "n", Expr.num(n)), () -> integrate(lower, v, depth + 1).map(rest ->
+                            tangent ? Expr.sub(first, rest) : Expr.sub(Expr.neg(first), rest)));
+        }
+
+        // sec^n y csc^n con n impar: fórmula de reducción
+        boolean secant = sin == 0 && cos <= -3 && cos % 2 != 0;
+        boolean cosecant = cos == 0 && sin <= -3 && sin % 2 != 0;
+        if (secant || cosecant) {
+            int n = -(secant ? cos : sin);
+            Expr base = Expr.func(secant ? Fn.SEC : Fn.CSC, x);
+            Expr other = Expr.func(secant ? Fn.TAN : Fn.COT, x);
+            Expr lower = Expr.pow(base, Expr.num(n - 2));
+            Expr first = Expr.div(Expr.mul(lower, other), Expr.num(n - 1));
+            Expr factor = Expr.num(n - 2, n - 1);
+            return trace.attempt(secant ? Rule.INT_TRIG_SEC_REDUCTION : Rule.INT_TRIG_CSC_REDUCTION, f,
+                    params(v, "n", Expr.num(n)), () -> integrate(lower, v, depth + 1).map(rest ->
+                            Expr.add(secant ? first : Expr.neg(first), Expr.mul(factor, rest))));
+        }
+
+        Optional<Trig.Rewrite> rewrite = Trig.odd(form, v);
+        if (rewrite.isEmpty()) rewrite = Trig.halfAngle(form, v);
+        if (rewrite.isEmpty()) rewrite = Trig.tangentSubstitution(form, v);
+        return rewrite.isPresent() ? rewrite(f, v, depth, rewrite.get()) : Optional.empty();
+    }
+
+    /** Funciones racionales de seno y coseno: {@code t = tan(x/2)} las vuelve racionales en {@code t}. */
+    private Optional<Expr> weierstrass(Expr f, String v, int depth) {
+        Optional<RationalFunction> converted = Trig.weierstrass(f, v);
+        if (converted.isEmpty()) return Optional.empty();
+
+        String t = freshName(f, v);
+        Expr ts = Expr.sym(t);
+        Expr g = converted.get().toExpr(t);
+        Expr half = Expr.func(Fn.TAN, Expr.div(Expr.sym(v), Expr.num(2)));
+        return trace.attempt(Rule.INT_TRIG_WEIERSTRASS, f, params(v, "s", ts, "g", g), () -> {
+            Optional<Expr> integral = integrate(g, t, depth + 1);
+            if (integral.isEmpty()) return Optional.empty();
+            Expr back = integral.get().substitute(t, half);
+            return verified(f, back, v) ? Optional.of(back) : Optional.empty();
+        });
     }
 
     /** Cociente de polinomios con grado del numerador mayor o igual que el del denominador. */
@@ -265,7 +344,7 @@ final class Integrator {
         int k = -e.value().intValueExact();
         if (k < 2 || k > 12) return Optional.empty();
         Expr x = Expr.sym(v);
-        if (!(Table.squarePlusConstant(p.base(), x) instanceof Expr.Num dn) || dn.value().signum() <= 0) {
+        if (!(Table.squarePlusConstant(p.base(), x) instanceof Expr.Num dn) || dn.value().isZero()) {
             return Optional.empty();
         }
 
@@ -403,6 +482,7 @@ final class Integrator {
             for (int i = 0; i < factors.size(); i++) {
                 List<Expr> others = new ArrayList<>(factors);
                 Expr u = others.remove(i);
+                if (u.isFreeOf(v)) continue;
                 choices.add(new Expr[]{u, Expr.mul(others)});
             }
         } else if (isLogarithmicOrInverseTrigonometric(f)) {

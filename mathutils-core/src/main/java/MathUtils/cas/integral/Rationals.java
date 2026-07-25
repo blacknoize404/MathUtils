@@ -13,13 +13,13 @@ import java.util.Optional;
  * Álgebra exacta de funciones racionales: factorización de un denominador sobre los racionales y
  * descomposición en fracciones parciales. No registra pasos; los usa el {@link Integrator}.
  * <p>Solo factoriza lo que puede garantizar: factores lineales (raíces racionales) y cuadráticos
- * irreducibles con discriminante negativo. Cualquier otro resto se declara no factorizable.
+ * sin raíces racionales. Cualquier otro resto se declara no factorizable.
  */
 final class Rationals {
 
     private static final BigInteger SEARCH_LIMIT = BigInteger.TEN.pow(12);
 
-    /** Factor mónico (lineal o cuadrático irreducible) con su multiplicidad. */
+    /** Factor mónico (lineal, o cuadrático sin raíces racionales) con su multiplicidad. */
     record Factor(Polynomial base, int multiplicity) {
         boolean isLinear() {
             return base.degree() == 1;
@@ -100,7 +100,8 @@ final class Rationals {
             Rational a = rest.coefficient(2);
             Rational discriminant = rest.coefficient(1).multiply(rest.coefficient(1))
                     .subtract(Rational.of(4).multiply(a).multiply(rest.coefficient(0)));
-            if (discriminant.signum() < 0) {
+            // Sin raíces racionales: el discriminante es negativo o positivo sin raíz exacta
+            if (discriminant.signum() != 0) {
                 out.add(new Factor(rest.scale(a.reciprocal()), multiplicity));
                 return true;
             }
