@@ -91,6 +91,7 @@ final class Integrator {
             if (result.isEmpty()) result = productToSum(f, v, depth);
             if (result.isEmpty()) result = substitution(f, v, depth);
             if (result.isEmpty()) result = trigonometric(f, v, depth);
+            if (result.isEmpty()) result = radical(f, v, depth);
             if (result.isEmpty()) result = polynomialDivision(f, v, depth);
             if (result.isEmpty()) result = expand(f, v, depth);
             if (result.isEmpty()) result = parts(f, v, depth);
@@ -224,6 +225,142 @@ final class Integrator {
             if (integral.isEmpty()) return Optional.empty();
             Expr back = integral.get().substitute(t, half);
             return verified(f, back, v) ? Optional.of(back) : Optional.empty();
+        });
+    }
+
+    // ================================================================ Radicales
+
+    private Optional<Expr> radical(Expr f, String v, int depth) {
+        // Si al expandir sale una suma, se integra término a término antes de sustituir
+        if (!(f instanceof Expr.Add) && Expand.expand(f) instanceof Expr.Add) return Optional.empty();
+        Optional<Expr> result = linearRadical(f, v, depth);
+        return result.isPresent() ? result : quadraticRadical(f, v, depth);
+    }
+
+    /** Raíces de una expresión lineal: {@code t = (ax+b)^(1/n)} las quita todas a la vez. */
+    private Optional<Expr> linearRadical(Expr f, String v, int depth) {
+        Optional<Radicals.LinearRadical> found = Radicals.linear(f, v);
+        if (found.isEmpty()) return Optional.empty();
+        Radicals.LinearRadical r = found.get();
+
+        int n = r.n();
+        Rational a = r.polynomial().coefficient(1);
+        Rational b = r.polynomial().coefficient(0);
+        String t = freshName(f, v);
+        Expr ts = Expr.sym(t);
+        Expr root = Expr.pow(r.base(), Expr.num(1, n));
+
+        Expr mapped = Radicals.mapPowers(f, r.base(), e -> Expr.pow(ts, Expr.num(e.multiply(Rational.of(n)))));
+        Expr x = Expr.div(Expr.sub(Expr.pow(ts, Expr.num(n)), Expr.num(b)), Expr.num(a));
+        Expr dx = Expr.div(Expr.mul(Expr.num(n), Expr.pow(ts, Expr.num(n - 1))), Expr.num(a));
+        Expr g = Expr.mul(mapped.substitute(v, x), dx);
+        if (!g.isFreeOf(v)) return Optional.empty();
+
+        return trace.attempt(Rule.INT_RADICAL_SUBSTITUTION, f, params(v, "u", root, "s", ts, "g", g), () -> {
+            Optional<Expr> integral = integrate(g, t, depth + 1);
+            if (integral.isEmpty()) return Optional.empty();
+            Expr back = integral.get().substitute(t, root);
+            return verified(f, back, v) ? Optional.of(back) : Optional.empty();
+        });
+    }
+
+    /** Raíces de un cuadrático: se completa el cuadrado y se aplica una sustitución trigonométrica. */
+    private Optional<Expr> quadraticRadical(Expr f, String v, int depth) {
+        Optional<Radicals.QuadraticRadical> found = Radicals.quadratic(f, v);
+        if (found.isEmpty()) return Optional.empty();
+        Expr q = found.get().base();
+        Polynomial poly = found.get().polynomial();
+        Rational alpha = poly.coefficient(2);
+        Rational beta = poly.coefficient(1);
+        Rational gamma = poly.coefficient(0);
+        String t = freshName(f, v);
+        Expr ts = Expr.sym(t);
+        Expr x = Expr.sym(v);
+
+        if (!beta.isZero()) {
+            Rational h = beta.divide(Rational.of(2).multiply(alpha));
+            Rational k = gamma.subtract(beta.multiply(beta).divide(Rational.of(4).multiply(alpha)));
+            Expr centered = Expr.add(Expr.mul(Expr.num(alpha), Expr.pow(ts, Expr.num(2))), Expr.num(k));
+            Expr g = Radicals.mapPowers(f, q, e -> Expr.pow(centered, Expr.num(e))).substitute(v, Expr.sub(ts, Expr.num(h)));
+            if (!g.isFreeOf(v)) return Optional.empty();
+            Expr shift = Expr.add(x, Expr.num(h));
+            Expr completed = Expr.add(Expr.mul(Expr.num(alpha), Expr.pow(shift, Expr.num(2))), Expr.num(k));
+            return trace.attempt(Rule.INT_RADICAL_COMPLETE_SQUARE, f,
+                    params(v, "q", q, "c", completed, "s", ts, "shift", shift, "g", g), () -> {
+                        Optional<Expr> integral = integrate(g, t, depth + 1);
+                        if (integral.isEmpty()) return Optional.empty();
+                        Expr back = integral.get().substitute(t, shift);
+                        return verified(f, back, v) ? Optional.of(back) : Optional.empty();
+                    });
+        }
+
+        // a·x² + c sin término lineal
+        Expr sqrtGamma = Expr.sqrt(Expr.num(gamma.abs()));
+        Expr m = Expr.sqrt(Expr.num(gamma.abs().divide(alpha.abs())));
+        Rule rule;
+        Expr xs;
+        Expr root;
+        Expr dx;
+        Expr sin;
+        Expr cos;
+        Expr angle;
+        Expr rootOfQ = Expr.sqrt(q);
+        if (alpha.signum() < 0 && gamma.signum() > 0) {
+            rule = Rule.INT_TRIG_SUBSTITUTION_SIN;
+            xs = Expr.mul(m, Expr.sin(ts));
+            root = Expr.mul(sqrtGamma, Expr.cos(ts));
+            dx = Expr.mul(m, Expr.cos(ts));
+            sin = Expr.div(x, m);
+            cos = Expr.div(rootOfQ, sqrtGamma);
+            angle = Expr.func(Fn.ASIN, Expr.div(x, m));
+        } else if (alpha.signum() > 0 && gamma.signum() > 0) {
+            rule = Rule.INT_TRIG_SUBSTITUTION_TAN;
+            Expr sec = Expr.func(Fn.SEC, ts);
+            xs = Expr.mul(m, Expr.func(Fn.TAN, ts));
+            root = Expr.mul(sqrtGamma, sec);
+            dx = Expr.mul(m, Expr.pow(sec, Expr.num(2)));
+            cos = Expr.div(sqrtGamma, rootOfQ);
+            sin = Expr.mul(Expr.div(x, m), cos);
+            angle = Expr.func(Fn.ATAN, Expr.div(x, m));
+        } else if (alpha.signum() > 0 && gamma.signum() < 0) {
+            rule = Rule.INT_TRIG_SUBSTITUTION_SEC;
+            Expr tan = Expr.func(Fn.TAN, ts);
+            Expr magnitude = Expr.abs(x);
+            xs = Expr.mul(m, Expr.func(Fn.SEC, ts));
+            root = Expr.mul(sqrtGamma, tan);
+            dx = Expr.mul(m, Expr.func(Fn.SEC, ts), tan);
+            cos = Expr.div(m, magnitude);
+            sin = Expr.div(Expr.sqrt(Expr.div(q, Expr.num(alpha))), magnitude);
+            angle = Expr.func(Fn.ACOS, Expr.div(m, magnitude));
+        } else {
+            return Optional.empty();
+        }
+
+        Expr rootT = root;
+        Expr mapped = Radicals.mapPowers(f, q, e -> {
+            Rational doubled = e.multiply(Rational.of(2));
+            Expr factors = rootT instanceof Expr.Mul mul ? Expr.mul(mul.factors().stream()
+                    .map(fa -> Expr.pow(fa, Expr.num(doubled))).toList()) : Expr.pow(rootT, Expr.num(doubled));
+            return factors;
+        });
+        Expr g = Expr.mul(mapped.substitute(v, xs), dx);
+        if (!g.isFreeOf(v)) return Optional.empty();
+
+        Expr sinX = sin;
+        Expr cosX = cos;
+        Expr angleX = angle;
+        boolean secant = rule == Rule.INT_TRIG_SUBSTITUTION_SEC;
+        return trace.attempt(rule, f, params(v, "m", m, "q", q, "xs", xs, "dx", dx, "root", root, "s", ts, "g", g), () -> {
+            Optional<Expr> integral = integrate(g, t, depth + 1);
+            if (integral.isEmpty()) return Optional.empty();
+            Expr back = Radicals.undo(integral.get(), ts, sinX, cosX, angleX);
+            if (verified(f, back, v)) return Optional.of(back);
+            if (secant) {
+                // La sustitución vale para x > 0: con f par la primitiva es impar, y con f impar es par
+                Expr odd = Expr.mul(Expr.div(x, Expr.abs(x)), back);
+                if (verified(f, odd, v)) return Optional.of(odd);
+            }
+            return Optional.empty();
         });
     }
 
@@ -425,36 +562,46 @@ final class Integrator {
     /** Subexpresiones que pueden ser la nueva variable, de las más pequeñas a las más grandes. */
     private List<Expr> candidates(Expr f, String v) {
         Set<Expr> found = new LinkedHashSet<>();
-        collect(f, v, found);
+        collect(f, v, found, false);
         found.remove(f);
         List<Expr> sorted = new ArrayList<>(found);
         sorted.sort(Comparator.comparingInt(Integrator::size));
         return sorted.size() > MAX_CANDIDATES ? sorted.subList(0, MAX_CANDIDATES) : sorted;
     }
 
-    private static void collect(Expr e, String v, Set<Expr> out) {
+    /**
+     * Recoge subexpresiones. Una expresión lineal solo es candidata si es el argumento de una
+     * función o la base de una potencia: dentro de un polinomio (como el {@code 4x} de
+     * {@code x² + 4x + 5}) solo cambiaría la escala de la variable.
+     */
+    private static void collect(Expr e, String v, Set<Expr> out, boolean direct) {
         if (e.isFreeOf(v)) return;
         switch (e) {
             case Expr.Sym s -> { }
             case Expr.Add a -> {
-                out.add(e);
-                a.terms().forEach(t -> collect(t, v, out));
+                if (direct || !isLinear(e, v)) out.add(e);
+                a.terms().forEach(t -> collect(t, v, out, false));
             }
             case Expr.Mul m -> {
-                out.add(e);
-                m.factors().forEach(t -> collect(t, v, out));
+                if (direct || !isLinear(e, v)) out.add(e);
+                m.factors().forEach(t -> collect(t, v, out, false));
             }
             case Expr.Pow p -> {
                 out.add(e);
-                collect(p.base(), v, out);
-                collect(p.exponent(), v, out);
+                collect(p.base(), v, out, true);
+                collect(p.exponent(), v, out, true);
             }
             case Expr.Func fn -> {
                 out.add(e);
-                collect(fn.arg(), v, out);
+                collect(fn.arg(), v, out, true);
             }
             default -> { }
         }
+    }
+
+    private static boolean isLinear(Expr e, String v) {
+        Optional<Polynomial> p = Polynomial.from(e, v);
+        return p.isPresent() && p.get().degree() == 1;
     }
 
     private static int size(Expr e) {

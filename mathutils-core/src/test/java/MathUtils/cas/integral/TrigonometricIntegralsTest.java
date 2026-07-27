@@ -47,6 +47,8 @@ class TrigonometricIntegralsTest {
         check("sec(x)^4", 0.1, 1.2);
         check("sec(x)^2*tan(x)^3", 0.1, 1.2);
         check("1/cos(x)", 0.1, 1.2);
+        check("1/(sin(x)^2*cos(x)^2)", 0.3, 1.2);
+        check("sin(x)^2/cos(x)^6", 0.1, 1.2);
         check("1/sin(x)^2", 0.3, 1.2);
     }
 

@@ -139,6 +139,26 @@ final class Table {
             }
         }
 
+        if (exponent.equals(Rational.of(1, 2))) {
+            // sqrt(x² + c)
+            Expr c = constantTermOfSquarePlus(p.base(), x);
+            if (c instanceof Expr.Num cn && cn.value().signum() != 0) {
+                Expr root = Expr.sqrt(Expr.add(Expr.pow(x, Expr.num(2)), c));
+                Expr result = Expr.add(Expr.div(Expr.mul(x, root), Expr.num(2)),
+                        Expr.mul(Expr.div(c, Expr.num(2)), Expr.ln(Expr.abs(Expr.add(x, root)))));
+                return hit(Rule.INT_ROOT_SUM_FORM, result, Trace.params("x", x, "c", c));
+            }
+            // sqrt(c - x²) con c > 0
+            Expr k = constantTermOfSquarePlus(negate(p.base()), x);
+            if (k instanceof Expr.Num kn && kn.value().signum() < 0) {
+                Expr c2 = Expr.num(kn.value().negate());
+                Expr root = Expr.sqrt(p.base());
+                Expr result = Expr.add(Expr.div(Expr.mul(x, root), Expr.num(2)),
+                        Expr.mul(Expr.div(c2, Expr.num(2)), Expr.func(Fn.ASIN, Expr.div(x, Expr.sqrt(c2)))));
+                return hit(Rule.INT_ROOT_DIFFERENCE_FORM, result, Trace.params("x", x, "c", c2));
+            }
+        }
+
         if (exponent.equals(minusHalf)) {
             // 1/sqrt(x² + c)
             Expr c = constantTermOfSquarePlus(p.base(), x);
