@@ -134,6 +134,17 @@ class VisualSnapshotTest {
     }
 
     @Test
+    void integralWithRadicals() {
+        Rendered r = open(ThemeManager.Mode.LIGHT, "integrals", 1700);
+        File file = FxTestSupport.onFx(() -> {
+            ((IntegralView) r.shell().activeModule()).solve("1/(x^2*sqrt(x^2+1))");
+            r.shell().settle();
+            return FxTestSupport.snapshot(r.scene(), "integrals-radical-light");
+        });
+        assertRendered(file);
+    }
+
+    @Test
     void derivativeModule() {
         for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {
             Rendered r = open(mode, "derivatives");

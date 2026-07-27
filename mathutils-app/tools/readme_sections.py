@@ -24,8 +24,10 @@ i.render(Locale.ENGLISH, Format.LATEX);
 - **Limits:** direct substitution, polynomial ratios and dominant terms at infinity, L'Hôpital,
   `0·∞`, `∞−∞`, `1^∞`, one-sided limits. Results are checked numerically.
 - **Integrals:** table, linearity, polynomial division, expansion, substitution and integration by
-  parts (including cyclic cases). Every result is verified by differentiating it, so the engine
-  reports "unsolved" or "non-elementary" instead of returning a wrong antiderivative.
+  parts (including cyclic cases); partial fractions with reduction formulas; powers and products of
+  trigonometric functions, half angles and `tan(x/2)`; roots of linear expressions, completing the
+  square and trigonometric substitutions. Every result is verified by differentiating it, so the
+  engine reports "unsolved" or "non-elementary" instead of returning a wrong antiderivative.
 
 **MathUtils Studio** (`mathutils-app`): calculator with exact and decimal results, interactive
 expression tree, order of operations, and the derivative, limit and integral solvers, with the
@@ -57,8 +59,11 @@ i.render(Locale.forLanguageTag("es"), Format.LATEX);
 - **Límites:** sustitución directa, cocientes de polinomios y términos dominantes en el infinito,
   L'Hôpital, `0·∞`, `∞−∞`, `1^∞` y límites laterales. Los resultados se comprueban numéricamente.
 - **Integrales:** tabla, linealidad, división de polinomios, expansión, sustitución e integración
-  por partes (incluidos los casos cíclicos). Cada resultado se verifica derivándolo, así que el
-  motor responde "no resuelta" o "no elemental" en vez de devolver una antiderivada incorrecta.
+  por partes (incluidos los casos cíclicos); fracciones parciales con fórmulas de reducción;
+  potencias y productos de funciones trigonométricas, ángulo mitad y `tan(x/2)`; raíces de
+  expresiones lineales, completar cuadrados y sustituciones trigonométricas. Cada resultado se
+  verifica derivándolo, así que el motor responde "no resuelta" o "no elemental" en vez de devolver
+  una antiderivada incorrecta.
 
 **MathUtils Studio** (`mathutils-app`): calculadora con resultado exacto y decimal, árbol de
 expresión interactivo, orden de operaciones y los solucionadores de derivadas, límites e

@@ -90,8 +90,11 @@ i.render(Locale.forLanguageTag("es"), Format.LATEX);
 - **Límites:** sustitución directa, cocientes de polinomios y términos dominantes en el infinito,
   L'Hôpital, `0·∞`, `∞−∞`, `1^∞` y límites laterales. Los resultados se comprueban numéricamente.
 - **Integrales:** tabla, linealidad, división de polinomios, expansión, sustitución e integración
-  por partes (incluidos los casos cíclicos). Cada resultado se verifica derivándolo, así que el
-  motor responde "no resuelta" o "no elemental" en vez de devolver una antiderivada incorrecta.
+  por partes (incluidos los casos cíclicos); fracciones parciales con fórmulas de reducción;
+  potencias y productos de funciones trigonométricas, ángulo mitad y `tan(x/2)`; raíces de
+  expresiones lineales, completar cuadrados y sustituciones trigonométricas. Cada resultado se
+  verifica derivándolo, así que el motor responde "no resuelta" o "no elemental" en vez de devolver
+  una antiderivada incorrecta.
 
 **MathUtils Studio** (`mathutils-app`): calculadora con resultado exacto y decimal, árbol de
 expresión interactivo, orden de operaciones y los solucionadores de derivadas, límites e

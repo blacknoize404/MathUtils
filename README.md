@@ -90,8 +90,10 @@ i.render(Locale.ENGLISH, Format.LATEX);
 - **Limits:** direct substitution, polynomial ratios and dominant terms at infinity, L'Hôpital,
   `0·∞`, `∞−∞`, `1^∞`, one-sided limits. Results are checked numerically.
 - **Integrals:** table, linearity, polynomial division, expansion, substitution and integration by
-  parts (including cyclic cases). Every result is verified by differentiating it, so the engine
-  reports "unsolved" or "non-elementary" instead of returning a wrong antiderivative.
+  parts (including cyclic cases); partial fractions with reduction formulas; powers and products of
+  trigonometric functions, half angles and `tan(x/2)`; roots of linear expressions, completing the
+  square and trigonometric substitutions. Every result is verified by differentiating it, so the
+  engine reports "unsolved" or "non-elementary" instead of returning a wrong antiderivative.
 
 **MathUtils Studio** (`mathutils-app`): calculator with exact and decimal results, interactive
 expression tree, order of operations, and the derivative, limit and integral solvers, with the
