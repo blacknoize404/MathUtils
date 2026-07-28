@@ -281,7 +281,7 @@ final class Normalizer {
                 Expr simplified = simplifyAbs(arg);
                 if (simplified != null) return simplified;
             }
-            case ERF, ASIN, ATAN, SINH, TANH -> {
+            case ERF, ASIN, ATAN, SINH, TANH, SI -> {
                 if (arg.isZero()) return Expr.ZERO;
             }
             case COSH -> {

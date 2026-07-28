@@ -244,6 +244,10 @@ public final class TreeModel {
             case ACOS -> "\\arccos";
             case ATAN -> "\\arctan";
             case ERF -> "\\operatorname{erf}";
+            case SI -> "\\operatorname{Si}";
+            case CI -> "\\operatorname{Ci}";
+            case EI -> "\\operatorname{Ei}";
+            case LI -> "\\operatorname{li}";
             default -> "\\" + fn.symbol();
         };
     }

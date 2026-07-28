@@ -190,6 +190,10 @@ final class Differentiator {
             case LN -> Expr.div(Expr.ONE, t);
             case ABS -> Expr.div(t, Expr.abs(t));
             case ERF -> Expr.mul(Expr.div(Expr.num(2), Expr.sqrt(Expr.PI)), Expr.exp(Expr.neg(Expr.pow(t, Expr.num(2)))));
+            case SI -> Expr.div(Expr.sin(t), t);
+            case CI -> Expr.div(Expr.cos(t), t);
+            case EI -> Expr.div(Expr.exp(t), t);
+            case LI -> Expr.div(Expr.ONE, Expr.ln(t));
         };
     }
 
@@ -210,6 +214,10 @@ final class Differentiator {
             case LN -> Rule.DIFF_LN;
             case ABS -> Rule.DIFF_ABS;
             case ERF -> Rule.DIFF_ERF;
+            case SI -> Rule.DIFF_SI;
+            case CI -> Rule.DIFF_CI;
+            case EI -> Rule.DIFF_EI;
+            case LI -> Rule.DIFF_LI;
         };
     }
 

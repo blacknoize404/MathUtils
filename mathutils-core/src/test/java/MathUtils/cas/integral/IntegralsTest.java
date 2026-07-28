@@ -251,8 +251,7 @@ class IntegralsTest {
 
     @Test
     void nonElementaryIntegrals() {
-        for (String f : new String[]{"e^(x^2)", "e^(-x^2)", "sin(x)/x", "cos(x)/x", "e^x/x", "1/ln(x)", "x^x",
-                "sin(x^2)", "cos(x^2)", "3*e^(x^2)"}) {
+        for (String f : new String[]{"e^(x^2)", "x^x", "sin(x^2)", "cos(x^2)", "3*e^(x^2)"}) {
             Solution s = Integrals.indefinite(f, "x");
             assert s.status() == Solution.Status.NON_ELEMENTAL : f + " -> " + s.status();
             assert s.result() == null;

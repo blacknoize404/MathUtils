@@ -92,7 +92,9 @@ i.render(Locale.forLanguageTag("es"), Format.LATEX);
 - **Integrales:** tabla, linealidad, división de polinomios, expansión, sustitución e integración
   por partes (incluidos los casos cíclicos); fracciones parciales con fórmulas de reducción;
   potencias y productos de funciones trigonométricas, ángulo mitad y `tan(x/2)`; raíces de
-  expresiones lineales, completar cuadrados y sustituciones trigonométricas. Cada resultado se
+  expresiones lineales, completar cuadrados y sustituciones trigonométricas; funciones especiales
+  (`erf`, `Si`, `Ci`, `Ei`, `li`) para las integrales no elementales clásicas como `sin(x)/x`,
+  `e^x/x`, `1/ln(x)` y `e^(-x²)`. Cada resultado se
   verifica derivándolo, así que el motor responde "no resuelta" o "no elemental" en vez de devolver
   una antiderivada incorrecta.
 

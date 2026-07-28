@@ -86,6 +86,7 @@ final class Integrator {
             if (result.isEmpty()) result = constantMultiple(f, v, depth);
             if (result.isEmpty()) result = table(f, v);
             if (result.isEmpty()) result = reduction(f, v, depth);
+            if (result.isEmpty()) result = exponentialReduction(f, v, depth);
             if (result.isEmpty()) result = quadraticDenominator(f, v, depth);
             if (result.isEmpty()) result = partialFractions(f, v, depth);
             if (result.isEmpty()) result = productToSum(f, v, depth);
@@ -472,6 +473,24 @@ final class Integrator {
                 () -> integrate(rewritten, v, depth + 1));
     }
 
+    /** {@code e^x / x^n} con {@code n ≥ 2}: por partes baja la potencia hasta la exponencial integral. */
+    private Optional<Expr> exponentialReduction(Expr f, String v, int depth) {
+        Expr x = Expr.sym(v);
+        if (!(f instanceof Expr.Mul m) || m.factors().size() != 2) return Optional.empty();
+        Expr exp = Expr.exp(x);
+        Expr power = m.factors().get(0).equals(exp) ? m.factors().get(1) : m.factors().get(1).equals(exp) ? m.factors().get(0) : null;
+        if (!(power instanceof Expr.Pow p) || !p.base().equals(x) || !(p.exponent() instanceof Expr.Num e)
+                || !e.value().isInteger() || e.value().signum() >= 0 || !e.value().fitsInt()) {
+            return Optional.empty();
+        }
+        int n = -e.value().intValueExact();
+        if (n < 2 || n > 12) return Optional.empty();
+        Expr lower = Expr.mul(exp, Expr.pow(x, Expr.num(-(n - 1))));
+        Expr first = Expr.neg(Expr.div(lower, Expr.num(n - 1)));
+        return trace.attempt(Rule.INT_EI_REDUCTION, f, params(v, "n", Expr.num(n)), () ->
+                integrate(lower, v, depth + 1).map(rest -> Expr.add(first, Expr.div(rest, Expr.num(n - 1)))));
+    }
+
     /** {@code 1/(x² + d)^k} con {@code k ≥ 2}: fórmula de reducción que baja la potencia. */
     private Optional<Expr> reduction(Expr f, String v, int depth) {
         if (!(f instanceof Expr.Pow p) || !(p.exponent() instanceof Expr.Num e) || !e.value().isInteger()
@@ -714,7 +733,8 @@ final class Integrator {
         Expr core = f instanceof Expr.Pow p && p.exponent() instanceof Expr.Num n && n.value().isInteger()
                 && n.value().signum() > 0 ? p.base() : f;
         return core instanceof Expr.Func fn
-                && (fn.fn() == Fn.LN || fn.fn() == Fn.ASIN || fn.fn() == Fn.ACOS || fn.fn() == Fn.ATAN);
+                && (fn.fn() == Fn.LN || fn.fn() == Fn.ASIN || fn.fn() == Fn.ACOS || fn.fn() == Fn.ATAN
+                || fn.fn() == Fn.ERF || fn.fn() == Fn.SI || fn.fn() == Fn.CI || fn.fn() == Fn.EI || fn.fn() == Fn.LI);
     }
 
     /** LIATE: logarítmica, trigonométrica inversa, algebraica, trigonométrica, exponencial. */
@@ -722,7 +742,7 @@ final class Integrator {
         if (u instanceof Expr.Func fn) {
             return switch (fn.fn()) {
                 case LN -> 0;
-                case ASIN, ACOS, ATAN -> 1;
+                case ASIN, ACOS, ATAN, ERF, SI, CI, EI, LI -> 1;
                 case SIN, COS, TAN, COT, SEC, CSC -> 3;
                 case SINH, COSH, TANH -> 4;
                 default -> 5;

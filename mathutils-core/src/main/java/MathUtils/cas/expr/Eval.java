@@ -76,6 +76,10 @@ public final class Eval {
             case LN -> Math.log(x);
             case ABS -> Math.abs(x);
             case ERF -> Special.erf(x);
+            case SI -> Special.si(x);
+            case CI -> Special.ci(x);
+            case EI -> Special.ei(x);
+            case LI -> Special.li(x);
         };
     }
 }

@@ -39,6 +39,10 @@ public enum Rule {
     DIFF_TANH(Category.DERIVATIVE),
     DIFF_ABS(Category.DERIVATIVE),
     DIFF_ERF(Category.DERIVATIVE),
+    DIFF_SI(Category.DERIVATIVE),
+    DIFF_CI(Category.DERIVATIVE),
+    DIFF_EI(Category.DERIVATIVE),
+    DIFF_LI(Category.DERIVATIVE),
     DIFF_ORDER(Category.DERIVATIVE),
 
     // ---- Límites
@@ -107,7 +111,13 @@ public enum Rule {
     INT_TRIG_SUBSTITUTION_TAN(Category.INTEGRAL),
     INT_TRIG_SUBSTITUTION_SEC(Category.INTEGRAL),
     INT_ROOT_DIFFERENCE_FORM(Category.INTEGRAL),
-    INT_ROOT_SUM_FORM(Category.INTEGRAL);
+    INT_ROOT_SUM_FORM(Category.INTEGRAL),
+    INT_ERF_FORM(Category.INTEGRAL),
+    INT_SI_FORM(Category.INTEGRAL),
+    INT_CI_FORM(Category.INTEGRAL),
+    INT_EI_FORM(Category.INTEGRAL),
+    INT_LI_FORM(Category.INTEGRAL),
+    INT_EI_REDUCTION(Category.INTEGRAL);
 
     /**
      * Familia de la regla; el renderizador la usa para mostrar la operación

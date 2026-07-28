@@ -92,7 +92,8 @@ i.render(Locale.ENGLISH, Format.LATEX);
 - **Integrals:** table, linearity, polynomial division, expansion, substitution and integration by
   parts (including cyclic cases); partial fractions with reduction formulas; powers and products of
   trigonometric functions, half angles and `tan(x/2)`; roots of linear expressions, completing the
-  square and trigonometric substitutions. Every result is verified by differentiating it, so the
+  square and trigonometric substitutions; special functions (`erf`, `Si`, `Ci`, `Ei`, `li`) for the
+  classic non-elementary integrals such as `sin(x)/x`, `e^x/x`, `1/ln(x)` and `e^(-x²)`. Every result is verified by differentiating it, so the
   engine reports "unsolved" or "non-elementary" instead of returning a wrong antiderivative.
 
 **MathUtils Studio** (`mathutils-app`): calculator with exact and decimal results, interactive

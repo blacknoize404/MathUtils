@@ -3,6 +3,7 @@ package MathUtils.cas.integral;
 import MathUtils.cas.expr.Expr;
 import MathUtils.cas.expr.Fn;
 import MathUtils.cas.expr.Rational;
+import MathUtils.cas.poly.Polynomial;
 import MathUtils.cas.steps.Rule;
 import MathUtils.cas.steps.Trace;
 
@@ -101,7 +102,48 @@ final class Table {
             return hit(Rule.INT_CSC_COT, Expr.neg(Expr.func(Fn.CSC, x)), base);
         }
 
+        Optional<Hit> special = special(f, x, base);
+        if (special.isPresent()) return special;
+
         return quadratic(f, x, base);
+    }
+
+    /** Integrales sin antiderivada elemental que se expresan con funciones especiales. */
+    private static Optional<Hit> special(Expr f, Expr x, Map<String, Expr> base) {
+        String variable = ((Expr.Sym) x).name();
+        if (f.equals(Expr.div(Expr.sin(x), x))) return hit(Rule.INT_SI_FORM, Expr.func(Fn.SI, x), base);
+        if (f.equals(Expr.div(Expr.cos(x), x))) return hit(Rule.INT_CI_FORM, Expr.func(Fn.CI, x), base);
+        if (f.equals(Expr.div(Expr.exp(x), x))) return hit(Rule.INT_EI_FORM, Expr.func(Fn.EI, x), base);
+
+        // x^m / ln x  ->  li(x^(m+1))
+        Expr lnx = Expr.pow(Expr.ln(x), Expr.MINUS_ONE);
+        Rational m = null;
+        if (f.equals(lnx)) {
+            m = Rational.ZERO;
+        } else if (f instanceof Expr.Mul mul && mul.factors().size() == 2) {
+            Expr other = mul.factors().get(0).equals(lnx) ? mul.factors().get(1)
+                    : mul.factors().get(1).equals(lnx) ? mul.factors().get(0) : null;
+            if (other != null && other.equals(x)) m = Rational.ONE;
+            else if (other instanceof Expr.Pow p && p.base().equals(x) && p.exponent() instanceof Expr.Num n) m = n.value();
+        }
+        if (m != null && !m.equals(Rational.MINUS_ONE)) {
+            Expr n = Expr.num(m.add(Rational.ONE));
+            return hit(Rule.INT_LI_FORM, Expr.func(Fn.LI, Expr.pow(x, n)), Trace.params("x", x, "n", n));
+        }
+
+        // e^(-a x²)  ->  erf
+        if (f instanceof Expr.Pow p && p.base().equals(Expr.E)) {
+            Optional<Polynomial> exponent = Polynomial.from(p.exponent(), variable);
+            if (exponent.isPresent() && exponent.get().degree() == 2 && exponent.get().coefficient(1).isZero()
+                    && exponent.get().coefficient(0).isZero() && exponent.get().coefficient(2).signum() < 0) {
+                Rational a = exponent.get().coefficient(2).negate();
+                Expr root = Expr.sqrt(Expr.num(a));
+                Expr result = Expr.mul(Expr.div(Expr.sqrt(Expr.PI), Expr.mul(Expr.num(2), root)),
+                        Expr.func(Fn.ERF, Expr.mul(root, x)));
+                return hit(Rule.INT_ERF_FORM, result, Trace.params("x", x, "a", Expr.num(a)));
+            }
+        }
+        return Optional.empty();
     }
 
     private static Optional<Hit> hit(Rule rule, Expr antiderivative, Map<String, Expr> params) {

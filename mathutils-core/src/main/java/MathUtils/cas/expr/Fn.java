@@ -9,7 +9,8 @@ public enum Fn {
     SIN("sin"), COS("cos"), TAN("tan"), COT("cot"), SEC("sec"), CSC("csc"),
     ASIN("asin"), ACOS("acos"), ATAN("atan"),
     SINH("sinh"), COSH("cosh"), TANH("tanh"),
-    LN("ln"), ABS("abs"), ERF("erf");
+    LN("ln"), ABS("abs"), ERF("erf"),
+    SI("Si"), CI("Ci"), EI("Ei"), LI("li");
 
     private final String symbol;
 
@@ -25,7 +26,7 @@ public enum Fn {
     /** Funciones impares: {@code f(-x) = -f(x)}. */
     public boolean isOdd() {
         return switch (this) {
-            case SIN, TAN, COT, CSC, ASIN, ATAN, SINH, TANH, ERF -> true;
+            case SIN, TAN, COT, CSC, ASIN, ATAN, SINH, TANH, ERF, SI -> true;
             default -> false;
         };
     }
@@ -53,7 +54,7 @@ public enum Fn {
             case "log" -> { return java.util.Optional.empty(); }
             default -> { }
         }
-        for (Fn fn : values()) if (fn.symbol.equals(n)) return java.util.Optional.of(fn);
+        for (Fn fn : values()) if (fn.symbol.equalsIgnoreCase(n)) return java.util.Optional.of(fn);
         return java.util.Optional.empty();
     }
 }

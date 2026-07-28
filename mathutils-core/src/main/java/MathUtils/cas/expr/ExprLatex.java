@@ -74,6 +74,10 @@ final class ExprLatex {
             case ABS -> "\\left|" + arg + "\\right|";
             case LN -> "\\ln\\left(" + arg + "\\right)";
             case ERF -> "\\operatorname{erf}\\left(" + arg + "\\right)";
+            case SI -> "\\operatorname{Si}\\left(" + arg + "\\right)";
+            case CI -> "\\operatorname{Ci}\\left(" + arg + "\\right)";
+            case EI -> "\\operatorname{Ei}\\left(" + arg + "\\right)";
+            case LI -> "\\operatorname{li}\\left(" + arg + "\\right)";
             case ASIN -> "\\arcsin\\left(" + arg + "\\right)";
             case ACOS -> "\\arccos\\left(" + arg + "\\right)";
             case ATAN -> "\\arctan\\left(" + arg + "\\right)";

@@ -44,7 +44,7 @@ public final class IntegralView extends SolverView {
         return List.of("x*e^x", "x^2*sin(x)", "e^x*sin(x)", "x*e^(x^2)", "ln(x)", "atan(x)",
                 "1/(x^2-3x+2)", "(3x+2)/(x^2+x+1)", "1/(x^2+1)^2",
                 "sin(x)^3", "sin(x)^2*cos(x)^2", "sec(x)^3", "sin(3x)*cos(2x)", "1/(2+sin(x))",
-                "sqrt(1-x^2)", "1/(x^2*sqrt(x^2+1))", "x*sqrt(x+1)");
+                "sqrt(1-x^2)", "1/(x^2*sqrt(x^2+1))", "x*sqrt(x+1)", "sin(x)/x", "e^(-x^2)");
     }
 
     @Override

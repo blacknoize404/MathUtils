@@ -23,7 +23,8 @@ class EngineRulesRenderingTest {
             "sin(x)^3", "sin(x)^2*cos(x)^2", "1/(sin(x)^2*cos(x)^2)", "tan(x)^4", "cot(x)^3", "sec(x)^3", "csc(x)^3", "tan(x)^2*sec(x)^2",
             "sin(3x)*cos(2x)", "1/(2+sin(x))",
             "1/(sqrt(x)+x^(1/3))", "x^2*sqrt(1-x^2)", "1/(x^2*sqrt(x^2+1))", "1/(x^2*sqrt(x^2-1))",
-            "sqrt(x^2+2x+2)", "sqrt(1-x^2)", "sqrt(x^2+1)"
+            "sqrt(x^2+2x+2)", "sqrt(1-x^2)", "sqrt(x^2+1)",
+            "sin(x)/x", "cos(x)/x", "e^x/x", "e^x/x^2", "1/ln(x)", "e^(-x^2)"
     };
 
     @Test
@@ -48,7 +49,9 @@ class EngineRulesRenderingTest {
                 Rule.INT_TRIG_CSC_REDUCTION, Rule.INT_TRIG_TAN_SUBSTITUTION, Rule.INT_TRIG_PRODUCT_TO_SUM,
                 Rule.INT_TRIG_WEIERSTRASS, Rule.INT_RADICAL_SUBSTITUTION, Rule.INT_RADICAL_COMPLETE_SQUARE,
                 Rule.INT_TRIG_SUBSTITUTION_SIN, Rule.INT_TRIG_SUBSTITUTION_TAN, Rule.INT_TRIG_SUBSTITUTION_SEC,
-                Rule.INT_ROOT_DIFFERENCE_FORM, Rule.INT_ROOT_SUM_FORM}) {
+                Rule.INT_ROOT_DIFFERENCE_FORM, Rule.INT_ROOT_SUM_FORM,
+                Rule.INT_SI_FORM, Rule.INT_CI_FORM, Rule.INT_EI_FORM, Rule.INT_EI_REDUCTION, Rule.INT_LI_FORM,
+                Rule.INT_ERF_FORM}) {
             assert used.contains(rule) : "El corpus no usa " + rule;
         }
     }
