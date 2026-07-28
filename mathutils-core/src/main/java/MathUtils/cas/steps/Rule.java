@@ -117,7 +117,20 @@ public enum Rule {
     INT_CI_FORM(Category.INTEGRAL),
     INT_EI_FORM(Category.INTEGRAL),
     INT_LI_FORM(Category.INTEGRAL),
-    INT_EI_REDUCTION(Category.INTEGRAL);
+    INT_EI_REDUCTION(Category.INTEGRAL),
+    INT_DEFINITE_ANTIDERIVATIVE(Category.INTEGRAL),
+    INT_BARROW(Category.GENERAL),
+    INT_ADD_PIECES(Category.GENERAL),
+    INT_ENDPOINT_LIMIT(Category.LIMIT),
+    INT_IMPROPER(Category.GENERAL),
+    INT_SPLIT_SINGULARITY(Category.GENERAL),
+    INT_DIVERGES(Category.GENERAL),
+    INT_ODD_SYMMETRY(Category.GENERAL),
+    INT_EVEN_SYMMETRY(Category.GENERAL),
+    INT_REVERSE_BOUNDS(Category.GENERAL),
+    INT_EMPTY_INTERVAL(Category.GENERAL),
+    INT_P_TEST_INFINITY(Category.GENERAL),
+    INT_P_TEST_ZERO(Category.GENERAL);
 
     /**
      * Familia de la regla; el renderizador la usa para mostrar la operación

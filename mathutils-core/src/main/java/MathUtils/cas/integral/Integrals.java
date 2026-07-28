@@ -33,6 +33,20 @@ public final class Integrals {
     }
 
     /**
+     * Integral definida o impropia entre dos extremos, que pueden ser {@code oo} y {@code -oo}.
+     * Si diverge, el estado es {@link Solution.Status#DOES_NOT_EXIST}; si el resultado exacto no se
+     * puede contrastar con la cuadratura numérica, el estado es {@link Solution.Status#UNSOLVED}. En
+     * todo caso el campo {@code approximation} de los extras trae el valor decimal si se pudo calcular.
+     */
+    public static Solution definite(String integrand, String variable, String lower, String upper) {
+        return definite(ExprParser.parse(integrand), variable, ExprParser.parse(lower), ExprParser.parse(upper));
+    }
+
+    public static Solution definite(Expr integrand, String variable, Expr lower, Expr upper) {
+        return DefiniteIntegrals.solve(integrand, variable, lower, upper);
+    }
+
+    /**
      * Integra respecto a {@code variable}. El resultado no incluye la constante de integración.
      */
     public static Solution indefinite(Expr integrand, String variable) {

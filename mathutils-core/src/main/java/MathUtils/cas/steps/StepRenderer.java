@@ -45,7 +45,7 @@ public final class StepRenderer {
 
     private static List<Segment> problemText(Solution s, Locale locale) {
         String base = "solution.kind." + s.kind().name();
-        String key = base + (s.order() > 1 ? ".problem.order" : ".problem");
+        String key = base + (s.order() > 1 ? ".problem.order" : isDefinite(s) ? ".problem.definite" : ".problem");
         if (s.kind() == Solution.Kind.LIMIT) {
             Expr direction = s.extras().get("direction");
             if (direction instanceof Expr.Num n && n.value().signum() != 0) {
@@ -58,6 +58,16 @@ public final class StepRenderer {
         params.put("x", Expr.sym(s.variable()));
         params.put("k", Expr.num(s.order()));
         return Messages.interpolate(Messages.get(key, locale), params);
+    }
+
+    private static boolean isDefinite(Solution s) {
+        return s.kind() == Solution.Kind.INTEGRAL && s.extras().containsKey("lower") && s.extras().containsKey("upper");
+    }
+
+    private static String statusText(Solution s, Locale locale) {
+        String key = "solution.status." + s.status().name();
+        if (isDefinite(s) && Messages.has(key + ".INTEGRAL", locale)) key += ".INTEGRAL";
+        return Messages.get(key, locale);
     }
 
     /** Operación de un paso aplicada a una expresión, en texto plano. */
@@ -118,12 +128,13 @@ public final class StepRenderer {
             }
             case LIMIT -> "lim[" + s.variable() + " -> " + s.extras().getOrDefault("a", Expr.ZERO)
                     + directionSuffixPlain(s) + "] " + s.problem();
-            case INTEGRAL -> "∫ " + s.problem() + " d" + s.variable();
+            case INTEGRAL -> (isDefinite(s) ? "∫[" + s.extras().get("lower") + ", " + s.extras().get("upper") + "] " : "∫ ")
+                    + s.problem() + " d" + s.variable();
         };
     }
 
     private static String resultSuffixPlain(Solution s) {
-        return s.kind() == Solution.Kind.INTEGRAL ? " + C" : "";
+        return s.kind() == Solution.Kind.INTEGRAL && !isDefinite(s) ? " + C" : "";
     }
 
     private static String resultOperationLatex(Solution s) {
@@ -140,12 +151,14 @@ public final class StepRenderer {
                 yield "\\lim_{" + v + " \\to " + s.extras().getOrDefault("a", Expr.ZERO).toLatex() + sign + "} "
                         + s.problem().toLatex();
             }
-            case INTEGRAL -> "\\int " + s.problem().toLatex() + " \\, d" + v;
+            case INTEGRAL -> "\\int" + (isDefinite(s)
+                    ? "_{" + s.extras().get("lower").toLatex() + "}^{" + s.extras().get("upper").toLatex() + "}" : "")
+                    + " " + s.problem().toLatex() + " \\, d" + v;
         };
     }
 
     private static String resultSuffixLatex(Solution s) {
-        return s.kind() == Solution.Kind.INTEGRAL ? " + C" : "";
+        return s.kind() == Solution.Kind.INTEGRAL && !isDefinite(s) ? " + C" : "";
     }
 
     private static String segmentsPlain(List<Segment> segments) {
@@ -187,7 +200,7 @@ public final class StepRenderer {
                     .append(resultOperationPlain(s))
                     .append(" = ").append(s.result()).append(resultSuffixPlain(s)).append('\n');
         } else {
-            sb.append(Messages.get("solution.status." + s.status().name(), locale)).append('\n');
+            sb.append(statusText(s, locale)).append('\n');
         }
         return sb.toString();
     }
@@ -225,7 +238,7 @@ public final class StepRenderer {
                     .append(resultOperationLatex(s))
                     .append(" = ").append(s.result().toLatex()).append(resultSuffixLatex(s)).append("$$\n");
         } else {
-            sb.append(Messages.get("solution.status." + s.status().name(), locale)).append('\n');
+            sb.append(statusText(s, locale)).append('\n');
         }
         return sb.toString();
     }
@@ -258,7 +271,7 @@ public final class StepRenderer {
                     .append(resultOperationLatex(s))
                     .append(" = ").append(s.result().toLatex()).append(resultSuffixLatex(s)).append("\\]\n");
         } else {
-            sb.append(escapeLatex(Messages.get("solution.status." + s.status().name(), locale))).append('\n');
+            sb.append(escapeLatex(statusText(s, locale))).append('\n');
         }
         return sb.toString();
     }
