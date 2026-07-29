@@ -357,6 +357,38 @@ public final class MathLayout {
         }
     }
 
+    /** El signo de integral con el límite superior arriba a la derecha y el inferior abajo. */
+    private static final class BoundedIntegralBox extends Box {
+        final IntegralSignBox sign;
+        final Box upper;
+        final Box lower;
+        final double upperX;
+        final double lowerX;
+        final double upperRise;
+        final double lowerDrop;
+
+        BoundedIntegralBox(double size, Box upper, Box lower) {
+            super(null);
+            this.sign = new IntegralSignBox(size);
+            this.upper = upper;
+            this.lower = lower;
+            this.upperX = sign.width * 1.0;
+            this.lowerX = sign.width * 0.3;
+            this.upperRise = sign.ascent * 0.62 + upper.descent;
+            this.lowerDrop = sign.descent * 0.55 + lower.ascent;
+            this.width = Math.max(sign.width, Math.max(upperX + upper.width, lowerX + lower.width)) + size * 0.06;
+            this.ascent = Math.max(sign.ascent, upperRise + upper.ascent);
+            this.descent = Math.max(sign.descent, lowerDrop + lower.descent);
+        }
+
+        @Override
+        void draw(GraphicsContext g, double x, double baseline, Context ctx) {
+            sign.draw(g, x, baseline, ctx);
+            upper.paint(g, x + upperX, baseline - upperRise, ctx);
+            lower.paint(g, x + lowerX, baseline + lowerDrop, ctx);
+        }
+    }
+
     /** Una caja principal con otra pequeña debajo (por ejemplo, {@code lim} con {@code x → a}). */
     private static final class UnderBox extends Box {
         final Box main;
@@ -482,8 +514,15 @@ public final class MathLayout {
      * Notación de integral indefinida: {@code ∫ f dx} y, si se da, {@code = F (+ C)}.
      */
     public static Box integralEquation(Expr variable, Expr integrand, Expr result, boolean plusConstant, double size) {
+        return integralEquation(variable, integrand, null, null, result, plusConstant, size);
+    }
+
+    /** Como {@link #integralEquation(Expr, Expr, Expr, boolean, double)} pero con límites de integración. */
+    public static Box integralEquation(Expr variable, Expr integrand, Expr lower, Expr upper, Expr result,
+                                       boolean plusConstant, double size) {
         List<Box> items = new ArrayList<>();
-        items.add(new IntegralSignBox(size));
+        items.add(lower == null || upper == null ? new IntegralSignBox(size)
+                : new BoundedIntegralBox(size, of(upper, size * 0.72), of(lower, size * 0.72)));
         items.add(space(size * 0.12));
         items.add(of(integrand, size));
         items.add(space(size * 0.2));

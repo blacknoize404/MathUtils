@@ -5,7 +5,7 @@
 ## Cálculo (Integrales y Derivadas)
 - [x] Diferenciación simbólica (reglas de derivación, regla de la cadena)
 - [x] Integración numérica: regla del trapecio, Simpson 1/3, Simpson 3/8, cuadratura gaussiana (implementado: trapecio, Simpson 1/3, Simpson 3/8 y Gauss-Legendre de 5 puntos)
-- [ ] Integrales definidas e indefinidas (indefinidas por tabla, sustitución, partes, fracciones parciales, trigonométricas y radicales: hecho; definidas, impropias y funciones especiales: pendiente)
+- [ ] Integrales definidas e indefinidas (indefinidas por tabla, sustitución, partes, fracciones parciales, trigonométricas y radicales: hecho; funciones especiales, definidas e impropias: hecho)
 - [x] Derivadas parciales y gradiente
 - [x] Jacobiano y Hessiana
 

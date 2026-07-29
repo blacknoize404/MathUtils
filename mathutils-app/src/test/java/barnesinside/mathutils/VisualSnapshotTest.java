@@ -145,6 +145,30 @@ class VisualSnapshotTest {
     }
 
     @Test
+    void definiteIntegralWithArea() {
+        for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {
+            Rendered r = open(mode, "integrals", 1700);
+            File file = FxTestSupport.onFx(() -> {
+                ((IntegralView) r.shell().activeModule()).solve("e^(-x^2)", "0", "oo");
+                r.shell().settle();
+                return FxTestSupport.snapshot(r.scene(), "integrals-definite-" + mode.name().toLowerCase());
+            });
+            assertRendered(file);
+        }
+    }
+
+    @Test
+    void divergentIntegralShowsThePlot() {
+        Rendered r = open(ThemeManager.Mode.LIGHT, "integrals", 1500);
+        File file = FxTestSupport.onFx(() -> {
+            ((IntegralView) r.shell().activeModule()).solve("1/x", "0", "1");
+            r.shell().settle();
+            return FxTestSupport.snapshot(r.scene(), "integrals-divergent-light");
+        });
+        assertRendered(file);
+    }
+
+    @Test
     void derivativeModule() {
         for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {
             Rendered r = open(mode, "derivatives");

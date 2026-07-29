@@ -94,7 +94,11 @@ i.render(Locale.forLanguageTag("es"), Format.LATEX);
   potencias y productos de funciones trigonométricas, ángulo mitad y `tan(x/2)`; raíces de
   expresiones lineales, completar cuadrados y sustituciones trigonométricas; funciones especiales
   (`erf`, `Si`, `Ci`, `Ei`, `li`) para las integrales no elementales clásicas como `sin(x)/x`,
-  `e^x/x`, `1/ln(x)` y `e^(-x²)`. Cada resultado se
+  `e^x/x`, `1/ln(x)` y `e^(-x²)`.
+- **Integrales definidas e impropias:** `Integrals.definite("e^(-x^2)", "x", "0", "oo")` aplica la regla
+  de Barrow con límites en los extremos infinitos o singulares, parte el intervalo en las singularidades
+  interiores, usa la simetría par e impar e informa cuando diverge. Cada valor exacto se contrasta con
+  cuadratura numérica de doble exponencial, y el valor decimal acompaña a la solución. Cada resultado se
   verifica derivándolo, así que el motor responde "no resuelta" o "no elemental" en vez de devolver
   una antiderivada incorrecta.
 

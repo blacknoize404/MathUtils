@@ -75,13 +75,14 @@ public final class SolutionPanel extends VBox {
 
         if (solution.isSolved()) {
             getChildren().add(resultCard());
+            addPlot();
             getChildren().add(stepsSection());
             return;
         }
 
         String key = switch (solution.status()) {
             case NON_ELEMENTAL -> "solution.nonElemental";
-            case DOES_NOT_EXIST -> "solution.doesNotExist";
+            case DOES_NOT_EXIST -> isDefinite(solution) ? "solution.diverges" : "solution.doesNotExist";
             default -> "solution.unsolved";
         };
         Label message = new Label(t.get(key));
@@ -91,7 +92,48 @@ public final class SolutionPanel extends VBox {
         VBox box = new VBox(message);
         box.getStyleClass().add(explanatory ? "card" : "message-error-box");
         getChildren().add(box);
-        if (explanatory && !solution.steps().isEmpty()) getChildren().add(stepsSection());
+        if (approximation() != null) getChildren().add(approximationLabel());
+        addPlot();
+        if ((explanatory || isDefinite(solution)) && !solution.steps().isEmpty()) getChildren().add(stepsSection());
+    }
+
+    private static boolean isDefinite(Solution s) {
+        return s.kind() == Solution.Kind.INTEGRAL && s.extras().containsKey("lower") && s.extras().containsKey("upper");
+    }
+
+    /** Valor decimal calculado por la cuadratura numérica, o {@code null}. */
+    private Double approximation() {
+        if (!isDefinite(solution) || !(solution.extras().get("approximation") instanceof Expr.Num n)) return null;
+        return n.value().doubleValue();
+    }
+
+    private Node approximationLabel() {
+        Label label = new Label(t.get("solution.approximation") + " " + String.format(java.util.Locale.ROOT, "%.10g", approximation()));
+        label.getStyleClass().addAll("mono", "text-muted");
+        return label;
+    }
+
+    /** Gráfica del integrando con el área bajo la curva entre los límites (si es una integral definida). */
+    private void addPlot() {
+        if (solution.kind() != Solution.Kind.INTEGRAL) return;
+        double lower = Double.NaN;
+        double upper = Double.NaN;
+        if (isDefinite(solution)) {
+            lower = MathUtils.cas.expr.Eval.value(solution.extras().get("lower"));
+            upper = MathUtils.cas.expr.Eval.value(solution.extras().get("upper"));
+            if (lower > upper) {
+                double swap = lower;
+                lower = upper;
+                upper = swap;
+            }
+        }
+        barnesinside.mathutils.math.PlotView plot = new barnesinside.mathutils.math.PlotView(
+                solution.problem(), solution.variable(), lower, upper);
+        if (!plot.isValid()) return;
+        VBox card = new VBox(10, Ui.caption(t.bind(isDefinite(solution) ? "solution.plot.area" : "solution.plot")), plot);
+        card.getStyleClass().add("card");
+        card.setPadding(new Insets(16));
+        getChildren().add(card);
     }
 
     private Node resultCard() {
@@ -107,6 +149,7 @@ public final class SolutionPanel extends VBox {
                 Ui.ghost(t.bind("solution.copyJson"), "copy", () -> copy(solution.render(t.locale(), Format.JSON))));
 
         VBox card = new VBox(14, Ui.caption(t.bind("solution.result")), scrollable(equation), actions);
+        if (approximation() != null) card.getChildren().add(1, approximationLabel());
         card.getStyleClass().add("card");
         card.setPadding(new Insets(20));
         return card;
@@ -147,7 +190,8 @@ public final class SolutionPanel extends VBox {
             case DERIVATIVE -> MathLayout.derivativeEquation(variable, s.problem(), null, s.order(), 22);
             case LIMIT -> MathLayout.limitEquation(variable, s.extras().getOrDefault("a", Expr.ZERO), directionOf(s),
                     s.problem(), null, 22);
-            case INTEGRAL -> MathLayout.integralEquation(variable, s.problem(), null, false, 22);
+            case INTEGRAL -> MathLayout.integralEquation(variable, s.problem(), s.extras().get("lower"),
+                    s.extras().get("upper"), null, false, 22);
         };
     }
 
@@ -157,7 +201,8 @@ public final class SolutionPanel extends VBox {
             case DERIVATIVE -> MathLayout.derivativeEquation(variable, s.problem(), s.result(), s.order(), 26);
             case LIMIT -> MathLayout.limitEquation(variable, s.extras().getOrDefault("a", Expr.ZERO), directionOf(s),
                     s.problem(), s.result(), 26);
-            case INTEGRAL -> MathLayout.integralEquation(variable, s.problem(), s.result(), true, 26);
+            case INTEGRAL -> MathLayout.integralEquation(variable, s.problem(), s.extras().get("lower"),
+                    s.extras().get("upper"), s.result(), !isDefinite(s), 26);
         };
     }
 
