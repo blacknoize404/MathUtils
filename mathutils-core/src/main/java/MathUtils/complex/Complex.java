@@ -35,6 +35,14 @@ public final class Complex {
         return new Complex(modulus * Math.cos(argument), modulus * Math.sin(argument));
     }
 
+    /**
+     * Interpreta un texto como número complejo: {@code 3+4i}, {@code (1+i)^2}, {@code 2i}, {@code pi}.
+     * @throws IllegalArgumentException si el texto no es una expresión válida
+     */
+    public static Complex parse(String text) {
+        return ComplexParser.parse(text);
+    }
+
     public double re() {
         return re;
     }

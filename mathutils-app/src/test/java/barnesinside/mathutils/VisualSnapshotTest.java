@@ -4,7 +4,11 @@ import barnesinside.mathutils.theme.ThemeManager;
 import barnesinside.mathutils.view.CalculatorView;
 import barnesinside.mathutils.view.DerivativeView;
 import barnesinside.mathutils.view.ExpressionTreeView;
+import barnesinside.mathutils.view.ComplexView;
 import barnesinside.mathutils.view.IntegralView;
+import barnesinside.mathutils.view.MatrixView;
+import barnesinside.mathutils.view.OdeView;
+import barnesinside.mathutils.view.StatisticsView;
 import barnesinside.mathutils.view.LimitView;
 import barnesinside.mathutils.view.OrderView;
 import barnesinside.mathutils.view.Shell;
@@ -166,6 +170,67 @@ class VisualSnapshotTest {
             return FxTestSupport.snapshot(r.scene(), "integrals-divergent-light");
         });
         assertRendered(file);
+    }
+
+    @Test
+    void matrixModule() {
+        for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {
+            Rendered r = open(mode, "matrices", 1200);
+            File file = FxTestSupport.onFx(() -> {
+                MatrixView view = (MatrixView) r.shell().activeModule();
+                view.setMatrices("2 -1 0; -1 2 -1; 0 -1 2", "1 0 0; 0 1 0; 0 0 1");
+                view.run(MatrixView.Op.INVERSE);
+                r.shell().settle();
+                return FxTestSupport.snapshot(r.scene(), "matrices-" + mode.name().toLowerCase());
+            });
+            assertRendered(file);
+        }
+    }
+
+    @Test
+    void complexModule() {
+        Rendered r = open(ThemeManager.Mode.LIGHT, "complex", 1300);
+        File file = FxTestSupport.onFx(() -> {
+            ComplexView view = (ComplexView) r.shell().activeModule();
+            view.setValues("-8", "1-2i", "3");
+            view.run(ComplexView.Op.ROOTS);
+            r.shell().settle();
+            return FxTestSupport.snapshot(r.scene(), "complex-light");
+        });
+        assertRendered(file);
+    }
+
+    @Test
+    void statisticsModule() {
+        Rendered r = open(ThemeManager.Mode.LIGHT, "statistics", 1500);
+        File file = FxTestSupport.onFx(() -> {
+            StatisticsView view = (StatisticsView) r.shell().activeModule();
+            view.calculateData("4 8 15 16 23 42 8 15 16 4 12 9 11 14 10 13", "");
+            r.shell().settle();
+            return FxTestSupport.snapshot(r.scene(), "statistics-light");
+        });
+        assertRendered(file);
+        File distribution = FxTestSupport.onFx(() -> {
+            StatisticsView view = (StatisticsView) r.shell().activeModule();
+            view.calculateDistribution(StatisticsView.Kind.NORMAL, "100", "15", "115");
+            r.shell().settle();
+            return FxTestSupport.snapshot(r.scene(), "statistics-normal-light");
+        });
+        assertRendered(distribution);
+    }
+
+    @Test
+    void odeModule() {
+        for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {
+            Rendered r = open(mode, "ode", 1250);
+            File file = FxTestSupport.onFx(() -> {
+                OdeView view = (OdeView) r.shell().activeModule();
+                view.solve("z", "-y - 0.3*z", "0", "1", "0", "20", OdeView.Method.DORMAND_PRINCE);
+                r.shell().settle();
+                return FxTestSupport.snapshot(r.scene(), "ode-" + mode.name().toLowerCase());
+            });
+            assertRendered(file);
+        }
     }
 
     @Test

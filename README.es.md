@@ -103,8 +103,9 @@ i.render(Locale.forLanguageTag("es"), Format.LATEX);
   una antiderivada incorrecta.
 
 **MathUtils Studio** (`mathutils-app`): calculadora con resultado exacto y decimal, árbol de
-expresión interactivo, orden de operaciones y los solucionadores de derivadas, límites e
-integrales, con la identidad visual de barnesinside. Para ejecutarla:
+expresión interactivo, orden de operaciones, los solucionadores de derivadas, límites e integrales
+(con el área bajo la curva) y paneles de matrices, complejos, estadística y ecuaciones
+diferenciales, con la identidad visual de barnesinside. Para ejecutarla:
 
 ```bash
 mvn javafx:run -pl mathutils-app

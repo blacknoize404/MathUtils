@@ -57,6 +57,10 @@ public final class Shell extends StackPane {
         modules.add(new DerivativeView(workspace));
         modules.add(new LimitView(workspace));
         modules.add(new IntegralView(workspace));
+        modules.add(new MatrixView(workspace));
+        modules.add(new ComplexView(workspace));
+        modules.add(new StatisticsView(workspace));
+        modules.add(new OdeView(workspace));
 
         BorderPane layout = new BorderPane();
         layout.setTop(header());
@@ -207,7 +211,7 @@ public final class Shell extends StackPane {
     private void installShortcuts() {
         sceneProperty().addListener((obs, old, scene) -> {
             if (scene == null) return;
-            for (int i = 0; i < modules.size(); i++) {
+            for (int i = 0; i < Math.min(9, modules.size()); i++) {
                 String id = modules.get(i).id();
                 scene.getAccelerators().put(
                         new KeyCodeCombination(KeyCode.valueOf("DIGIT" + (i + 1)), KeyCombination.SHORTCUT_DOWN),

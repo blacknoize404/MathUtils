@@ -275,7 +275,7 @@ public final class PlotView extends Region {
 
     // ---------------------------------------------------------------- Marcas de los ejes
 
-    private static double[] ticks(double min, double max) {
+    static double[] ticks(double min, double max) {
         double range = max - min;
         double raw = range / 6;
         double magnitude = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -290,7 +290,7 @@ public final class PlotView extends Region {
         return out.stream().mapToDouble(Double::doubleValue).toArray();
     }
 
-    private static String label(double v) {
+    static String label(double v) {
         if (v == Math.rint(v) && Math.abs(v) < 1e6) return String.valueOf((long) v);
         String s = String.format(Locale.ROOT, "%.4g", v);
         return s.contains("e") ? s : Arrays.stream(s.split("\\.")).count() == 2 ? s.replaceAll("0+$", "") : s;

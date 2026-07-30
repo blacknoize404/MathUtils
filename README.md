@@ -101,8 +101,9 @@ i.render(Locale.ENGLISH, Format.LATEX);
   engine reports "unsolved" or "non-elementary" instead of returning a wrong antiderivative.
 
 **MathUtils Studio** (`mathutils-app`): calculator with exact and decimal results, interactive
-expression tree, order of operations, and the derivative, limit and integral solvers, with the
-barnesinside visual identity. Run it with:
+expression tree, order of operations, the derivative, limit and integral solvers (with the area
+under the curve), and panels for matrices, complex numbers, statistics and differential equations,
+with the barnesinside visual identity. Run it with:
 
 ```bash
 mvn javafx:run -pl mathutils-app
