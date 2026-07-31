@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=MathUtils Studio
+GenericName=Calculadora matemática
+Comment=Calculadora, solucionadores paso a paso y paneles de matrices, complejos, estadística y EDOs
+Comment[en]=Calculator, step-by-step solvers and panels for matrices, complex numbers, statistics and ODEs
+Exec=@INSTALL_DIR@/bin/MathUtilsStudio
+Icon=mathutils-studio
+Terminal=false
+Categories=Education;Science;Math;
+Keywords=math;calculus;integral;derivative;matrix;
+StartupWMClass=barnesinside-mathutils-Launcher

@@ -109,6 +109,21 @@ with the barnesinside visual identity. Run it with:
 mvn javafx:run -pl mathutils-app
 ```
 
+**Standalone app (no Java needed).** `mathutils-app` is a Java module (`barnesinside.mathutils`), so
+`jlink` builds a runtime with only the modules it really uses (14 of them, including JavaFX), and
+`jpackage` wraps it with a native launcher and the brand icon. On Windows that is
+`MathUtilsStudio.exe`, and Inno Setup packs it as an installer with the brand images (rendered from
+the SVG logos); on Linux it is `bin/MathUtilsStudio`, as a `.tar.gz` and a `.deb`.
+
+```bash
+python mathutils-app/packaging/tools/build_app.py --installer   # Windows: app + Inno Setup installer
+python mathutils-app/packaging/tools/build_app.py --deb         # Linux: app + tar.gz + .deb
+```
+
+It needs a JDK 21+ with `jmods` (such as Temurin) and Maven; the script downloads the JavaFX jmods.
+The `Package MathUtils Studio` workflow builds both platforms and attaches them to each `v*` release.
+Icons and installer images are regenerated with `packaging/tools/render_assets.py` (needs Edge or Chrome).
+
 ## Project Structure
 
 ```
