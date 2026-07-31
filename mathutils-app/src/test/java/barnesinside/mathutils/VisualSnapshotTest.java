@@ -234,6 +234,18 @@ class VisualSnapshotTest {
     }
 
     @Test
+    void organizedSteps() {
+        Rendered r = open(ThemeManager.Mode.LIGHT, "integrals", 2300);
+        File file = FxTestSupport.onFx(() -> {
+            IntegralView view = (IntegralView) r.shell().activeModule();
+            view.solve("x^2*sin(x)");
+            r.shell().settle();
+            return FxTestSupport.snapshot(r.scene(), "integrals-steps-light");
+        });
+        assertRendered(file);
+    }
+
+    @Test
     void derivativeModule() {
         for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {
             Rendered r = open(mode, "derivatives");

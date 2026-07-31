@@ -3,6 +3,7 @@ package barnesinside.mathutils.view;
 import barnesinside.mathutils.AppContext;
 import barnesinside.mathutils.I18n;
 import barnesinside.mathutils.Workspace;
+import barnesinside.mathutils.ui.Collapsible;
 import barnesinside.mathutils.ui.SymbolPalette;
 import barnesinside.mathutils.ui.Ui;
 import javafx.beans.binding.StringBinding;
@@ -29,6 +30,7 @@ abstract class ToolView implements Module {
     private final VBox output = new VBox(20);
     private final Label empty = new Label();
     private final SymbolPalette symbols;
+    private Collapsible examplesBox;
     private Node content;
 
     protected ToolView(Workspace workspace) {
@@ -99,7 +101,8 @@ abstract class ToolView implements Module {
                 box.setOnMouseClicked(e -> example.apply().run());
                 chips.getChildren().add(box);
             }
-            main.getChildren().add(new VBox(8, Ui.caption(t.bind("solver.examples")), chips));
+            examplesBox = new Collapsible(t.bind("solver.examples"), chips, true);
+            main.getChildren().add(examplesBox);
         }
 
         output.getChildren().setAll(empty);
@@ -130,6 +133,7 @@ abstract class ToolView implements Module {
     protected void show(Node... nodes) {
         clearError();
         output.getChildren().setAll(nodes);
+        if (examplesBox != null) examplesBox.setOpen(false);
     }
 
     /** Tarjeta con un título en minúsculas pequeñas y su contenido. */

@@ -223,3 +223,12 @@
 }
 .symbol-key:hover { -fx-border-color: -bi-accent; }
 .symbol-key:pressed { -fx-background-color: -bi-accent-bg; }
+
+/* Pasos organizados y animador */
+.step-card { -fx-padding: 10 12; -fx-background-color: -bi-bg-elevated; -fx-border-color: -bi-border; -fx-border-radius: 8; -fx-background-radius: 8; }
+.step-card-nested { -fx-background-color: -bi-bg-secondary; }
+.step-card.current { -fx-border-color: -bi-accent; -fx-border-width: 2; -fx-padding: 9 11; }
+.step-rail { -fx-border-color: transparent transparent transparent -bi-border; -fx-border-width: 0 0 0 1; }
+.animator-dock { -fx-background-color: -bi-bg-secondary; -fx-border-color: -bi-border; -fx-border-width: 0 0 0 1; }
+.animator-scroll, .animator-scroll > .viewport { -fx-background-color: transparent; }
+.animator { -fx-background-color: transparent; }

@@ -7,6 +7,7 @@ import MathUtils.exceptions.ExpressionParseException;
 import barnesinside.mathutils.AppContext;
 import barnesinside.mathutils.I18n;
 import barnesinside.mathutils.Workspace;
+import barnesinside.mathutils.ui.Collapsible;
 import barnesinside.mathutils.ui.SymbolPalette;
 import barnesinside.mathutils.ui.Ui;
 import javafx.beans.binding.StringBinding;
@@ -41,7 +42,11 @@ abstract class SolverView implements Module {
     protected final TextField variable = new TextField("x");
     private final Label error = new Label();
     private final SymbolPalette symbols = new SymbolPalette(false);
-    private final SolutionPanel panel = new SolutionPanel();
+    private Collapsible examplesBox;
+    private final StepSession session = new StepSession();
+    private final SolutionPanel panel = new SolutionPanel(session);
+    private final AnimatorPanel animator = new AnimatorPanel(session);
+    private static final java.util.prefs.Preferences PREFERENCES = java.util.prefs.Preferences.userNodeForPackage(SolverView.class);
     private Node content;
     private String lastShared = "";
 
@@ -107,6 +112,14 @@ abstract class SolverView implements Module {
         solve();
     }
 
+    StepSession session() {
+        return session;
+    }
+
+    AnimatorPanel animator() {
+        return animator;
+    }
+
     public Solution solution() {
         return panel.solution();
     }
@@ -152,6 +165,7 @@ abstract class SolverView implements Module {
             examples.getChildren().add(box);
         }
 
+        examplesBox = new Collapsible(t.bind("solver.examples"), examples, true);
         Label empty = Ui.label(text("empty"), "text-muted");
         empty.managedProperty().bind(empty.visibleProperty());
         VBox output = new VBox(20, panel);
@@ -163,13 +177,72 @@ abstract class SolverView implements Module {
         symbols.attach(extraInputs().toArray(new javafx.scene.control.TextInputControl[0]));
         VBox main = new VBox(20, Ui.pageHeader(text("title"), text("subtitle"), symbols.trigger()), form,
                 Ui.primary(t.bind("solver.solve"), "play", this::solve), error,
-                new VBox(8, Ui.caption(t.bind("solver.examples")), examples), output);
+                examplesBox, output);
         main.setPadding(new Insets(32));
         main.setMaxWidth(920);
 
         ScrollPane scroll = new ScrollPane(main);
         scroll.setFitToWidth(true);
-        return scroll;
+        panel.setRevealer(node -> reveal(scroll, node));
+        HBox.setHgrow(scroll, Priority.ALWAYS);
+        return new HBox(scroll, animatorDock());
+    }
+
+    /**
+     * El animador a la derecha: un panel que se pliega a una tira con su botón. Se recuerda si estaba
+     * abierto o cerrado.
+     */
+    private Node animatorDock() {
+        ScrollPane body = new ScrollPane(animator);
+        body.setFitToWidth(true);
+        body.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        body.setPrefWidth(460);
+        body.setMinWidth(460);
+        body.setMaxWidth(460);
+        body.getStyleClass().add("animator-scroll");
+
+        javafx.scene.control.Button toggle = Ui.iconButton("chevron-right", t.bind("animator.toggle"), () -> { });
+        Label rail = Ui.label(t.bind("animator.title"), "caption");
+        rail.setRotate(90);
+        rail.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+        VBox strip = new VBox(18, toggle, new javafx.scene.Group(rail));
+        strip.setAlignment(Pos.TOP_CENTER);
+        strip.setPadding(new Insets(24, 6, 0, 6));
+        strip.setMinWidth(46);
+
+        HBox dock = new HBox(strip, body);
+        dock.getStyleClass().add("animator-dock");
+        Runnable apply = () -> {
+            boolean open = PREFERENCES.getBoolean("animator.open", true);
+            body.setVisible(open);
+            body.setManaged(open);
+            rail.getParent().setVisible(!open);
+            rail.getParent().setManaged(!open);
+            toggle.setGraphic(barnesinside.mathutils.theme.Brand.icon(open ? "chevron-right" : "chevron-left", 18));
+        };
+        toggle.setOnAction(e -> {
+            PREFERENCES.putBoolean("animator.open", !PREFERENCES.getBoolean("animator.open", true));
+            apply.run();
+        });
+        apply.run();
+        return dock;
+    }
+
+    /** Desplaza la lista hasta que el nodo quede a la vista, sin moverla si ya se ve. */
+    private static void reveal(ScrollPane scroll, Node node) {
+        if (node.getScene() == null || scroll.getContent() == null) return;
+        javafx.application.Platform.runLater(() -> {
+            javafx.geometry.Bounds content = scroll.getContent().localToScene(scroll.getContent().getBoundsInLocal());
+            javafx.geometry.Bounds target = node.localToScene(node.getBoundsInLocal());
+            double viewport = scroll.getViewportBounds().getHeight();
+            double scrollable = content.getHeight() - viewport;
+            if (scrollable <= 0) return;
+            double top = scroll.getVvalue() * scrollable;
+            double y = target.getMinY() - content.getMinY();
+            if (y < top + 12 || y + Math.min(target.getHeight(), viewport) > top + viewport - 12) {
+                scroll.setVvalue(Math.max(0, Math.min(1, (y - 90) / scrollable)));
+            }
+        });
     }
 
     // ---------------------------------------------------------------- Lógica
@@ -203,6 +276,7 @@ abstract class SolverView implements Module {
         error.setVisible(false);
         error.setManaged(false);
         panel.show(result);
+        examplesBox.setOpen(false);
     }
 
     private void showError(String message) {

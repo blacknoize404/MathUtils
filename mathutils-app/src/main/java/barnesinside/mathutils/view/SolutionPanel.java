@@ -1,5 +1,6 @@
 package barnesinside.mathutils.view;
 
+import MathUtils.cas.expr.Eval;
 import MathUtils.cas.expr.Expr;
 import MathUtils.cas.steps.Format;
 import MathUtils.cas.steps.Rule;
@@ -10,7 +11,10 @@ import barnesinside.mathutils.AppContext;
 import barnesinside.mathutils.I18n;
 import barnesinside.mathutils.math.MathLayout;
 import barnesinside.mathutils.math.MathView;
+import barnesinside.mathutils.math.PlotView;
 import barnesinside.mathutils.theme.Brand;
+import barnesinside.mathutils.ui.Collapsible;
+import barnesinside.mathutils.ui.Segmented;
 import barnesinside.mathutils.ui.Toasts;
 import barnesinside.mathutils.ui.Ui;
 import javafx.geometry.Insets;
@@ -27,29 +31,58 @@ import javafx.scene.text.TextFlow;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.Consumer;
 
 /**
  * Presenta una {@link Solution} (derivada, límite o integral): enunciado con notación matemática,
- * resultado con botones para copiarlo y el árbol de pasos, que se puede plegar. Se vuelve a
- * dibujar al cambiar el idioma.
+ * resultado con botones para copiarlo y los pasos organizados en tres niveles de detalle.
+ * <p>Los pasos forman un recorrido: arriba, el camino con los pasos principales; debajo, una tarjeta
+ * por paso con su explicación y su ecuación, y dentro de cada tarjeta sus subpasos. Elegir un paso
+ * lo selecciona en el {@link StepSession} compartido, así que el animador lo muestra al instante.
+ * Se vuelve a dibujar al cambiar el idioma.
  */
 public final class SolutionPanel extends VBox {
 
-    private final I18n t = AppContext.i18n();
-    private final List<StepPane> panes = new ArrayList<>();
-    private Solution solution;
+    /** Cuánto de la estructura de pasos se muestra abierto. */
+    enum Level {
+        /** Solo los títulos de los pasos principales. */
+        SUMMARY(-1),
+        /** Los pasos principales abiertos, con los subpasos como títulos. */
+        MAIN(0),
+        /** Todo abierto. */
+        FULL(Integer.MAX_VALUE);
 
-    public SolutionPanel() {
+        private final int openDepth;
+
+        Level(int openDepth) {
+            this.openDepth = openDepth;
+        }
+    }
+
+    private final I18n t = AppContext.i18n();
+    private final StepSession session;
+    private final List<StepPane> panes = new ArrayList<>();
+    private final Segmented<Level> level = new Segmented<>(List.of(Level.values()), Level.MAIN,
+            l -> AppContext.i18n().get("steps.level." + l.name().toLowerCase()));
+    private Solution solution;
+    private Consumer<Node> revealer = node -> { };
+
+    public SolutionPanel(StepSession session) {
         super(20);
+        this.session = session;
         t.localeProperty().addListener((obs, old, now) -> {
             if (solution != null) render();
         });
+        level.valueProperty().addListener((obs, old, now) -> applyLevel(now));
+        session.positionProperty().addListener((obs, old, now) -> highlight(now.intValue()));
     }
 
     /** Quita la solución mostrada. */
     public void clear() {
         solution = null;
         panes.clear();
+        session.clear();
         getChildren().clear();
     }
 
@@ -59,7 +92,13 @@ public final class SolutionPanel extends VBox {
 
     public void show(Solution newSolution) {
         this.solution = newSolution;
+        session.load(newSolution);
         render();
+    }
+
+    /** Quién desplaza la vista hasta un paso cuando se selecciona desde el animador. */
+    void setRevealer(Consumer<Node> revealer) {
+        this.revealer = revealer;
     }
 
     // ================================================================ Presentación
@@ -77,6 +116,7 @@ public final class SolutionPanel extends VBox {
             getChildren().add(resultCard());
             addPlot();
             getChildren().add(stepsSection());
+            highlight(session.positionProperty().get());
             return;
         }
 
@@ -94,7 +134,10 @@ public final class SolutionPanel extends VBox {
         getChildren().add(box);
         if (approximation() != null) getChildren().add(approximationLabel());
         addPlot();
-        if ((explanatory || isDefinite(solution)) && !solution.steps().isEmpty()) getChildren().add(stepsSection());
+        if ((explanatory || isDefinite(solution)) && !solution.steps().isEmpty()) {
+            getChildren().add(stepsSection());
+            highlight(session.positionProperty().get());
+        }
     }
 
     private static boolean isDefinite(Solution s) {
@@ -108,29 +151,29 @@ public final class SolutionPanel extends VBox {
     }
 
     private Node approximationLabel() {
-        Label label = new Label(t.get("solution.approximation") + " " + String.format(java.util.Locale.ROOT, "%.10g", approximation()));
+        Label label = new Label(t.get("solution.approximation") + " " + String.format(Locale.ROOT, "%.10g", approximation()));
         label.getStyleClass().addAll("mono", "text-muted");
         return label;
     }
 
     /** Gráfica del integrando con el área bajo la curva entre los límites (si es una integral definida). */
     private void addPlot() {
-        if (solution.kind() != Solution.Kind.INTEGRAL) return;
+        if (solution.kind() != Solution.Kind.INTEGRAL || solution.problem().variables().size() > 1) return;
         double lower = Double.NaN;
         double upper = Double.NaN;
         if (isDefinite(solution)) {
-            lower = MathUtils.cas.expr.Eval.value(solution.extras().get("lower"));
-            upper = MathUtils.cas.expr.Eval.value(solution.extras().get("upper"));
+            lower = Eval.value(solution.extras().get("lower"));
+            upper = Eval.value(solution.extras().get("upper"));
             if (lower > upper) {
                 double swap = lower;
                 lower = upper;
                 upper = swap;
             }
         }
-        barnesinside.mathutils.math.PlotView plot = new barnesinside.mathutils.math.PlotView(
-                solution.problem(), solution.variable(), lower, upper);
+        PlotView plot = new PlotView(solution.problem(), solution.variable(), lower, upper);
         if (!plot.isValid()) return;
-        VBox card = new VBox(10, Ui.caption(t.bind(isDefinite(solution) ? "solution.plot.area" : "solution.plot")), plot);
+        VBox card = new VBox(new Collapsible(t.bind(isDefinite(solution) ? "solution.plot.area" : "solution.plot"), plot,
+                isDefinite(solution)));
         card.getStyleClass().add("card");
         card.setPadding(new Insets(16));
         getChildren().add(card);
@@ -160,22 +203,154 @@ public final class SolutionPanel extends VBox {
         Toasts.show(t.get("solution.copied"));
     }
 
-    private Node stepsSection() {
-        VBox steps = new VBox(0);
-        List<Step> top = solution.steps();
-        for (int i = 0; i < top.size(); i++) steps.getChildren().add(stepPane(top.get(i), String.valueOf(i + 1), 0));
+    // ================================================================ Pasos organizados
 
-        HBox header = new HBox(12, Ui.caption(t.bind("solution.steps")), Ui.spacer(),
-                Ui.ghost(t.bind("solution.expandAll"), "chevron-down", () -> panes.forEach(p -> p.setExpanded(true))),
-                Ui.ghost(t.bind("solution.collapseAll"), "chevron-right", () -> panes.forEach(p -> p.setExpanded(false))));
+    private Node stepsSection() {
+        VBox cards = new VBox(8);
+        List<StepSession.Frame> frames = session.frames();
+        // Se crean todas las tarjetas y luego se cuelgan de su tarjeta madre, que ya existe porque va antes
+        List<StepPane> created = new ArrayList<>();
+        for (StepSession.Frame frame : frames) {
+            StepPane pane = new StepPane(frame);
+            created.add(pane);
+            if (frame.parent() < 0) cards.getChildren().add(pane);
+            else created.get(frame.parent()).addChild(pane);
+        }
+        panes.addAll(created);
+
+        HBox header = new HBox(12, Ui.caption(t.bind("solution.steps")), Ui.spacer(), level);
         header.setAlignment(Pos.CENTER_LEFT);
-        return new VBox(8, header, steps);
+
+        VBox section = new VBox(12, header, path(), cards);
+        applyLevel(level.getValue());
+        return section;
     }
 
-    private StepPane stepPane(Step step, String number, int depth) {
-        StepPane pane = new StepPane(step, number, depth);
-        panes.add(pane);
-        return pane;
+    /** El camino: los pasos principales como una fila de botones numerados, para saltar a cada uno. */
+    private Node path() {
+        FlowPane flow = new FlowPane(6, 6);
+        flow.setAlignment(Pos.CENTER_LEFT);
+        List<StepSession.Frame> top = session.topLevel();
+        for (int i = 0; i < top.size(); i++) {
+            StepSession.Frame frame = top.get(i);
+            Label chip = new Label(frame.number() + "  " + frame.step().title(t.locale()));
+            HBox box = new HBox(chip);
+            box.getStyleClass().add("chip");
+            box.setOnMouseClicked(e -> {
+                session.go(frame.index());
+                StepPane pane = panes.get(frame.index());
+                pane.setExpanded(true);
+                revealer.accept(pane);
+            });
+            flow.getChildren().add(box);
+            if (i + 1 < top.size()) {
+                Label arrow = Ui.label("›", "text-muted");
+                flow.getChildren().add(arrow);
+            }
+        }
+        VBox box = new VBox(6, Ui.caption(t.bind("steps.path")), flow);
+        box.getStyleClass().add("panel");
+        box.setPadding(new Insets(12, 14, 14, 14));
+        return box;
+    }
+
+    private void applyLevel(Level target) {
+        for (StepPane pane : panes) pane.setExpanded(pane.frame.depth() <= target.openDepth);
+    }
+
+    /** Resalta el paso seleccionado, abre las tarjetas que lo contienen y lo muestra en pantalla. */
+    private void highlight(int index) {
+        if (panes.isEmpty()) return;
+        for (StepPane pane : panes) pane.setCurrent(pane.frame.index() == index);
+        if (index < 0 || index >= panes.size()) return;
+        StepPane current = panes.get(index);
+        int parent = current.frame.parent();
+        while (parent >= 0) {
+            panes.get(parent).setExpanded(true);
+            parent = panes.get(parent).frame.parent();
+        }
+        revealer.accept(current);
+    }
+
+    /** Una tarjeta de paso: número, título, resultado resumido, explicación, ecuación y subpasos. */
+    private final class StepPane extends VBox {
+        final StepSession.Frame frame;
+        private final VBox body = new VBox(10);
+        private final VBox children = new VBox(8);
+        private final Node chevronDown = Brand.icon("chevron-down", 16);
+        private final Node chevronRight = Brand.icon("chevron-right", 16);
+        private final HBox header;
+        private final Label summary;
+        private boolean expanded;
+
+        StepPane(StepSession.Frame frame) {
+            super(0);
+            this.frame = frame;
+            getStyleClass().add("step-card");
+            if (frame.depth() > 0) getStyleClass().add("step-card-nested");
+
+            Label number = Ui.label(frame.number(), "step-number");
+            Label title = Ui.label(frame.step().title(t.locale()), "step-title");
+            summary = Ui.label(summaryText(frame.step()), "mono", "text-muted");
+            summary.setStyle("-fx-font-size: 12px;");
+            header = new HBox(10, number, title, Ui.spacer(), summary, chevronDown, chevronRight);
+            header.setAlignment(Pos.CENTER_LEFT);
+            header.getStyleClass().add("toggle-chevron");
+            header.setOnMouseClicked(e -> {
+                setExpanded(!expanded);
+                session.go(frame.index());
+            });
+            getChildren().add(header);
+
+            body.getChildren().add(explanation(frame.step(), t.locale()));
+            if (frame.step().before() != null && frame.step().after() != null) {
+                MathView equation = MathView.empty(17);
+                equation.setBox(stepEquation(frame.step()));
+                equation.setInteractive(false);
+                body.getChildren().add(scrollable(equation));
+            }
+            body.setPadding(new Insets(10, 0, 0, 26));
+            getChildren().add(body);
+
+            children.setPadding(new Insets(10, 0, 0, 18));
+            children.getStyleClass().add("step-rail");
+            if (!frame.step().substeps().isEmpty()) getChildren().add(children);
+            setExpanded(false);
+        }
+
+        void addChild(StepPane child) {
+            children.getChildren().add(child);
+        }
+
+        void setExpanded(boolean value) {
+            expanded = value;
+            body.setVisible(value);
+            body.setManaged(value);
+            boolean showChildren = value && !frame.step().substeps().isEmpty();
+            children.setVisible(showChildren);
+            children.setManaged(showChildren);
+            chevronDown.setVisible(value);
+            chevronDown.setManaged(value);
+            chevronRight.setVisible(!value);
+            chevronRight.setManaged(!value);
+            summary.setVisible(!value);
+            summary.setManaged(!value);
+        }
+
+        void setCurrent(boolean value) {
+            if (value) {
+                if (!getStyleClass().contains("current")) getStyleClass().add("current");
+            } else {
+                getStyleClass().remove("current");
+            }
+        }
+    }
+
+    /** El resultado del paso en una línea corta, para leer el recorrido sin abrir las tarjetas. */
+    private static String summaryText(Step step) {
+        if (step.after() == null) return "";
+        String text = "= " + step.after();
+        return text.length() > 46 ? text.substring(0, 45) + "…" : text;
     }
 
     // ================================================================ Ecuaciones según el tipo de problema
@@ -206,7 +381,8 @@ public final class SolutionPanel extends VBox {
         };
     }
 
-    private static MathLayout.Box stepEquation(Step step) {
+    /** La ecuación de un paso con la notación de su tipo (derivada, límite o integral). */
+    static MathLayout.Box stepEquation(Step step) {
         Expr x = step.variable();
         double size = 17;
         if (x == null) {
@@ -223,60 +399,11 @@ public final class SolutionPanel extends VBox {
         };
     }
 
-    // ================================================================ Pasos plegables
-
-    /** Un paso con su explicación, su ecuación y sus subpasos, que se pliega al pulsar su título. */
-    private final class StepPane extends VBox {
-        private final VBox body = new VBox(10);
-        private final VBox children = new VBox(0);
-        private final Node chevronDown = Brand.icon("chevron-down", 16);
-        private final Node chevronRight = Brand.icon("chevron-right", 16);
-
-        StepPane(Step step, String number, int depth) {
-            getStyleClass().add("step");
-
-            HBox toggle = new HBox(8, chevronDown, chevronRight, Ui.label(number, "step-number"),
-                    Ui.label(step.title(t.locale()), "step-title"));
-            toggle.setAlignment(Pos.CENTER_LEFT);
-            toggle.getStyleClass().add("toggle-chevron");
-            toggle.setOnMouseClicked(e -> setExpanded(!body.isVisible()));
-            getChildren().add(toggle);
-
-            body.setPadding(new Insets(0, 0, 0, 24));
-            body.getChildren().add(explanation(step));
-            if (step.before() != null && step.after() != null) {
-                MathView equation = MathView.empty(17);
-                equation.setBox(stepEquation(step));
-                equation.setInteractive(false);
-                body.getChildren().add(scrollable(equation));
-            }
-            getChildren().add(body);
-
-            children.setPadding(new Insets(0, 0, 0, 16));
-            for (int i = 0; i < step.substeps().size(); i++) {
-                children.getChildren().add(stepPane(step.substeps().get(i), number + "." + (i + 1), depth + 1));
-            }
-            if (!step.substeps().isEmpty()) getChildren().add(children);
-
-            setExpanded(depth < 2);
-        }
-
-        void setExpanded(boolean value) {
-            body.setVisible(value);
-            body.setManaged(value);
-            children.setVisible(value);
-            children.setManaged(value);
-            chevronDown.setVisible(value);
-            chevronDown.setManaged(value);
-            chevronRight.setVisible(!value);
-            chevronRight.setManaged(!value);
-        }
-    }
-
-    private TextFlow explanation(Step step) {
+    /** La explicación de un paso con las expresiones intercaladas como fórmulas. */
+    static TextFlow explanation(Step step, Locale locale) {
         TextFlow flow = new TextFlow();
         flow.setLineSpacing(4);
-        for (Segment segment : step.explanation(t.locale())) {
+        for (Segment segment : step.explanation(locale)) {
             switch (segment) {
                 case Segment.Text text -> {
                     Text node = new Text(text.value());
