@@ -199,3 +199,27 @@
 .chip:hover { -fx-border-color: -bi-accent; }
 .chip .label { -fx-font-family: "Geist Mono"; -fx-font-size: 13px; }
 .toggle-chevron { -fx-cursor: hand; }
+
+/* Paleta de símbolos */
+.palette {
+    -fx-background-color: -bi-bg-elevated;
+    -fx-border-color: -bi-border;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 18, 0, 0, 6);
+}
+.symbol-key {
+    -fx-font-family: "Geist Mono";
+    -fx-font-size: 15px;
+    -fx-min-width: 40;
+    -fx-min-height: 36;
+    -fx-padding: 0 8;
+    -fx-background-color: -bi-bg-secondary;
+    -fx-text-fill: -bi-fg;
+    -fx-border-color: -bi-border;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+}
+.symbol-key:hover { -fx-border-color: -bi-accent; }
+.symbol-key:pressed { -fx-background-color: -bi-accent-bg; }

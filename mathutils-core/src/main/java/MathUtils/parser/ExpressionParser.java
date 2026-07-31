@@ -76,7 +76,8 @@ public final class ExpressionParser {
      * Divide la expresión en tokens.
      * @throws ExpressionParseException si hay un carácter o número inválido
      */
-    public static List<Token> tokenize(String source) {
+    public static List<Token> tokenize(String rawSource) {
+        String source = Notation.normalize(rawSource);
         List<Token> tokens = new ArrayList<>();
         int i = 0;
         int n = source.length();

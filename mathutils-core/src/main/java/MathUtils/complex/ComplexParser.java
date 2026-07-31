@@ -16,7 +16,7 @@ final class ComplexParser {
 
     static Complex parse(String text) {
         if (text == null || text.isBlank()) throw new IllegalArgumentException("Escribe un número complejo. Ejemplo: 3+4i");
-        ComplexParser parser = new ComplexParser(text.replace("−", "-").replace(',', '.'));
+        ComplexParser parser = new ComplexParser(MathUtils.parser.Notation.normalize(text).replace(',', '.'));
         Complex value = parser.sum();
         parser.skipSpaces();
         if (parser.position < parser.text.length()) throw parser.error("Carácter inesperado");
@@ -129,7 +129,7 @@ final class ComplexParser {
             String name = text.substring(start, position).toLowerCase();
             return switch (name) {
                 case "i", "j" -> Complex.I;
-                case "pi" -> Complex.real(Math.PI);
+                case "pi", "π" -> Complex.real(Math.PI);
                 case "e" -> Complex.real(Math.E);
                 default -> {
                     position = start;

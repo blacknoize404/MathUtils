@@ -9,6 +9,7 @@ import barnesinside.mathutils.AppContext;
 import barnesinside.mathutils.I18n;
 import barnesinside.mathutils.Workspace;
 import barnesinside.mathutils.theme.Brand;
+import barnesinside.mathutils.ui.SymbolPalette;
 import barnesinside.mathutils.ui.Ui;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -43,6 +44,7 @@ public final class OrderView implements Module {
     private final I18n t = AppContext.i18n();
 
     private final TextField input = new TextField();
+    private final SymbolPalette symbols = new SymbolPalette(false);
     private final Label error = new Label();
     private final HBox expressionRow = new HBox(0);
     private final VBox stepsBox = new VBox(0);
@@ -115,6 +117,7 @@ public final class OrderView implements Module {
             if (e.getCode() == KeyCode.ENTER) solve();
         });
 
+        symbols.attach(input);
         HBox inputRow = new HBox(12, input, Ui.primary(t.bind("order.solve"), "play", this::solve));
         inputRow.setAlignment(Pos.CENTER_LEFT);
 
@@ -142,7 +145,7 @@ public final class OrderView implements Module {
         expressionRow.setVisible(false);
         expressionRow.setManaged(false);
 
-        VBox main = new VBox(18, Ui.pageHeader(t.bind("order.title"), t.bind("order.subtitle")), inputRow, error,
+        VBox main = new VBox(18, Ui.pageHeader(t.bind("order.title"), t.bind("order.subtitle"), symbols.trigger()), inputRow, error,
                 controls, expressionRow, stepsBox, notes, hierarchy());
         main.setPadding(new Insets(32));
         ScrollPane scroll = new ScrollPane(main);

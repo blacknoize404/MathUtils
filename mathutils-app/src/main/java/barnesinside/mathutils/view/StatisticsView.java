@@ -124,6 +124,11 @@ public final class StatisticsView extends ToolView {
     }
 
     @Override
+    protected List<javafx.scene.control.TextInputControl> inputs() {
+        return List.of(dataX, dataY, first, second, point, probability);
+    }
+
+    @Override
     protected Node form() {
         VBox dataForm = new VBox(14,
                 new HBox(16, grow(field("stats.data.x", dataX)), grow(field("stats.data.y", dataY))),

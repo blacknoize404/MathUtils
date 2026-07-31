@@ -92,6 +92,11 @@ public final class OdeView extends ToolView {
     }
 
     @Override
+    protected List<javafx.scene.control.TextInputControl> inputs() {
+        return List.of(fy, fz, t0, y0, z0, tEnd, steps);
+    }
+
+    @Override
     protected Node form() {
         VBox equationY = new VBox(4, Ui.caption("y' ="), fy);
         VBox equationZ = new VBox(4, Ui.caption("z' ="), fz);

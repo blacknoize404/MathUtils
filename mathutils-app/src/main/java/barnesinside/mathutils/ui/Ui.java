@@ -58,6 +58,15 @@ public final class Ui {
         return label;
     }
 
+    /** Cabecera de página con un elemento a la derecha (por ejemplo, el botón de símbolos). */
+    public static HBox pageHeader(StringBinding title, StringBinding subtitle, Node trailing) {
+        VBox header = pageHeader(title, subtitle);
+        HBox.setHgrow(header, Priority.ALWAYS);
+        HBox row = new HBox(12, header, trailing);
+        row.setAlignment(Pos.TOP_LEFT);
+        return row;
+    }
+
     /** Cabecera de página: titular y descripción breve. */
     public static VBox pageHeader(StringBinding title, StringBinding subtitle) {
         Label headline = label(title, "headline");

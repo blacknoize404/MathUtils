@@ -9,6 +9,7 @@ import barnesinside.mathutils.Workspace;
 import barnesinside.mathutils.math.MathView;
 import barnesinside.mathutils.ui.Segmented;
 import barnesinside.mathutils.ui.Toasts;
+import barnesinside.mathutils.ui.SymbolPalette;
 import barnesinside.mathutils.ui.Ui;
 import javafx.beans.binding.StringBinding;
 import javafx.geometry.Insets;
@@ -43,6 +44,7 @@ public final class CalculatorView implements Module {
     private final CalculatorSession session;
 
     private final TextField input = new TextField();
+    private final SymbolPalette symbols = new SymbolPalette(false);
     private final Label validation = new Label();
     private final VBox resultBox = new VBox(12);
     private final VBox historyBox = new VBox(8);
@@ -88,7 +90,7 @@ public final class CalculatorView implements Module {
         VBox main = new VBox(20);
         main.setPadding(new Insets(32));
         main.getChildren().addAll(
-                Ui.pageHeader(t.bind("calc.title"), t.bind("calc.subtitle")),
+                Ui.pageHeader(t.bind("calc.title"), t.bind("calc.subtitle"), symbols.attach(input).trigger()),
                 inputRow(),
                 validationLabel(),
                 resultBox,

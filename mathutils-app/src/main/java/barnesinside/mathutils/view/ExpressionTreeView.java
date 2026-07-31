@@ -9,6 +9,7 @@ import barnesinside.mathutils.I18n;
 import barnesinside.mathutils.Workspace;
 import barnesinside.mathutils.ui.Segmented;
 import barnesinside.mathutils.ui.Toasts;
+import barnesinside.mathutils.ui.SymbolPalette;
 import barnesinside.mathutils.ui.Ui;
 import javafx.beans.binding.StringBinding;
 import javafx.embed.swing.SwingFXUtils;
@@ -45,6 +46,7 @@ public final class ExpressionTreeView implements Module {
     private final I18n t = AppContext.i18n();
 
     private final TextField input = new TextField();
+    private final SymbolPalette symbols = new SymbolPalette(false);
     private final TextField values = new TextField();
     private final Label error = new Label();
     private final Label hoverStatus = new Label();
@@ -137,7 +139,8 @@ public final class ExpressionTreeView implements Module {
         options.setAlignment(Pos.CENTER_LEFT);
         options.setRowValignment(javafx.geometry.VPos.CENTER);
 
-        VBox top = new VBox(16, Ui.pageHeader(t.bind("tree.title"), t.bind("tree.subtitle")), inputRow, error, options);
+        symbols.attach(input, values);
+        VBox top = new VBox(16, Ui.pageHeader(t.bind("tree.title"), t.bind("tree.subtitle"), symbols.trigger()), inputRow, error, options);
         top.setPadding(new Insets(32, 32, 16, 32));
 
         emptyHint.textProperty().bind(t.bind("tree.empty"));

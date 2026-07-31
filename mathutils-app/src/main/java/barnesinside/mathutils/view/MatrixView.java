@@ -74,6 +74,11 @@ public final class MatrixView extends ToolView {
     }
 
     @Override
+    protected List<javafx.scene.control.TextInputControl> inputs() {
+        return List.of(a, b);
+    }
+
+    @Override
     protected Node form() {
         VBox left = field("matrix.a", a);
         VBox right = field("matrix.b", b);

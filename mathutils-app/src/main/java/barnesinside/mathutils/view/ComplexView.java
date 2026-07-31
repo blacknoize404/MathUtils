@@ -73,6 +73,16 @@ public final class ComplexView extends ToolView {
     }
 
     @Override
+    protected boolean imaginaryUnit() {
+        return true;
+    }
+
+    @Override
+    protected List<javafx.scene.control.TextInputControl> inputs() {
+        return List.of(z1, z2, n);
+    }
+
+    @Override
     protected Node form() {
         VBox first = field("complex.z1", z1);
         VBox second = field("complex.z2", z2);

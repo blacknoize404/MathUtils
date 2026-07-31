@@ -90,6 +90,11 @@ public final class LimitView extends SolverView {
     }
 
     @Override
+    protected List<javafx.scene.control.TextInputControl> extraInputs() {
+        return List.of(point);
+    }
+
+    @Override
     protected List<Node> extraFields() {
         return List.of(
                 new VBox(4, Ui.caption(t.bind("limit.point")), point),

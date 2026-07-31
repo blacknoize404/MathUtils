@@ -7,6 +7,7 @@ import MathUtils.exceptions.ExpressionParseException;
 import barnesinside.mathutils.AppContext;
 import barnesinside.mathutils.I18n;
 import barnesinside.mathutils.Workspace;
+import barnesinside.mathutils.ui.SymbolPalette;
 import barnesinside.mathutils.ui.Ui;
 import javafx.beans.binding.StringBinding;
 import javafx.geometry.Insets;
@@ -39,6 +40,7 @@ abstract class SolverView implements Module {
     protected final TextField function = new TextField();
     protected final TextField variable = new TextField("x");
     private final Label error = new Label();
+    private final SymbolPalette symbols = new SymbolPalette(false);
     private final SolutionPanel panel = new SolutionPanel();
     private Node content;
     private String lastShared = "";
@@ -62,6 +64,11 @@ abstract class SolverView implements Module {
     /** Rellena el formulario con un ejemplo (por defecto, solo la función). */
     protected void applyExample(String example) {
         function.setText(example);
+    }
+
+    /** Campos de texto adicionales que también reciben símbolos de la paleta. */
+    protected List<javafx.scene.control.TextInputControl> extraInputs() {
+        return List.of();
     }
 
     /** Campos adicionales del formulario (orden, punto…), o una lista vacía. */
@@ -152,7 +159,9 @@ abstract class SolverView implements Module {
         panel.getChildren().addListener((javafx.collections.ListChangeListener<Node>) c ->
                 empty.setVisible(panel.getChildren().isEmpty()));
 
-        VBox main = new VBox(20, Ui.pageHeader(text("title"), text("subtitle")), form,
+        symbols.attach(function, variable);
+        symbols.attach(extraInputs().toArray(new javafx.scene.control.TextInputControl[0]));
+        VBox main = new VBox(20, Ui.pageHeader(text("title"), text("subtitle"), symbols.trigger()), form,
                 Ui.primary(t.bind("solver.solve"), "play", this::solve), error,
                 new VBox(8, Ui.caption(t.bind("solver.examples")), examples), output);
         main.setPadding(new Insets(32));

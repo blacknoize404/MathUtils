@@ -3,6 +3,7 @@ package barnesinside.mathutils.view;
 import barnesinside.mathutils.AppContext;
 import barnesinside.mathutils.I18n;
 import barnesinside.mathutils.Workspace;
+import barnesinside.mathutils.ui.SymbolPalette;
 import barnesinside.mathutils.ui.Ui;
 import javafx.beans.binding.StringBinding;
 import javafx.geometry.Insets;
@@ -27,10 +28,22 @@ abstract class ToolView implements Module {
     private final Label error = new Label();
     private final VBox output = new VBox(20);
     private final Label empty = new Label();
+    private final SymbolPalette symbols;
     private Node content;
 
     protected ToolView(Workspace workspace) {
         this.workspace = workspace;
+        this.symbols = new SymbolPalette(imaginaryUnit());
+    }
+
+    /** Si la paleta de símbolos ofrece la unidad imaginaria {@code i}. */
+    protected boolean imaginaryUnit() {
+        return false;
+    }
+
+    /** Campos de texto del módulo que reciben los símbolos de la paleta. */
+    protected List<javafx.scene.control.TextInputControl> inputs() {
+        return List.of();
     }
 
     /** Prefijo de las claves de texto: {@code matrix}, {@code complex}, {@code stats} u {@code ode}. */
@@ -72,7 +85,9 @@ abstract class ToolView implements Module {
         empty.textProperty().bind(text("empty"));
         empty.getStyleClass().add("text-muted");
 
-        VBox main = new VBox(20, Ui.pageHeader(text("title"), text("subtitle")), form(), error);
+        Node form = form();
+        symbols.attach(inputs().toArray(new javafx.scene.control.TextInputControl[0]));
+        VBox main = new VBox(20, Ui.pageHeader(text("title"), text("subtitle"), symbols.trigger()), form, error);
 
         List<Example> examples = examples();
         if (!examples.isEmpty()) {

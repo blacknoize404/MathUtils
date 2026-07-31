@@ -85,6 +85,11 @@ public final class IntegralView extends SolverView {
     }
 
     @Override
+    protected List<javafx.scene.control.TextInputControl> extraInputs() {
+        return List.of(lower, upper);
+    }
+
+    @Override
     protected List<Node> extraFields() {
         return List.of(
                 new VBox(4, Ui.caption(t.bind("integral.lower")), lower),
