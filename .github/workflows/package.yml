@@ -47,7 +47,7 @@ jobs:
         run: mvn -B test
 
       - name: Construir la aplicación nativa
-        run: python mathutils-app/packaging/tools/build_app.py --skip-maven ${{ matrix.args }}
+        run: python mathutils-app/packaging/tools/build_app.py ${{ matrix.args }}
 
       - name: Guardar los paquetes
         uses: actions/upload-artifact@v4
