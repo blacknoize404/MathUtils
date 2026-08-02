@@ -39,6 +39,7 @@ public enum Rule {
     DIFF_TANH(Category.DERIVATIVE),
     DIFF_ABS(Category.DERIVATIVE),
     DIFF_ERF(Category.DERIVATIVE),
+    DIFF_PARTIAL(Category.DERIVATIVE),
     DIFF_SI(Category.DERIVATIVE),
     DIFF_CI(Category.DERIVATIVE),
     DIFF_EI(Category.DERIVATIVE),
@@ -130,7 +131,16 @@ public enum Rule {
     INT_REVERSE_BOUNDS(Category.GENERAL),
     INT_EMPTY_INTERVAL(Category.GENERAL),
     INT_P_TEST_INFINITY(Category.GENERAL),
-    INT_P_TEST_ZERO(Category.GENERAL);
+    INT_P_TEST_ZERO(Category.GENERAL),
+    INT_ITERATED(Category.INTEGRAL),
+    INT_ITERATED_DEFINITE(Category.INTEGRAL),
+    LIMIT_MULTI_SUBSTITUTION(Category.GENERAL),
+    LIMIT_MULTI_ITERATED(Category.GENERAL),
+    LIMIT_MULTI_PATHS(Category.GENERAL),
+    LIMIT_MULTI_DIFFERENT(Category.GENERAL),
+    LIMIT_MULTI_POLAR_ZERO(Category.GENERAL),
+    LIMIT_MULTI_POLAR_CONSTANT(Category.GENERAL),
+    LIMIT_MULTI_CANDIDATE(Category.GENERAL);
 
     /**
      * Familia de la regla; el renderizador la usa para mostrar la operación

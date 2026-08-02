@@ -57,11 +57,92 @@ public final class StepRenderer {
         params.put("f", s.problem());
         params.put("x", Expr.sym(s.variable()));
         params.put("k", Expr.num(s.order()));
+        List<String> limitVariables = limitVariables(s);
+        if (limitVariables.size() > 1) {
+            key = base + ".problem.multiple";
+            params.put("vars", Expr.sym("(" + String.join(", ", limitVariables) + ")"));
+            params.put("point", Expr.sym("(" + String.join(", ", limitPoint(s)) + ")"));
+        }
+        List<String> integrationVariables = integrationVariables(s);
+        if (integrationVariables.size() > 1) {
+            key = base + ".problem.multiple";
+            params.put("vars", Expr.sym(String.join(", ", integrationVariables)));
+        }
+        List<String> partials = partialVariables(s);
+        if (partials.size() > 1) {
+            key = base + ".problem.partial";
+            params.put("vars", Expr.sym(String.join(", ", partials)));
+        } else if (!partials.isEmpty()) {
+            key = base + ".problem.partialSingle";
+        }
         return Messages.interpolate(Messages.get(key, locale), params);
     }
 
+    /** Variables de una derivada parcial en el orden de derivación ({@code var1}, {@code var2}…), o vacío. */
+    private static List<String> partialVariables(Solution s) {
+        if (s.kind() != Solution.Kind.DERIVATIVE) return List.of();
+        List<String> names = new java.util.ArrayList<>();
+        for (int i = 1; s.extras().get("var" + i) instanceof Expr.Sym sym; i++) names.add(sym.name());
+        return names;
+    }
+
+    /** Variables de un límite múltiple ({@code var1}, {@code var2}…), o vacío. */
+    private static List<String> limitVariables(Solution s) {
+        if (s.kind() != Solution.Kind.LIMIT) return List.of();
+        List<String> names = new java.util.ArrayList<>();
+        for (int i = 1; s.extras().get("var" + i) instanceof Expr.Sym sym; i++) names.add(sym.name());
+        return names;
+    }
+
+    private static List<String> limitPoint(Solution s) {
+        List<String> values = new java.util.ArrayList<>();
+        for (int i = 1; s.extras().get("point" + i) != null; i++) values.add(s.extras().get("point" + i).toString());
+        return values;
+    }
+
+    /** Variables de una integral iterada de la interior a la exterior, o vacío si no es iterada. */
+    private static List<String> integrationVariables(Solution s) {
+        if (s.kind() != Solution.Kind.INTEGRAL) return List.of();
+        List<String> names = new java.util.ArrayList<>();
+        for (int i = 1; s.extras().get("var" + i) instanceof Expr.Sym sym; i++) names.add(sym.name());
+        return names;
+    }
+
+    /** Los signos de integral de una integral iterada, del exterior al interior, con sus límites. */
+    private static String iteratedSigns(Solution s, boolean latex) {
+        List<String> names = integrationVariables(s);
+        StringBuilder sb = new StringBuilder();
+        for (int i = names.size(); i >= 1; i--) {
+            Expr lower = s.extras().get("lower" + i);
+            Expr upper = s.extras().get("upper" + i);
+            if (latex) {
+                sb.append("\\int");
+                if (lower != null) sb.append("_{").append(lower.toLatex()).append("}^{").append(upper.toLatex()).append('}');
+                sb.append(' ');
+            } else {
+                sb.append(lower == null ? "∫ " : "∫[" + lower + ", " + upper + "] ");
+            }
+        }
+        return sb.toString();
+    }
+
+    private static String iteratedDifferentials(Solution s, boolean latex) {
+        StringBuilder sb = new StringBuilder();
+        for (String name : integrationVariables(s)) {
+            sb.append(latex ? " \\, d" + Expr.sym(name).toLatex() : " d" + name);
+        }
+        return sb.toString();
+    }
+
+    private static String partialDenominator(List<String> variables) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = variables.size() - 1; i >= 0; i--) sb.append("∂").append(variables.get(i));
+        return sb.toString();
+    }
+
     private static boolean isDefinite(Solution s) {
-        return s.kind() == Solution.Kind.INTEGRAL && s.extras().containsKey("lower") && s.extras().containsKey("upper");
+        return s.kind() == Solution.Kind.INTEGRAL && s.extras().containsKey("lower") && s.extras().containsKey("upper")
+                && integrationVariables(s).isEmpty();
     }
 
     private static String statusText(Solution s, Locale locale) {
@@ -77,7 +158,8 @@ public final class StepRenderer {
         return switch (category) {
             case DERIVATIVE -> "d/d" + x + "[" + before + "]";
             case LIMIT -> "lim[" + x + " -> " + params.getOrDefault("a", Expr.ZERO) + "] " + before;
-            case INTEGRAL -> "∫ " + before + " d" + x;
+            case INTEGRAL -> (params.containsKey("lower") && params.containsKey("upper")
+                    ? "∫[" + params.get("lower") + ", " + params.get("upper") + "] " : "∫ ") + before + " d" + x;
             default -> before.toString();
         };
     }
@@ -89,7 +171,9 @@ public final class StepRenderer {
             case DERIVATIVE -> "\\frac{d}{d" + x.toLatex() + "}\\left[" + before.toLatex() + "\\right]";
             case LIMIT -> "\\lim_{" + x.toLatex() + " \\to " + params.getOrDefault("a", Expr.ZERO).toLatex() + "} "
                     + before.toLatex();
-            case INTEGRAL -> "\\int " + before.toLatex() + " \\, d" + x.toLatex();
+            case INTEGRAL -> "\\int" + (params.containsKey("lower") && params.containsKey("upper")
+                    ? "_{" + params.get("lower").toLatex() + "}^{" + params.get("upper").toLatex() + "}" : "")
+                    + " " + before.toLatex() + " \\, d" + x.toLatex();
             default -> before.toLatex();
         };
     }
@@ -123,42 +207,79 @@ public final class StepRenderer {
     private static String resultOperationPlain(Solution s) {
         return switch (s.kind()) {
             case DERIVATIVE -> {
-                String d = s.order() > 1 ? "d^" + s.order() + "/d" + s.variable() + "^" + s.order() : "d/d" + s.variable();
+                List<String> partials = partialVariables(s);
+                String d = !partials.isEmpty()
+                        ? (partials.size() > 1 ? "∂^" + partials.size() : "∂") + "/" + partialDenominator(partials)
+                        : s.order() > 1 ? "d^" + s.order() + "/d" + s.variable() + "^" + s.order() : "d/d" + s.variable();
                 yield d + "[" + s.problem() + "]";
             }
-            case LIMIT -> "lim[" + s.variable() + " -> " + s.extras().getOrDefault("a", Expr.ZERO)
+            case LIMIT -> limitVariables(s).size() > 1
+                    ? "lim[(" + String.join(", ", limitVariables(s)) + ") -> (" + String.join(", ", limitPoint(s)) + ")] " + s.problem()
+                    : "lim[" + s.variable() + " -> " + s.extras().getOrDefault("a", Expr.ZERO)
                     + directionSuffixPlain(s) + "] " + s.problem();
-            case INTEGRAL -> (isDefinite(s) ? "∫[" + s.extras().get("lower") + ", " + s.extras().get("upper") + "] " : "∫ ")
+            case INTEGRAL -> integrationVariables(s).size() > 1
+                    ? iteratedSigns(s, false) + s.problem() + iteratedDifferentials(s, false)
+                    : (isDefinite(s) ? "∫[" + s.extras().get("lower") + ", " + s.extras().get("upper") + "] " : "∫ ")
                     + s.problem() + " d" + s.variable();
         };
     }
 
+    /** Si el resultado lleva constante: las integrales indefinidas y las iteradas con alguna indefinida. */
+    private static boolean hasConstant(Solution s) {
+        if (s.kind() != Solution.Kind.INTEGRAL) return false;
+        int count = integrationVariables(s).size();
+        if (count > 1) {
+            for (int i = 1; i <= count; i++) if (s.extras().get("lower" + i) == null) return true;
+            return false;
+        }
+        return !isDefinite(s);
+    }
+
     private static String resultSuffixPlain(Solution s) {
-        return s.kind() == Solution.Kind.INTEGRAL && !isDefinite(s) ? " + C" : "";
+        return hasConstant(s) ? " + C" : "";
     }
 
     private static String resultOperationLatex(Solution s) {
         String v = Expr.sym(s.variable()).toLatex();
         return switch (s.kind()) {
             case DERIVATIVE -> {
-                String frac = s.order() > 1
-                        ? "\\frac{d^{" + s.order() + "}}{d" + v + "^{" + s.order() + "}}"
-                        : "\\frac{d}{d" + v + "}";
+                List<String> partials = partialVariables(s);
+                String frac;
+                if (!partials.isEmpty()) {
+                    StringBuilder denominator = new StringBuilder();
+                    for (int i = partials.size() - 1; i >= 0; i--) {
+                        denominator.append("\\partial ").append(Expr.sym(partials.get(i)).toLatex()).append(' ');
+                    }
+                    frac = "\\frac{\\partial" + (partials.size() > 1 ? "^{" + partials.size() + "}" : "") + "}{"
+                            + denominator.toString().strip() + "}";
+                } else {
+                    frac = s.order() > 1
+                            ? "\\frac{d^{" + s.order() + "}}{d" + v + "^{" + s.order() + "}}"
+                            : "\\frac{d}{d" + v + "}";
+                }
                 yield frac + "\\left[" + s.problem().toLatex() + "\\right]";
             }
             case LIMIT -> {
+                if (limitVariables(s).size() > 1) {
+                    String names = String.join(", ", limitVariables(s).stream().map(n -> Expr.sym(n).toLatex()).toList());
+                    String values = String.join(", ", java.util.stream.IntStream.rangeClosed(1, limitVariables(s).size())
+                            .mapToObj(i -> s.extras().get("point" + i).toLatex()).toList());
+                    yield "\\lim_{(" + names + ") \\to (" + values + ")} " + s.problem().toLatex();
+                }
                 String sign = directionSuffixPlain(s).isEmpty() ? "" : "^{" + directionSuffixPlain(s) + "}";
                 yield "\\lim_{" + v + " \\to " + s.extras().getOrDefault("a", Expr.ZERO).toLatex() + sign + "} "
                         + s.problem().toLatex();
             }
-            case INTEGRAL -> "\\int" + (isDefinite(s)
+            case INTEGRAL -> integrationVariables(s).size() > 1
+                    ? iteratedSigns(s, true) + s.problem().toLatex() + iteratedDifferentials(s, true)
+                    : "\\int" + (isDefinite(s)
                     ? "_{" + s.extras().get("lower").toLatex() + "}^{" + s.extras().get("upper").toLatex() + "}" : "")
                     + " " + s.problem().toLatex() + " \\, d" + v;
         };
     }
 
     private static String resultSuffixLatex(Solution s) {
-        return s.kind() == Solution.Kind.INTEGRAL && !isDefinite(s) ? " + C" : "";
+        return hasConstant(s) ? " + C" : "";
     }
 
     private static String segmentsPlain(List<Segment> segments) {

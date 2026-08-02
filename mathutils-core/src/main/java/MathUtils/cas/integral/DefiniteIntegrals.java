@@ -75,6 +75,79 @@ final class DefiniteIntegrals {
         return new Solution(Solution.Kind.INTEGRAL, outcome.status(), f, outcome.value(), outcome.steps(), v, 1, extras);
     }
 
+    /**
+     * Integral definida con parámetros: el integrando o los límites contienen otras variables. Se
+     * evalúa la antiderivada en los límites y el resultado se contrasta con la cuadratura numérica en
+     * varios valores de los parámetros; no se tratan extremos infinitos ni singularidades.
+     */
+    static Solution parametric(Expr f, String v, Expr lower, Expr upper) {
+        Map<String, Expr> extras = new LinkedHashMap<>();
+        extras.put("lower", lower);
+        extras.put("upper", upper);
+        List<Step> steps = new ArrayList<>();
+
+        Solution indefinite = Integrals.indefinite(f, v);
+        if (!indefinite.isSolved() || Double.isInfinite(safeValue(lower)) || Double.isInfinite(safeValue(upper))) {
+            return new Solution(Solution.Kind.INTEGRAL, Solution.Status.UNSOLVED, f, null, indefinite.steps(), v, 1, extras);
+        }
+        Expr antiderivative = indefinite.result();
+        steps.add(new Step(Rule.INT_DEFINITE_ANTIDERIVATIVE, f, antiderivative, Map.of("x", Expr.sym(v), "f", f),
+                indefinite.steps()));
+        Expr atUpper = antiderivative.substitute(v, upper);
+        Expr atLower = antiderivative.substitute(v, lower);
+        Expr value = Expr.sub(atUpper, atLower);
+        steps.add(new Step(Rule.INT_BARROW, null, value,
+                Map.of("p", lower, "q", upper, "Fp", atLower, "Fq", atUpper), List.of()));
+
+        Solution.Status status = sampledAgree(f, v, lower, upper, value) ? Solution.Status.SOLVED : Solution.Status.UNSOLVED;
+        return new Solution(Solution.Kind.INTEGRAL, status, f, status == Solution.Status.SOLVED ? value : null,
+                steps, v, 1, extras);
+    }
+
+    private static double safeValue(Expr e) {
+        try {
+            return e.variables().isEmpty() ? Eval.value(e) : 0;
+        } catch (RuntimeException ex) {
+            return Double.NaN;
+        }
+    }
+
+    /**
+     * Comprueba el valor exacto en puntos de muestra de los parámetros: en cada uno, la integral numérica
+     * entre los límites correspondientes debe coincidir. Hace falta al menos un punto válido.
+     */
+    private static boolean sampledAgree(Expr f, String v, Expr lower, Expr upper, Expr value) {
+        java.util.Set<String> names = new java.util.TreeSet<>(f.variables());
+        names.addAll(lower.variables());
+        names.addAll(upper.variables());
+        names.remove(v);
+
+        java.util.Random random = new java.util.Random(20_240_611L);
+        int valid = 0;
+        for (int attempt = 0; attempt < 30 && valid < 3; attempt++) {
+            Map<String, Expr> env = new LinkedHashMap<>();
+            Map<String, Double> numbers = new LinkedHashMap<>();
+            // Se alternan rangos (dentro de (0,1), mayores que 1 y negativos) para cubrir dominios distintos
+            double low = attempt % 3 == 0 ? 0.15 : attempt % 3 == 1 ? 0.6 : -0.9;
+            double high = attempt % 3 == 0 ? 0.9 : attempt % 3 == 1 ? 2.4 : -0.15;
+            for (String name : names) {
+                double sample = Math.round((low + random.nextDouble() * (high - low)) * 100) / 100.0;
+                numbers.put(name, sample);
+                env.put(name, Expr.num(MathUtils.cas.expr.Rational.fromDouble(sample)));
+            }
+            double a = Eval.value(lower.substitute(env));
+            double b = Eval.value(upper.substitute(env));
+            if (!Double.isFinite(a) || !Double.isFinite(b) || Math.abs(b - a) < 1e-9) continue;
+
+            double exact = Eval.value(value, numbers);
+            double numeric = a < b ? numeric(f.substitute(env), v, a, b) : -numeric(f.substitute(env), v, b, a);
+            if (!Double.isFinite(exact) || !Double.isFinite(numeric)) continue;
+            if (!close(exact, numeric)) return false;
+            valid++;
+        }
+        return valid >= 1;
+    }
+
     private static boolean close(double x, double y) {
         return Math.abs(x - y) <= 1e-6 * (1 + Math.max(Math.abs(x), Math.abs(y)));
     }
