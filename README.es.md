@@ -95,6 +95,12 @@ i.render(Locale.forLanguageTag("es"), Format.LATEX);
   expresiones lineales, completar cuadrados y sustituciones trigonométricas; funciones especiales
   (`erf`, `Si`, `Ci`, `Ei`, `li`) para las integrales no elementales clásicas como `sin(x)/x`,
   `e^x/x`, `1/ln(x)` y `e^(-x²)`.
+- **Varias variables:** `MultiDerivatives` calcula derivadas parciales sucesivas (mixtas), gradiente,
+  hessiana, jacobiana, divergencia y laplaciano; `MultipleIntegrals.iterated` integra de dentro hacia fuera
+  con límites interiores que dependen de las variables exteriores; `MultiLimits.limit` demuestra que un
+  límite en un punto no existe (caminos distintos o límites iterados) o demuestra su valor (continuidad o una
+  cota en polares) y, si no, solo ofrece un candidato, porque comprobar caminos no es una demostración.
+- **Notación:** `2π`, `√(x²+1)`, `x⁻¹`, `30°`, `∞` y las letras griegas se aceptan en cualquier expresión.
 - **Integrales definidas e impropias:** `Integrals.definite("e^(-x^2)", "x", "0", "oo")` aplica la regla
   de Barrow con límites en los extremos infinitos o singulares, parte el intervalo en las singularidades
   interiores, usa la simetría par e impar e informa cuando diverge. Cada valor exacto se contrasta con
@@ -105,7 +111,9 @@ i.render(Locale.forLanguageTag("es"), Format.LATEX);
 **MathUtils Studio** (`mathutils-app`): calculadora con resultado exacto y decimal, árbol de
 expresión interactivo, orden de operaciones, los solucionadores de derivadas, límites e integrales
 (con el área bajo la curva) y paneles de matrices, complejos, estadística y ecuaciones
-diferenciales, con la identidad visual de barnesinside. Para ejecutarla:
+diferenciales, con la identidad visual de barnesinside. Cada solucionador muestra sus pasos en tres niveles de detalle (resumen,
+principal, completo) y un animador plegable con el árbol de la expresión antes y después de cada paso; una paleta
+de símbolos escribe lo que el teclado no tiene. Para ejecutarla:
 
 ```bash
 mvn javafx:run -pl mathutils-app

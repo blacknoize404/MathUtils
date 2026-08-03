@@ -486,6 +486,66 @@ public final class MathLayout {
     }
 
     /**
+     * Derivada parcial sucesiva: {@code ∂ⁿ/∂y∂x [f]} (la primera variable de la lista se deriva primero).
+     */
+    public static Box partialEquation(List<Expr> variables, Expr before, Expr after, double size) {
+        int order = variables.size();
+        StringBuilder denominator = new StringBuilder();
+        for (int i = order - 1; i >= 0; i--) denominator.append("∂").append(variables.get(i));
+        Box numerator = order > 1
+                ? new RowBox(List.of(text("∂", size * 0.9), script(text(String.valueOf(order), size * 0.9), size * 0.9)), null)
+                : text("∂", size * 0.9);
+        List<Box> items = new ArrayList<>();
+        items.add(fraction(numerator, text(denominator.toString(), size * 0.9), size * 0.9));
+        items.add(space(size * 0.2));
+        items.add(delimited(of(before, size), Delimiter.SQUARE, size));
+        if (after != null) {
+            items.add(space(size * 0.35));
+            items.add(text("=", size));
+            items.add(space(size * 0.35));
+            items.add(of(after, size));
+        }
+        return new RowBox(items, null);
+    }
+
+    /** Una variable de una integral iterada con sus límites (ambos {@code null} si es indefinida). */
+    public record IntegralDimension(Expr variable, Expr lower, Expr upper) {
+    }
+
+    /**
+     * Integral iterada: los signos del exterior al interior, cada uno con sus límites, el integrando y
+     * los diferenciales de dentro hacia fuera.
+     *
+     * @param dimensions variables de la más interna a la más externa
+     */
+    public static Box multipleIntegralEquation(List<IntegralDimension> dimensions, Expr integrand, Expr result,
+                                               boolean plusConstant, double size) {
+        List<Box> items = new ArrayList<>();
+        for (int i = dimensions.size() - 1; i >= 0; i--) {
+            IntegralDimension d = dimensions.get(i);
+            items.add(d.lower() == null ? new IntegralSignBox(size)
+                    : new BoundedIntegralBox(size, of(d.upper(), size * 0.72), of(d.lower(), size * 0.72)));
+            items.add(space(size * 0.1));
+        }
+        items.add(of(integrand, size));
+        items.add(space(size * 0.2));
+        StringBuilder differentials = new StringBuilder();
+        for (IntegralDimension d : dimensions) differentials.append("d").append(d.variable()).append(' ');
+        items.add(text(differentials.toString().strip(), size));
+        if (result != null) {
+            items.add(space(size * 0.35));
+            items.add(text("=", size));
+            items.add(space(size * 0.35));
+            items.add(of(result, size));
+            if (plusConstant) {
+                items.add(space(size * 0.2));
+                items.add(text("+ C", size));
+            }
+        }
+        return new RowBox(items, null);
+    }
+
+    /**
      * Notación de límite: {@code lim} con {@code x → a} debajo, la función y, si se da, el resultado.
      *
      * @param direction 1 por la derecha, -1 por la izquierda, 0 por ambos lados

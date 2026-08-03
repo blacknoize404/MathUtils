@@ -94,6 +94,12 @@ i.render(Locale.ENGLISH, Format.LATEX);
   trigonometric functions, half angles and `tan(x/2)`; roots of linear expressions, completing the
   square and trigonometric substitutions; special functions (`erf`, `Si`, `Ci`, `Ei`, `li`) for the
   classic non-elementary integrals such as `sin(x)/x`, `e^x/x`, `1/ln(x)` and `e^(-x²)`.
+- **Several variables:** `MultiDerivatives` computes successive (mixed) partial derivatives, gradient,
+  Hessian, Jacobian, divergence and Laplacian; `MultipleIntegrals.iterated` integrates from the inside out
+  with inner limits that depend on the outer variables; `MultiLimits.limit` proves that a limit at a point
+  does not exist (different paths or iterated limits) or proves its value (continuity or a polar bound), and
+  otherwise only offers a candidate, because checking paths is not a proof.
+- **Notation:** `2π`, `√(x²+1)`, `x⁻¹`, `30°`, `∞` and Greek letters are accepted anywhere an expression is.
 - **Definite and improper integrals:** `Integrals.definite("e^(-x^2)", "x", "0", "oo")` applies the
   fundamental theorem with limits at infinite or singular endpoints, splits at interior singularities,
   uses odd/even symmetry and reports divergence. Every exact value is checked against double-exponential
@@ -103,7 +109,9 @@ i.render(Locale.ENGLISH, Format.LATEX);
 **MathUtils Studio** (`mathutils-app`): calculator with exact and decimal results, interactive
 expression tree, order of operations, the derivative, limit and integral solvers (with the area
 under the curve), and panels for matrices, complex numbers, statistics and differential equations,
-with the barnesinside visual identity. Run it with:
+with the barnesinside visual identity. Every solver shows its steps in three levels of detail (summary, main, full)
+and a collapsible animator with the expression tree before and after each step; a symbol palette writes what the
+keyboard does not have. Run it with:
 
 ```bash
 mvn javafx:run -pl mathutils-app

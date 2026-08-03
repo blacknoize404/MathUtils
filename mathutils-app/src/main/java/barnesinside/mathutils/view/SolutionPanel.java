@@ -120,12 +120,13 @@ public final class SolutionPanel extends VBox {
             return;
         }
 
+        Expr candidate = solution.extras().get("candidate");
         String key = switch (solution.status()) {
             case NON_ELEMENTAL -> "solution.nonElemental";
             case DOES_NOT_EXIST -> isDefinite(solution) ? "solution.diverges" : "solution.doesNotExist";
-            default -> "solution.unsolved";
+            default -> candidate != null ? "solution.candidate" : "solution.unsolved";
         };
-        Label message = new Label(t.get(key));
+        Label message = new Label(candidate != null ? t.get(key, candidate) : t.get(key));
         message.setWrapText(true);
         boolean explanatory = solution.status() == Solution.Status.DOES_NOT_EXIST;
         message.getStyleClass().add(explanatory ? "step-title" : "message-error");
@@ -146,7 +147,7 @@ public final class SolutionPanel extends VBox {
 
     /** Valor decimal calculado por la cuadratura numérica, o {@code null}. */
     private Double approximation() {
-        if (!isDefinite(solution) || !(solution.extras().get("approximation") instanceof Expr.Num n)) return null;
+        if (solution.kind() != Solution.Kind.INTEGRAL || !(solution.extras().get("approximation") instanceof Expr.Num n)) return null;
         return n.value().doubleValue();
     }
 
@@ -158,7 +159,8 @@ public final class SolutionPanel extends VBox {
 
     /** Gráfica del integrando con el área bajo la curva entre los límites (si es una integral definida). */
     private void addPlot() {
-        if (solution.kind() != Solution.Kind.INTEGRAL || solution.problem().variables().size() > 1) return;
+        if (solution.kind() != Solution.Kind.INTEGRAL || solution.problem().variables().size() > 1
+                || extraVariables(solution).size() > 1) return;
         double lower = Double.NaN;
         double upper = Double.NaN;
         if (isDefinite(solution)) {
@@ -359,26 +361,63 @@ public final class SolutionPanel extends VBox {
         return s.extras().get("direction") instanceof Expr.Num n ? n.value().signum() : 0;
     }
 
-    private static MathLayout.Box statement(Solution s) {
+    /** Variables de un cálculo con varias variables ({@code var1}, {@code var2}…), en el orden de los extras. */
+    private static List<Expr> extraVariables(Solution s) {
+        List<Expr> variables = new ArrayList<>();
+        for (int i = 1; s.extras().get("var" + i) != null; i++) variables.add(s.extras().get("var" + i));
+        return variables;
+    }
+
+    private static List<MathLayout.IntegralDimension> dimensions(Solution s) {
+        List<MathLayout.IntegralDimension> dimensions = new ArrayList<>();
+        List<Expr> variables = extraVariables(s);
+        for (int i = 0; i < variables.size(); i++) {
+            dimensions.add(new MathLayout.IntegralDimension(variables.get(i), s.extras().get("lower" + (i + 1)),
+                    s.extras().get("upper" + (i + 1))));
+        }
+        return dimensions;
+    }
+
+    private static Expr listExpr(List<Expr> items) {
+        return Expr.sym("(" + String.join(", ", items.stream().map(Expr::toString).toList()) + ")");
+    }
+
+    private static Expr limitPoint(Solution s) {
+        List<Expr> point = new ArrayList<>();
+        for (int i = 1; s.extras().get("point" + i) != null; i++) point.add(s.extras().get("point" + i));
+        return listExpr(point);
+    }
+
+    /** Si el resultado lleva constante de integración (indefinidas e iteradas con alguna variable indefinida). */
+    private static boolean hasConstant(Solution s) {
+        if (extraVariables(s).size() > 1) return dimensions(s).stream().anyMatch(d -> d.lower() == null);
+        return !isDefinite(s);
+    }
+
+    private static MathLayout.Box equation(Solution s, Expr result, double size) {
         Expr variable = Expr.sym(s.variable());
+        List<Expr> variables = extraVariables(s);
         return switch (s.kind()) {
-            case DERIVATIVE -> MathLayout.derivativeEquation(variable, s.problem(), null, s.order(), 22);
-            case LIMIT -> MathLayout.limitEquation(variable, s.extras().getOrDefault("a", Expr.ZERO), directionOf(s),
-                    s.problem(), null, 22);
-            case INTEGRAL -> MathLayout.integralEquation(variable, s.problem(), s.extras().get("lower"),
-                    s.extras().get("upper"), null, false, 22);
+            case DERIVATIVE -> variables.isEmpty()
+                    ? MathLayout.derivativeEquation(variable, s.problem(), result, s.order(), size)
+                    : MathLayout.partialEquation(variables, s.problem(), result, size);
+            case LIMIT -> variables.size() > 1
+                    ? MathLayout.limitEquation(listExpr(variables), limitPoint(s), 0, s.problem(), result, size)
+                    : MathLayout.limitEquation(variable, s.extras().getOrDefault("a", Expr.ZERO), directionOf(s),
+                    s.problem(), result, size);
+            case INTEGRAL -> variables.size() > 1
+                    ? MathLayout.multipleIntegralEquation(dimensions(s), s.problem(), result, hasConstant(s) && result != null, size)
+                    : MathLayout.integralEquation(variable, s.problem(), s.extras().get("lower"),
+                    s.extras().get("upper"), result, !isDefinite(s), size);
         };
     }
 
+    private static MathLayout.Box statement(Solution s) {
+        return equation(s, null, 22);
+    }
+
     private static MathLayout.Box result(Solution s) {
-        Expr variable = Expr.sym(s.variable());
-        return switch (s.kind()) {
-            case DERIVATIVE -> MathLayout.derivativeEquation(variable, s.problem(), s.result(), s.order(), 26);
-            case LIMIT -> MathLayout.limitEquation(variable, s.extras().getOrDefault("a", Expr.ZERO), directionOf(s),
-                    s.problem(), s.result(), 26);
-            case INTEGRAL -> MathLayout.integralEquation(variable, s.problem(), s.extras().get("lower"),
-                    s.extras().get("upper"), s.result(), !isDefinite(s), 26);
-        };
+        return equation(s, s.result(), 26);
     }
 
     /** La ecuación de un paso con la notación de su tipo (derivada, límite o integral). */
@@ -390,10 +429,13 @@ public final class SolutionPanel extends VBox {
                     MathLayout.of(step.after(), size)));
         }
         return switch (step.rule().category()) {
-            case DERIVATIVE -> MathLayout.derivativeEquation(x, step.before(), step.after(), 1, size);
+            case DERIVATIVE -> step.rule() == Rule.DIFF_PARTIAL
+                    ? MathLayout.partialEquation(List.of(x), step.before(), step.after(), size)
+                    : MathLayout.derivativeEquation(x, step.before(), step.after(), 1, size);
             case LIMIT -> MathLayout.limitEquation(x, step.params().getOrDefault("a", Expr.ZERO), 0,
                     step.before(), step.after(), size);
-            case INTEGRAL -> MathLayout.integralEquation(x, step.before(), step.after(), false, size);
+            case INTEGRAL -> MathLayout.integralEquation(x, step.before(), step.params().get("lower"),
+                    step.params().get("upper"), step.after(), false, size);
             default -> MathLayout.row(List.of(MathLayout.of(step.before(), size), MathLayout.text(" = ", size),
                     MathLayout.of(step.after(), size)));
         };

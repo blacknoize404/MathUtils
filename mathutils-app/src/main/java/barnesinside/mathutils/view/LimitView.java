@@ -3,6 +3,7 @@ package barnesinside.mathutils.view;
 import MathUtils.cas.expr.Expr;
 import MathUtils.cas.expr.ExprParser;
 import MathUtils.cas.limit.Limits;
+import MathUtils.cas.limit.MultiLimits;
 import MathUtils.cas.steps.Solution;
 import barnesinside.mathutils.Workspace;
 import barnesinside.mathutils.ui.Segmented;
@@ -60,13 +61,16 @@ public final class LimitView extends SolverView {
     @Override
     protected List<String> examples() {
         return List.of("sin(x)/x|0|B", "(1+1/x)^x|oo|B", "(1-cos(x))/x^2|0|B", "x*ln(x)|0|R", "1/x|0|R",
-                "sqrt(x^2+x)-x|oo|B", "(3x^2+x)/(2x^2-5)|oo|B", "abs(x)/x|0|B");
+                "sqrt(x^2+x)-x|oo|B", "(3x^2+x)/(2x^2-5)|oo|B", "abs(x)/x|0|B",
+                "x^2*y/(x^2+y^2)|0; 0|B", "x*y/(x^2+y^2)|0; 0|B", "(x^2-y^2)/(x^2+y^2)|0; 0|B",
+                "x^2*y/(x^4+y^2)|0; 0|B");
     }
 
     @Override
     protected String exampleLabel(String example) {
         String[] parts = example.split("\\|");
         String side = parts[2].equals("R") ? "+" : parts[2].equals("L") ? "-" : "";
+        if (parts[1].contains(";")) return parts[0] + "   ((x, y) → (" + parts[1].replace(";", ",") + "))";
         return parts[0] + "   (x → " + parts[1] + side + ")";
     }
 
@@ -75,6 +79,8 @@ public final class LimitView extends SolverView {
         String[] parts = example.split("\\|");
         function.setText(parts[0]);
         point.setText(parts[1]);
+        int count = parts[1].split(";").length;
+        variable.setText(String.join(", ", java.util.Arrays.asList("x", "y", "z").subList(0, Math.min(3, count))));
         direction.setValue(switch (parts[2]) {
             case "R" -> Limits.Direction.RIGHT;
             case "L" -> Limits.Direction.LEFT;
@@ -96,9 +102,31 @@ public final class LimitView extends SolverView {
 
     @Override
     protected List<Node> extraFields() {
-        return List.of(
-                new VBox(4, Ui.caption(t.bind("limit.point")), point),
-                new VBox(4, Ui.caption(t.bind("limit.direction")), direction));
+        return List.of(new VBox(4, Ui.caption(t.bind("limit.point")), point));
+    }
+
+    @Override
+    protected Node optionsRow() {
+        return new VBox(4, Ui.caption(t.bind("limit.direction")), direction);
+    }
+
+    @Override
+    protected StringBinding variableCaption() {
+        return t.bind("limit.variables");
+    }
+
+    /** Con varias variables, el punto se escribe con un valor por variable, separados por «;» o por comas. */
+    @Override
+    protected Computation computeAll(String functionText, String variablesText) {
+        List<String> variables = variableList(variablesText);
+        if (variables.size() < 2) return super.computeAll(functionText, variablesText);
+
+        String pointText = point.getText() == null ? "" : point.getText();
+        String[] pieces = pointText.contains(";") ? pointText.split(";", -1) : pointText.split(",", -1);
+        if (pieces.length != variables.size()) throw new IllegalArgumentException(t.get("limit.error.point"));
+        List<Expr> values = new java.util.ArrayList<>();
+        for (String piece : pieces) values.add(ExprParser.parse(piece.isBlank() ? "0" : piece));
+        return Computation.single(MultiLimits.limit(ExprParser.parse(functionText), variables, values));
     }
 
     @Override

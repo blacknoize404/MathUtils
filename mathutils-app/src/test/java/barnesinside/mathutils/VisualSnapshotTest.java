@@ -246,6 +246,43 @@ class VisualSnapshotTest {
     }
 
     @Test
+    void hessianWithSeveralVariables() {
+        Rendered r = open(ThemeManager.Mode.LIGHT, "derivatives", 1900);
+        File file = FxTestSupport.onFx(() -> {
+            ((DerivativeView) r.shell().activeModule()).solve("x^2*y^3 + sin(x*y)", "x, y", DerivativeView.Mode.HESSIAN);
+            r.shell().settle();
+            return FxTestSupport.snapshot(r.scene(), "derivatives-hessian-light");
+        });
+        assertRendered(file);
+    }
+
+    @Test
+    void doubleIntegral() {
+        Rendered r = open(ThemeManager.Mode.LIGHT, "integrals", 1900);
+        File file = FxTestSupport.onFx(() -> {
+            IntegralView view = (IntegralView) r.shell().activeModule();
+            view.setVariables("x, y");
+            view.solve("x*y", "0; 0", "y; 1");
+            r.shell().settle();
+            return FxTestSupport.snapshot(r.scene(), "integrals-double-light");
+        });
+        assertRendered(file);
+    }
+
+    @Test
+    void limitWithSeveralVariables() {
+        Rendered r = open(ThemeManager.Mode.LIGHT, "limits", 1700);
+        File file = FxTestSupport.onFx(() -> {
+            LimitView view = (LimitView) r.shell().activeModule();
+            view.setVariables("x, y");
+            view.solve("x^2*y/(x^4 + y^2)", "0; 0", MathUtils.cas.limit.Limits.Direction.BOTH);
+            r.shell().settle();
+            return FxTestSupport.snapshot(r.scene(), "limits-multi-light");
+        });
+        assertRendered(file);
+    }
+
+    @Test
     void derivativeModule() {
         for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {
             Rendered r = open(mode, "derivatives");

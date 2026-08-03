@@ -194,6 +194,8 @@ final class AnimatorPanel extends VBox {
         boolean drawable = expr != null;
         treeNote.setVisible(!drawable && shown == null);
         treeNote.setManaged(!drawable && shown == null);
+        canvas.setVisible(drawable || shown != null);
+        canvas.setManaged(drawable || shown != null);
         if (!drawable) return;
         try {
             shown = TreeModel.ofExpr(expr);

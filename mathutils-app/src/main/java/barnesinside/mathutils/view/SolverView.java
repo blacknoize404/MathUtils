@@ -8,6 +8,7 @@ import barnesinside.mathutils.AppContext;
 import barnesinside.mathutils.I18n;
 import barnesinside.mathutils.Workspace;
 import barnesinside.mathutils.ui.Collapsible;
+import barnesinside.mathutils.ui.Segmented;
 import barnesinside.mathutils.ui.SymbolPalette;
 import barnesinside.mathutils.ui.Ui;
 import javafx.beans.binding.StringBinding;
@@ -41,6 +42,7 @@ abstract class SolverView implements Module {
     protected final TextField function = new TextField();
     protected final TextField variable = new TextField("x");
     private final Label error = new Label();
+    private final VBox multiBox = new VBox(16);
     private final SymbolPalette symbols = new SymbolPalette(false);
     private Collapsible examplesBox;
     private final StepSession session = new StepSession();
@@ -74,6 +76,11 @@ abstract class SolverView implements Module {
     /** Campos de texto adicionales que también reciben símbolos de la paleta. */
     protected List<javafx.scene.control.TextInputControl> extraInputs() {
         return List.of();
+    }
+
+    /** Una fila de opciones bajo el formulario (por ejemplo, el tipo de cálculo), o {@code null}. */
+    protected Node optionsRow() {
+        return null;
     }
 
     /** Campos adicionales del formulario (orden, punto…), o una lista vacía. */
@@ -112,6 +119,11 @@ abstract class SolverView implements Module {
         solve();
     }
 
+    /** Escribe las variables desde fuera (para pruebas). */
+    public void setVariables(String text) {
+        variable.setText(text);
+    }
+
     StepSession session() {
         return session;
     }
@@ -144,7 +156,7 @@ abstract class SolverView implements Module {
 
         VBox functionBox = new VBox(4, Ui.caption(text("function")), function);
         HBox.setHgrow(functionBox, Priority.ALWAYS);
-        HBox form = new HBox(12, functionBox, new VBox(4, Ui.caption(t.bind("solver.variable")), variable));
+        HBox form = new HBox(12, functionBox, new VBox(4, Ui.caption(variableCaption()), variable));
         form.getChildren().addAll(extraFields());
         form.setAlignment(Pos.BOTTOM_LEFT);
 
@@ -168,16 +180,16 @@ abstract class SolverView implements Module {
         examplesBox = new Collapsible(t.bind("solver.examples"), examples, true);
         Label empty = Ui.label(text("empty"), "text-muted");
         empty.managedProperty().bind(empty.visibleProperty());
-        VBox output = new VBox(20, panel);
+        VBox output = new VBox(20, multiBox, panel);
         output.getChildren().add(0, empty);
         panel.getChildren().addListener((javafx.collections.ListChangeListener<Node>) c ->
                 empty.setVisible(panel.getChildren().isEmpty()));
 
         symbols.attach(function, variable);
         symbols.attach(extraInputs().toArray(new javafx.scene.control.TextInputControl[0]));
-        VBox main = new VBox(20, Ui.pageHeader(text("title"), text("subtitle"), symbols.trigger()), form,
-                Ui.primary(t.bind("solver.solve"), "play", this::solve), error,
-                examplesBox, output);
+        VBox main = new VBox(20, Ui.pageHeader(text("title"), text("subtitle"), symbols.trigger()), form);
+        if (optionsRow() != null) main.getChildren().add(optionsRow());
+        main.getChildren().addAll(Ui.primary(t.bind("solver.solve"), "play", this::solve), error, examplesBox, output);
         main.setPadding(new Insets(32));
         main.setMaxWidth(920);
 
@@ -251,23 +263,9 @@ abstract class SolverView implements Module {
         String text = function.getText();
         if (text == null || text.isBlank()) return;
 
-        String name = variable.getText() == null ? "" : variable.getText().trim();
-        if (!VARIABLE.matcher(name).matches()) {
-            showError(t.get("solver.invalidVariable"));
-            return;
-        }
-
-        Expr parsed;
+        Computation computation;
         try {
-            parsed = ExprParser.parse(text);
-        } catch (ExpressionParseException e) {
-            showError(e.getMessage());
-            return;
-        }
-
-        Solution result;
-        try {
-            result = compute(parsed, name);
+            computation = computeAll(text, variable.getText() == null ? "" : variable.getText().trim());
         } catch (IllegalArgumentException | ExpressionParseException e) {
             showError(e.getMessage());
             return;
@@ -275,8 +273,74 @@ abstract class SolverView implements Module {
 
         error.setVisible(false);
         error.setManaged(false);
-        panel.show(result);
+
+        multiBox.getChildren().clear();
+        if (computation.summary() != null) multiBox.getChildren().add(computation.summary());
+        List<Part> parts = computation.parts();
+        if (parts.size() > 1) {
+            Segmented<Part> chooser = new Segmented<>(parts, parts.get(0), Part::label);
+            chooser.valueProperty().addListener((obs, old, now) -> panel.show(now.solution()));
+            ScrollPane scroller = new ScrollPane(chooser);
+            scroller.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            scroller.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            scroller.setFitToHeight(true);
+            scroller.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+            scroller.getStyleClass().add("animator-scroll");
+            multiBox.getChildren().add(new VBox(6, Ui.caption(t.bind("solver.parts")), scroller));
+        }
+        panel.show(parts.get(0).solution());
         examplesBox.setOpen(false);
+    }
+
+    // ---------------------------------------------------------------- Resultados con varias partes
+
+    /** Una solución con su nombre, cuando un cálculo produce varias (gradiente, hessiana…). */
+    protected record Part(String label, Solution solution) {
+    }
+
+    /**
+     * Resultado de un cálculo: las soluciones que se pueden explicar paso a paso y, si hay varias, un
+     * resumen (la matriz de resultados, por ejemplo) que se muestra encima.
+     */
+    protected record Computation(List<Part> parts, Node summary) {
+
+        protected Computation {
+            if (parts.isEmpty()) throw new IllegalArgumentException("Un cálculo necesita al menos una solución");
+            parts = List.copyOf(parts);
+        }
+
+        static Computation single(Solution solution) {
+            return new Computation(List.of(new Part("", solution)), null);
+        }
+    }
+
+    /**
+     * Interpreta los campos y calcula. Por defecto es el caso de una variable; los módulos que admiten
+     * varias variables lo sustituyen.
+     * @throws IllegalArgumentException con un mensaje para el usuario si algún campo no es válido
+     */
+    protected Computation computeAll(String functionText, String variablesText) {
+        if (!VARIABLE.matcher(variablesText).matches()) throw new IllegalArgumentException(t.get("solver.invalidVariable"));
+        return Computation.single(compute(ExprParser.parse(functionText), variablesText));
+    }
+
+    /**
+     * Lista de variables escrita con comas, punto y coma o espacios. Vacía si el campo está vacío.
+     * @throws IllegalArgumentException si algún nombre no es válido
+     */
+    protected List<String> variableList(String text) {
+        if (text == null || text.isBlank()) return List.of();
+        List<String> names = new java.util.ArrayList<>();
+        for (String name : text.trim().split("[,;\\s]+")) {
+            if (!VARIABLE.matcher(name).matches()) throw new IllegalArgumentException(t.get("solver.invalidVariable"));
+            names.add(name);
+        }
+        return names;
+    }
+
+    /** Rótulo del campo de variables (en plural en los módulos con varias variables). */
+    protected StringBinding variableCaption() {
+        return t.bind("solver.variable");
     }
 
     private void showError(String message) {
