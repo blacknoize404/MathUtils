@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 public final class FxTestSupport {
 
     private static boolean started;
+    private static String unavailableReason;
 
     private FxTestSupport() {
     }
@@ -27,13 +28,17 @@ public final class FxTestSupport {
     /** Arranca el toolkit; si el entorno no lo permite (sin pantalla), salta el test. */
     public static synchronized void start() {
         if (started) return;
+        // Tras un primer intento fallido el toolkit queda a medias: no se reintenta, porque un segundo
+        // arranque parece "ya iniciado" y las tareas esperarían en vano hasta agotar el tiempo
+        if (unavailableReason != null) Assumptions.abort(unavailableReason);
         try {
             Platform.startup(() -> {
             });
         } catch (IllegalStateException alreadyStarted) {
             // Ya estaba arrancado
         } catch (Throwable unavailable) {
-            Assumptions.abort("JavaFX no está disponible en este entorno: " + unavailable);
+            unavailableReason = "JavaFX no está disponible en este entorno: " + unavailable;
+            Assumptions.abort(unavailableReason);
         }
         Platform.setImplicitExit(false);
         started = true;
