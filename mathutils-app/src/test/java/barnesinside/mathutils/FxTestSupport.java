@@ -31,6 +31,12 @@ public final class FxTestSupport {
         // Tras un primer intento fallido el toolkit queda a medias: no se reintenta, porque un segundo
         // arranque parece "ya iniciado" y las tareas esperarían en vano hasta agotar el tiempo
         if (unavailableReason != null) Assumptions.abort(unavailableReason);
+        // En Linux sin servidor gráfico (integración continua) ni se intenta arrancar el toolkit
+        boolean windowsOrMac = System.getProperty("os.name", "").toLowerCase().matches(".*(win|mac).*");
+        if (!windowsOrMac && System.getenv("DISPLAY") == null && System.getenv("WAYLAND_DISPLAY") == null) {
+            unavailableReason = "JavaFX no está disponible en este entorno: no hay pantalla";
+            Assumptions.abort(unavailableReason);
+        }
         try {
             Platform.startup(() -> {
             });
@@ -56,7 +62,7 @@ public final class FxTestSupport {
             }
         });
         try {
-            return future.get(60, TimeUnit.SECONDS);
+            return future.get(30, TimeUnit.SECONDS);
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
             if (cause instanceof RuntimeException runtime) throw runtime;
