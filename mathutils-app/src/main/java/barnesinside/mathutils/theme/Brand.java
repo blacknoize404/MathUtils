@@ -147,7 +147,18 @@ public final class Brand {
 
     // ---------------------------------------------------------------- Logos
 
-    /** Variantes de los logos oficiales. */
+    /** La marca de MathUtils (blanca sobre fondos oscuros y negra sobre claros), con su cuadrado menta. */
+    public static Image mark(boolean darkBackground) {
+        return new Image(Brand.class.getResourceAsStream("/mathutils/brand/mathutils_mark_"
+                + (darkBackground ? "blanco" : "negro") + ".png"));
+    }
+
+    /** El icono de la aplicación para la ventana y la barra de tareas. */
+    public static Image appIcon() {
+        return new Image(Brand.class.getResourceAsStream("/mathutils/brand/mathutils_app_icon.png"));
+    }
+
+    /** Variantes de los logos oficiales de barnesinside, que se muestran en «Acerca de». */
     public enum Logo {ISOTIPO, IMAGOTIPO}
 
     /**

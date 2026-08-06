@@ -7,6 +7,8 @@ import MathUtils.exceptions.ExpressionParseException;
 import barnesinside.mathutils.AppContext;
 import barnesinside.mathutils.I18n;
 import barnesinside.mathutils.Workspace;
+import barnesinside.mathutils.math.LivePreview;
+import barnesinside.mathutils.math.MathLayout;
 import barnesinside.mathutils.ui.Collapsible;
 import barnesinside.mathutils.ui.Segmented;
 import barnesinside.mathutils.ui.SymbolPalette;
@@ -43,6 +45,7 @@ abstract class SolverView implements Module {
     protected final TextField variable = new TextField("x");
     private final Label error = new Label();
     private final VBox multiBox = new VBox(16);
+    private final LivePreview preview = new LivePreview();
     private final SymbolPalette symbols = new SymbolPalette(false);
     private Collapsible examplesBox;
     private final StepSession session = new StepSession();
@@ -76,6 +79,31 @@ abstract class SolverView implements Module {
     /** Campos de texto adicionales que también reciben símbolos de la paleta. */
     protected List<javafx.scene.control.TextInputControl> extraInputs() {
         return List.of();
+    }
+
+    /**
+     * La fórmula de la vista previa con lo que hay escrito. Por defecto, la función; cada módulo la
+     * presenta con su notación (derivada, límite, integral). Lanza una excepción con el motivo si el
+     * texto todavía no es válido.
+     */
+    protected MathLayout.Box previewBox(String functionText, String variablesText) {
+        return MathLayout.of(ExprParser.parse(functionText), 22);
+    }
+
+    private MathLayout.Box renderPreview() {
+        String text = function.getText();
+        if (text == null || text.isBlank()) return null;
+        return previewBox(text, variable.getText() == null ? "" : variable.getText().trim());
+    }
+
+    /** Vuelve a dibujar la vista previa (los módulos lo llaman al cambiar una opción que no es texto). */
+    protected void refreshPreview() {
+        preview.refresh(this::renderPreview);
+    }
+
+    /** La vista previa de lo escrito (para pruebas). */
+    LivePreview preview() {
+        return preview;
     }
 
     /** Una fila de opciones bajo el formulario (por ejemplo, el tipo de cálculo), o {@code null}. */
@@ -189,6 +217,9 @@ abstract class SolverView implements Module {
         symbols.attach(extraInputs().toArray(new javafx.scene.control.TextInputControl[0]));
         VBox main = new VBox(20, Ui.pageHeader(text("title"), text("subtitle"), symbols.trigger()), form);
         if (optionsRow() != null) main.getChildren().add(optionsRow());
+        List<javafx.scene.control.TextInputControl> followed = new java.util.ArrayList<>(List.of(function, variable));
+        followed.addAll(extraInputs());
+        main.getChildren().add(preview.follow(followed, this::renderPreview));
         main.getChildren().addAll(Ui.primary(t.bind("solver.solve"), "play", this::solve), error, examplesBox, output);
         main.setPadding(new Insets(32));
         main.setMaxWidth(920);

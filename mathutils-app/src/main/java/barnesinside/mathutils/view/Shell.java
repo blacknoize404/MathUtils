@@ -123,7 +123,8 @@ public final class Shell extends StackPane {
         });
         Ui.pressEffect(themeToggle);
 
-        HBox bar = new HBox(16, brand, Ui.spacer(), language, themeToggle);
+        Button about = Ui.iconButton("info", t.bind("header.about"), () -> AboutDialog.show(getScene() == null ? null : getScene().getWindow()));
+        HBox bar = new HBox(16, brand, Ui.spacer(), language, about, themeToggle);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.setFillHeight(false);
         bar.setPrefHeight(64);
@@ -133,7 +134,7 @@ public final class Shell extends StackPane {
     }
 
     private void updateLogo() {
-        logo.setImage(Brand.logo(Brand.Logo.ISOTIPO, theme.isDark()));
+        logo.setImage(Brand.mark(theme.isDark()));
     }
 
     private void updateThemeIcon(Button button) {

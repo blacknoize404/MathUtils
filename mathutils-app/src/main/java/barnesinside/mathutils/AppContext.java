@@ -10,6 +10,7 @@ public final class AppContext {
 
     private static ThemeManager theme;
     private static I18n i18n;
+    private static javafx.application.HostServices hostServices;
 
     private AppContext() {
     }
@@ -22,6 +23,23 @@ public final class AppContext {
     public static synchronized I18n i18n() {
         if (i18n == null) i18n = new I18n();
         return i18n;
+    }
+
+    public static synchronized void setHostServices(javafx.application.HostServices services) {
+        hostServices = services;
+    }
+
+    /** Abre un enlace en el navegador del sistema. */
+    public static synchronized void openLink(String url) {
+        if (hostServices != null) {
+            hostServices.showDocument(url);
+            return;
+        }
+        try {
+            if (java.awt.Desktop.isDesktopSupported()) java.awt.Desktop.getDesktop().browse(java.net.URI.create(url));
+        } catch (java.io.IOException | RuntimeException e) {
+            // Sin navegador disponible no hay nada más que hacer
+        }
     }
 
     /** Sustituye los servicios (para pruebas). */

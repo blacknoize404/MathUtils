@@ -12,6 +12,13 @@ Plain Java evaluates math eagerly. You pass values in and get a number out, so t
 
 > **Spanish documentation**: [README.md](README.es.md)
 
+<p align="center">
+  <img src="docs/images/studio-integral-light.png" alt="MathUtils Studio solving an improper integral, with the live preview, the steps and the animator" width="49%">
+  <img src="docs/images/studio-hessian-dark.png" alt="MathUtils Studio computing a Hessian in dark mode" width="49%">
+</p>
+
+<p align="center"><sub><b>MathUtils Studio</b>: step-by-step solvers with a live preview of what you type, an animator with the expression tree, and panels for matrices, complex numbers, statistics and differential equations. Download it from the <a href="https://github.com/blacknoize404/MathUtils/releases">releases</a>; it needs no Java.</sub></p>
+
 ## Features
 
 ### 1. Typed, evaluable expression trees

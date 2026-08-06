@@ -21,7 +21,8 @@ public final class MathUtilsApp extends Application {
         AppContext.theme().install(scene);
 
         stage.titleProperty().bind(AppContext.i18n().bind("app.title"));
-        stage.getIcons().add(Brand.logo(Brand.Logo.ISOTIPO, true));
+        AppContext.setHostServices(getHostServices());
+        stage.getIcons().add(Brand.appIcon());
         stage.setMinWidth(1040);
         stage.setMinHeight(680);
         stage.setScene(scene);

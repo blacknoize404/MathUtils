@@ -91,6 +91,28 @@ public final class OdeView extends ToolView {
         return "ode";
     }
 
+    private final barnesinside.mathutils.math.LivePreview preview = new barnesinside.mathutils.math.LivePreview();
+
+    @Override
+    protected Node previewNode() {
+        return preview.follow(List.of(fy, fz), () -> {
+            boolean hasY = fy.getText() != null && !fy.getText().isBlank();
+            boolean hasZ = fz.getText() != null && !fz.getText().isBlank();
+            if (!hasY && !hasZ) return null;
+            List<barnesinside.mathutils.math.MathLayout.Box> items = new java.util.ArrayList<>();
+            if (hasY) {
+                items.add(barnesinside.mathutils.math.MathLayout.text("y' = ", 22));
+                items.add(barnesinside.mathutils.math.MathLayout.of(ExprParser.parse(fy.getText()), 22));
+            }
+            if (hasY && hasZ) items.add(barnesinside.mathutils.math.MathLayout.text("        ", 22));
+            if (hasZ) {
+                items.add(barnesinside.mathutils.math.MathLayout.text("z' = ", 22));
+                items.add(barnesinside.mathutils.math.MathLayout.of(ExprParser.parse(fz.getText()), 22));
+            }
+            return barnesinside.mathutils.math.MathLayout.row(items);
+        });
+    }
+
     @Override
     protected List<javafx.scene.control.TextInputControl> inputs() {
         return List.of(fy, fz, t0, y0, z0, tEnd, steps);

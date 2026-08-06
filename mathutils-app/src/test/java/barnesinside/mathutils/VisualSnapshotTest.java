@@ -282,6 +282,23 @@ class VisualSnapshotTest {
         assertRendered(file);
     }
 
+    /** Capturas del README (se copian a docs/images). */
+    @Test
+    void readmeScreenshots() {
+        Rendered light = open(ThemeManager.Mode.LIGHT, "integrals", 940);
+        assertRendered(FxTestSupport.onFx(() -> {
+            ((IntegralView) light.shell().activeModule()).solve("e^(-x^2)", "0", "oo");
+            light.shell().settle();
+            return FxTestSupport.snapshot(light.scene(), "readme-integral-light");
+        }));
+        Rendered dark = open(ThemeManager.Mode.DARK, "derivatives", 940);
+        assertRendered(FxTestSupport.onFx(() -> {
+            ((DerivativeView) dark.shell().activeModule()).solve("x^2*y^3 + sin(x*y)", "x, y", DerivativeView.Mode.HESSIAN);
+            dark.shell().settle();
+            return FxTestSupport.snapshot(dark.scene(), "readme-hessian-dark");
+        }));
+    }
+
     @Test
     void derivativeModule() {
         for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {

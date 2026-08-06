@@ -107,10 +107,13 @@ public final class SolutionPanel extends VBox {
         getChildren().clear();
         panes.clear();
 
-        MathView statement = MathView.empty(22);
-        statement.setBox(statement(solution));
-        statement.setInteractive(false);
-        getChildren().add(scrollable(statement));
+        // Con resultado, la tarjeta ya muestra el problema completo; el enunciado solo hace falta si no lo hay
+        if (!solution.isSolved()) {
+            MathView statement = MathView.empty(22);
+            statement.setBox(statement(solution));
+            statement.setInteractive(false);
+            getChildren().add(scrollable(statement));
+        }
 
         if (solution.isSolved()) {
             getChildren().add(resultCard());

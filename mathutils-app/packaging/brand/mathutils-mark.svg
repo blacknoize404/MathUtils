@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- Marca de MathUtils: una M de trazo recto y un cuadrado menta, el acento de la marca -->
+  <path d="M4 20.5V3.5L12 12.5L20 3.5V20.5" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="miter" stroke-miterlimit="10"/>
+  <rect x="10.25" y="16.5" width="3.5" height="4" fill="#00FF88"/>
+</svg>

@@ -73,6 +73,22 @@ public final class MatrixView extends ToolView {
         return "matrix";
     }
 
+    private final barnesinside.mathutils.math.LivePreview preview = new barnesinside.mathutils.math.LivePreview();
+
+    @Override
+    protected Node previewNode() {
+        return preview.followNodes(List.of(a, b), () -> {
+            boolean hasA = a.getText() != null && !a.getText().isBlank();
+            boolean hasB = b.getText() != null && !b.getText().isBlank();
+            if (!hasA && !hasB) return null;
+            HBox row = new HBox(36);
+            row.setAlignment(Pos.CENTER_LEFT);
+            if (hasA) row.getChildren().add(named("A", grid(parse(a.getText()))));
+            if (hasB) row.getChildren().add(named("B", grid(parse(b.getText()))));
+            return row;
+        });
+    }
+
     @Override
     protected List<javafx.scene.control.TextInputControl> inputs() {
         return List.of(a, b);

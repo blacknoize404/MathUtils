@@ -43,6 +43,11 @@ abstract class ToolView implements Module {
         return false;
     }
 
+    /** La vista previa en tiempo real de lo escrito, o {@code null} si el módulo no la tiene. */
+    protected Node previewNode() {
+        return null;
+    }
+
     /** Campos de texto del módulo que reciben los símbolos de la paleta. */
     protected List<javafx.scene.control.TextInputControl> inputs() {
         return List.of();
@@ -89,7 +94,10 @@ abstract class ToolView implements Module {
 
         Node form = form();
         symbols.attach(inputs().toArray(new javafx.scene.control.TextInputControl[0]));
-        VBox main = new VBox(20, Ui.pageHeader(text("title"), text("subtitle"), symbols.trigger()), form, error);
+        VBox main = new VBox(20, Ui.pageHeader(text("title"), text("subtitle"), symbols.trigger()), form);
+        Node live = previewNode();
+        if (live != null) main.getChildren().add(live);
+        main.getChildren().add(error);
 
         List<Example> examples = examples();
         if (!examples.isEmpty()) {

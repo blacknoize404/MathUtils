@@ -72,6 +72,22 @@ public final class ComplexView extends ToolView {
         return "complex";
     }
 
+    private final barnesinside.mathutils.math.LivePreview preview = new barnesinside.mathutils.math.LivePreview();
+
+    @Override
+    protected Node previewNode() {
+        return preview.follow(List.of(z1, z2), () -> {
+            boolean hasFirst = z1.getText() != null && !z1.getText().isBlank();
+            boolean hasSecond = z2.getText() != null && !z2.getText().isBlank();
+            if (!hasFirst && !hasSecond) return null;
+            List<barnesinside.mathutils.math.MathLayout.Box> items = new java.util.ArrayList<>();
+            if (hasFirst) items.add(barnesinside.mathutils.math.MathLayout.text("z1 = " + format(Complex.parse(z1.getText())), 20));
+            if (hasFirst && hasSecond) items.add(barnesinside.mathutils.math.MathLayout.text("      ", 20));
+            if (hasSecond) items.add(barnesinside.mathutils.math.MathLayout.text("z2 = " + format(Complex.parse(z2.getText())), 20));
+            return barnesinside.mathutils.math.MathLayout.row(items);
+        });
+    }
+
     @Override
     protected boolean imaginaryUnit() {
         return true;

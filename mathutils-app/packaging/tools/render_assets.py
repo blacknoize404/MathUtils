@@ -94,17 +94,32 @@ def inline_svg(name: str, css: str, fill: str = "#fff") -> str:
     raw = re.sub(r"<metadata>.*?</metadata>", "", raw, flags=re.S)
     raw = re.sub(r"<defs>.*?</defs>", "", raw, flags=re.S)
     raw = raw.replace("<svg ", f'<svg style="{css}" ', 1)
-    return raw.replace("</svg>", f"<style>path,polygon,rect{{fill:{fill}}}</style></svg>")
+    # El relleno va en un grupo, no en una hoja de estilo: una regla CSS dentro de un SVG incrustado
+    # afectaría a todos los SVG de la página
+    start = raw.index(">", raw.index("<svg ")) + 1
+    return raw[:start] + f'<g fill="{fill}">' + raw[start:raw.rindex("</svg>")] + "</g></svg>"
+
+
+def mark_svg(css: str, stroke: str = "#FFFFFF") -> str:
+    """La marca de MathUtils (una M con un cuadrado menta) con el color de trazo indicado."""
+    raw = (BRAND / "mathutils-mark.svg").read_text(encoding="utf-8")
+    raw = re.sub(r"<!--.*?-->", "", raw, flags=re.S).replace("#FFFFFF", stroke)
+    return raw.replace("<svg ", f'<svg style="{css}" ', 1)
+
+
+def mark_page(stroke: str, size: int) -> str:
+    return (f'<!doctype html><meta charset="utf-8"><style>html,body{{margin:0;width:{size}px;height:{size}px;'
+            f'background:transparent;overflow:hidden}}</style>{mark_svg(f"width:{size}px;height:{size}px;display:block", stroke)}')
 
 
 def icon_html(size: int) -> str:
     radius = round(size * 0.225)
-    height = round(size * 0.52)
+    height = round(size * 0.6)
     return f"""<!doctype html><meta charset="utf-8"><style>
 html,body {{ margin:0; width:{size}px; height:{size}px; background:transparent; overflow:hidden; }}
 .tile {{ width:{size}px; height:{size}px; border-radius:{radius}px; background:#000; display:flex;
   align-items:center; justify-content:center; box-sizing:border-box; border:{max(1, size // 64)}px solid #2D2D2D; }}
-</style><div class="tile">{inline_svg("barnesinside_isotipo_blanco.svg", f"height:{height}px;display:block")}</div>"""
+</style><div class="tile">{mark_svg(f"width:{height}px;height:{height}px;display:block")}</div>"""
 
 
 def font_faces() -> str:
@@ -116,7 +131,7 @@ def font_faces() -> str:
 
 
 def wizard_html(width: int, height: int, version: str) -> str:
-    isotipo = inline_svg("barnesinside_isotipo_blanco.svg", "height:34px;display:block")
+    isotipo = mark_svg("width:38px;height:38px;display:block")
     imagotipo = inline_svg("barnesinside_imagotipo_blanco.svg", "width:112px;display:block;margin-top:10px;opacity:.9")
     return f"""<!doctype html><meta charset="utf-8"><style>
 {font_faces()}
@@ -136,7 +151,7 @@ p {{ margin:12px 0 0; font-size:11.5px; line-height:1.45; color:#A3A3A3; }}
 <div class="rule"></div>
 <p>Calcula, mira el árbol y entiende cada paso.</p>
 <div class="spacer"></div>
-<div class="version">v{version}</div>
+<div class="version">v{version} · por</div>
 {imagotipo}
 <div class="edge"></div></div>"""
 
@@ -171,17 +186,13 @@ def flatten_to_bmp(png: Path, bmp: Path) -> None:
 
 
 def icon_svg() -> str:
-    """El icono vectorial: el isotipo blanco sobre un cuadrado negro de esquinas redondeadas."""
-    raw = (BRAND / "barnesinside_isotipo_blanco.svg").read_text(encoding="utf-8")
-    start = raw.index("<svg")
-    body = raw[start:]
-    body = re.sub(r"<metadata>.*?</metadata>", "", body, flags=re.S)
-    body = re.sub(r"<defs>.*?</defs>", "", body, flags=re.S)
-    inner = body[body.index(">") + 1:body.rindex("</svg>")]
-    inner = '<g fill="#fff">' + inner + "</g>"
+    """El icono vectorial: la marca de MathUtils sobre un cuadrado negro de esquinas redondeadas."""
+    raw = (BRAND / "mathutils-mark.svg").read_text(encoding="utf-8")
+    inner = raw[raw.index(">") + 1:raw.rindex("</svg>")]
+    inner = re.sub(r"<!--.*?-->", "", inner, flags=re.S)
     return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">'
             '<rect x="0.5" y="0.5" width="127" height="127" rx="28.8" fill="#000" stroke="#2D2D2D"/>'
-            '<svg x="43.4" y="30.5" width="41.2" height="67" viewBox="0 0 17.9 26.16" preserveAspectRatio="xMidYMid meet">'
+            '<svg x="25.6" y="25.6" width="76.8" height="76.8" viewBox="0 0 24 24">'
             f'{inner}</svg></svg>\n')
 
 
@@ -210,6 +221,13 @@ def main() -> None:
     write_ico([(s, icons / f"mathutils-studio-{s}.png") for s in (16, 24, 32, 48, 64, 128, 256)],
               icons / "mathutils-studio.ico")
     (icons / "mathutils-studio.svg").write_text(icon_svg(), encoding="utf-8")
+
+    # La aplicación usa la marca (blanca o negra según el tema) y el icono de la ventana
+    resources = PACKAGING.parent / "src" / "main" / "resources" / "mathutils" / "brand"
+    resources.mkdir(parents=True, exist_ok=True)
+    render(browser, mark_page("#FFFFFF", 256), 256, 256, 1, resources / "mathutils_mark_blanco.png")
+    render(browser, mark_page("#000000", 256), 256, 256, 1, resources / "mathutils_mark_negro.png")
+    shutil.copy(icons / "mathutils-studio-256.png", resources / "mathutils_app_icon.png")
 
     installer = ASSETS / "installer"
     installer.mkdir(parents=True, exist_ok=True)

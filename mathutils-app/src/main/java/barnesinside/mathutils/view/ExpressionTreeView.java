@@ -104,6 +104,17 @@ public final class ExpressionTreeView implements Module {
 
     // ================================================================ Construcción
 
+
+    /** La vista previa de lo que se escribe; mientras no sea una expresión válida no muestra nada (los errores ya se avisan aparte). */
+    private static barnesinside.mathutils.math.LivePreview livePreview(javafx.scene.control.TextField field) {
+        return new barnesinside.mathutils.math.LivePreview().follow(java.util.List.of(field), () -> {
+            String text = field.getText();
+            if (text == null || text.isBlank()) return null;
+            return MathUtils.cas.expr.ExprParser.tryParse(text)
+                    .map(e -> barnesinside.mathutils.math.MathLayout.of(e, 22)).orElse(null);
+        });
+    }
+
     private Node build() {
         input.getStyleClass().add("expression-field");
         input.promptTextProperty().bind(t.bind("tree.placeholder"));
@@ -140,7 +151,7 @@ public final class ExpressionTreeView implements Module {
         options.setRowValignment(javafx.geometry.VPos.CENTER);
 
         symbols.attach(input, values);
-        VBox top = new VBox(16, Ui.pageHeader(t.bind("tree.title"), t.bind("tree.subtitle"), symbols.trigger()), inputRow, error, options);
+        VBox top = new VBox(16, Ui.pageHeader(t.bind("tree.title"), t.bind("tree.subtitle"), symbols.trigger()), inputRow, livePreview(input), error, options);
         top.setPadding(new Insets(32, 32, 16, 32));
 
         emptyHint.textProperty().bind(t.bind("tree.empty"));

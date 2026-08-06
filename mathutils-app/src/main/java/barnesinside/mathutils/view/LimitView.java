@@ -6,6 +6,7 @@ import MathUtils.cas.limit.Limits;
 import MathUtils.cas.limit.MultiLimits;
 import MathUtils.cas.steps.Solution;
 import barnesinside.mathutils.Workspace;
+import barnesinside.mathutils.math.MathLayout;
 import barnesinside.mathutils.ui.Segmented;
 import barnesinside.mathutils.ui.Ui;
 import javafx.beans.binding.StringBinding;
@@ -35,6 +36,7 @@ public final class LimitView extends SolverView {
         point.setPrefWidth(130);
         point.getStyleClass().add("mono");
         point.promptTextProperty().bind(t.bind("limit.point.placeholder"));
+        direction.valueProperty().addListener((obs, old, now) -> refreshPreview());
     }
 
     @Override
@@ -113,6 +115,23 @@ public final class LimitView extends SolverView {
     @Override
     protected StringBinding variableCaption() {
         return t.bind("limit.variables");
+    }
+
+    @Override
+    protected MathLayout.Box previewBox(String functionText, String variablesText) {
+        List<String> variables = variableList(variablesText);
+        Expr f = ExprParser.parse(functionText);
+        String pointText = point.getText() == null ? "" : point.getText();
+        if (variables.size() > 1) {
+            String[] pieces = pointText.contains(";") ? pointText.split(";", -1) : pointText.split(",", -1);
+            List<Expr> values = new java.util.ArrayList<>();
+            for (String piece : pieces) values.add(ExprParser.parse(piece.isBlank() ? "0" : piece));
+            return MathLayout.limitEquation(Expr.sym("(" + String.join(", ", variables) + ")"),
+                    Expr.sym("(" + String.join(", ", values.stream().map(Expr::toString).toList()) + ")"), 0, f, null, 22);
+        }
+        Expr target = ExprParser.parse(pointText.isBlank() ? "0" : pointText);
+        int side = direction.getValue() == Limits.Direction.RIGHT ? 1 : direction.getValue() == Limits.Direction.LEFT ? -1 : 0;
+        return MathLayout.limitEquation(Expr.sym(variables.isEmpty() ? "x" : variables.get(0)), target, side, f, null, 22);
     }
 
     /** Con varias variables, el punto se escribe con un valor por variable, separados por «;» o por comas. */

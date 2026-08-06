@@ -232,3 +232,8 @@
 .animator-dock { -fx-background-color: -bi-bg-secondary; -fx-border-color: -bi-border; -fx-border-width: 0 0 0 1; }
 .animator-scroll, .animator-scroll > .viewport { -fx-background-color: transparent; }
 .animator { -fx-background-color: transparent; }
+
+/* Enlaces */
+.hyperlink { -fx-text-fill: -bi-fg; -fx-underline: true; -fx-font-family: "Geist Mono"; -fx-font-size: 13px; -fx-border-color: transparent; }
+.hyperlink:hover { -fx-text-fill: -bi-accent-hover; }
+.hyperlink:focused { -fx-border-color: -bi-accent; }

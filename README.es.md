@@ -12,6 +12,13 @@ Java evalúa la matemática de forma inmediata. Entregas los valores y recibes u
 
 > **Documentación en inglés / English version**: [README.md](README.md)
 
+<p align="center">
+  <img src="docs/images/studio-integral-light.png" alt="MathUtils Studio resolviendo una integral impropia, con la vista previa, los pasos y el animador" width="49%">
+  <img src="docs/images/studio-hessian-dark.png" alt="MathUtils Studio calculando una hessiana en modo oscuro" width="49%">
+</p>
+
+<p align="center"><sub><b>MathUtils Studio</b>: solucionadores paso a paso con vista previa en tiempo real de lo que escribes, un animador con el árbol de la expresión y paneles de matrices, complejos, estadística y ecuaciones diferenciales. Descárgalo en las <a href="https://github.com/blacknoize404/MathUtils/releases">releases</a>; no necesita Java.</sub></p>
+
 ## Características Principales
 
 ### 1. Árboles de expresión tipados y evaluables

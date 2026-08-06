@@ -6,6 +6,7 @@ import MathUtils.cas.expr.Expr;
 import MathUtils.cas.expr.ExprParser;
 import MathUtils.cas.steps.Solution;
 import barnesinside.mathutils.Workspace;
+import barnesinside.mathutils.math.MathLayout;
 import barnesinside.mathutils.ui.Segmented;
 import barnesinside.mathutils.ui.Ui;
 import javafx.beans.binding.StringBinding;
@@ -36,6 +37,52 @@ public final class DerivativeView extends SolverView {
         order.getStyleClass().add("mono");
         variable.setPrefWidth(120);
         variable.promptTextProperty().bind(t.bind("derivative.variables.placeholder"));
+        mode.valueProperty().addListener((obs, old, now) -> refreshPreview());
+    }
+
+    @Override
+    protected MathLayout.Box previewBox(String functionText, String variablesText) {
+        List<String> variables = variableList(variablesText);
+        Mode selected = mode.getValue();
+        if (selected == Mode.JACOBIAN || selected == Mode.DIVERGENCE) {
+            List<Expr> functions = MultiDerivatives.parseFunctions(functionText);
+            if (functions.isEmpty()) return null;
+            List<MathLayout.Box> items = new java.util.ArrayList<>();
+            items.add(MathLayout.text(selected == Mode.JACOBIAN ? "J( " : "∇· ", 22));
+            for (int i = 0; i < functions.size(); i++) {
+                if (i > 0) items.add(MathLayout.text(";  ", 22));
+                items.add(MathLayout.of(functions.get(i), 22));
+            }
+            if (selected == Mode.JACOBIAN) items.add(MathLayout.text(" )", 22));
+            return MathLayout.row(items);
+        }
+        Expr f = ExprParser.parse(functionText);
+        switch (selected) {
+            case GRADIENT -> {
+                return MathLayout.row(List.of(MathLayout.text("∇ ", 22), MathLayout.of(f, 22)));
+            }
+            case HESSIAN -> {
+                return MathLayout.row(List.of(MathLayout.text("Hess ", 22), MathLayout.of(f, 22)));
+            }
+            case LAPLACIAN -> {
+                return MathLayout.row(List.of(MathLayout.text("∇² ", 22), MathLayout.of(f, 22)));
+            }
+            default -> {
+                if (variables.isEmpty()) return MathLayout.of(f, 22);
+                if (variables.size() > 1 || f.variables().size() > 1) {
+                    List<Expr> names = new java.util.ArrayList<>();
+                    for (String name : variables) names.add(Expr.sym(name));
+                    return MathLayout.partialEquation(names, f, null, 22);
+                }
+                int derivativeOrder;
+                try {
+                    derivativeOrder = Math.max(1, Math.min(10, Integer.parseInt(order.getText().trim())));
+                } catch (NumberFormatException e) {
+                    derivativeOrder = 1;
+                }
+                return MathLayout.derivativeEquation(Expr.sym(variables.get(0)), f, null, derivativeOrder, 22);
+            }
+        }
     }
 
     @Override

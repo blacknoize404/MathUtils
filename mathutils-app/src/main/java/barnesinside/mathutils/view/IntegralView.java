@@ -6,6 +6,7 @@ import MathUtils.cas.integral.Integrals;
 import MathUtils.cas.integral.MultipleIntegrals;
 import MathUtils.cas.steps.Solution;
 import barnesinside.mathutils.Workspace;
+import barnesinside.mathutils.math.MathLayout;
 import barnesinside.mathutils.ui.Ui;
 import javafx.beans.binding.StringBinding;
 import javafx.scene.Node;
@@ -107,6 +108,26 @@ public final class IntegralView extends SolverView {
     @Override
     protected StringBinding variableCaption() {
         return t.bind("integral.variables");
+    }
+
+    @Override
+    protected MathLayout.Box previewBox(String functionText, String variablesText) {
+        List<String> variables = variableList(variablesText);
+        Expr f = ExprParser.parse(functionText);
+        String[] lows = splitBounds(lower.getText());
+        String[] highs = splitBounds(upper.getText());
+        if (variables.size() > 1) {
+            List<MathLayout.IntegralDimension> dimensions = new java.util.ArrayList<>();
+            for (int i = 0; i < variables.size(); i++) {
+                boolean has = i < lows.length && i < highs.length && !lows[i].isBlank() && !highs[i].isBlank();
+                dimensions.add(new MathLayout.IntegralDimension(Expr.sym(variables.get(i)),
+                        has ? ExprParser.parse(lows[i]) : null, has ? ExprParser.parse(highs[i]) : null));
+            }
+            return MathLayout.multipleIntegralEquation(dimensions, f, null, false, 22);
+        }
+        boolean definite = lows.length == 1 && highs.length == 1 && !lows[0].isBlank() && !highs[0].isBlank();
+        return MathLayout.integralEquation(Expr.sym(variables.isEmpty() ? "x" : variables.get(0)), f,
+                definite ? ExprParser.parse(lows[0]) : null, definite ? ExprParser.parse(highs[0]) : null, null, false, 22);
     }
 
     /**
