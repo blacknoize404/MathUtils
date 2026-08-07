@@ -300,6 +300,19 @@ class VisualSnapshotTest {
     }
 
     @Test
+    void multipleIntegralPreview() {
+        Rendered r = open(ThemeManager.Mode.DARK, "integrals", 760);
+        File file = FxTestSupport.onFx(() -> {
+            IntegralView view = (IntegralView) r.shell().activeModule();
+            view.setVariables("x, y, z");
+            view.solve("x*y*z", "0; 0; 0", "1; 1; 1");
+            r.shell().settle();
+            return FxTestSupport.snapshot(r.scene(), "integrals-triple-dark");
+        });
+        assertRendered(file);
+    }
+
+    @Test
     void derivativeModule() {
         for (ThemeManager.Mode mode : ThemeManager.Mode.values()) {
             Rendered r = open(mode, "derivatives");

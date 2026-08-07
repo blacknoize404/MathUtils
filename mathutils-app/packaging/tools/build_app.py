@@ -75,7 +75,8 @@ def main_jar(folder: Path, prefix: str) -> Path:
     jars = [j for j in folder.glob(f"{prefix}-*.jar") if not j.stem.endswith(("-sources", "-javadoc", "-tests"))]
     if not jars:
         sys.exit(f"No hay jar de {prefix} en {folder}: compila con Maven primero.")
-    return jars[0]
+    # Si quedan jar de versiones anteriores en target, se usa el más reciente
+    return max(jars, key=lambda j: j.stat().st_mtime)
 
 
 def javafx_platform() -> str:

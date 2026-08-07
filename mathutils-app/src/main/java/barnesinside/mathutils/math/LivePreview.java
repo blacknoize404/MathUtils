@@ -7,7 +7,6 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextInputControl;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.util.List;
@@ -35,8 +34,6 @@ public final class LivePreview extends VBox {
         scroller.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scroller.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroller.setFitToHeight(true);
-        scroller.setMinHeight(Region.USE_PREF_SIZE);
-        scroller.prefHeightProperty().bind(view.heightProperty().add(12));
         scroller.getStyleClass().add("animator-scroll");
 
         message.getStyleClass().addAll("mono", "text-muted");
@@ -112,6 +109,11 @@ public final class LivePreview extends VBox {
         nodeHolder.setVisible(false);
         nodeHolder.setManaged(false);
         view.setBox(box);
+        // La altura sale de las medidas de la fórmula, no de una pasada de diseño: así no depende de cuándo se muestra
+        double height = Math.ceil(box.height()) + 2 * 3 + 14;
+        scroller.setMinHeight(height);
+        scroller.setPrefHeight(height);
+        scroller.setMaxHeight(height);
         scroller.setVisible(true);
         scroller.setManaged(true);
         message.setVisible(false);
