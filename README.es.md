@@ -12,12 +12,8 @@ Java evalúa la matemática de forma inmediata. Entregas los valores y recibes u
 
 > **Documentación en inglés / English version**: [README.md](README.md)
 
-<p align="center">
-  <img src="docs/images/studio-integral-light.png" alt="MathUtils Studio resolviendo una integral impropia, con la vista previa, los pasos y el animador" width="49%">
-  <img src="docs/images/studio-hessian-dark.png" alt="MathUtils Studio calculando una hessiana en modo oscuro" width="49%">
-</p>
-
-<p align="center"><sub><b>MathUtils Studio</b>: solucionadores paso a paso con vista previa en tiempo real de lo que escribes, un animador con el árbol de la expresión y paneles de matrices, complejos, estadística y ecuaciones diferenciales. Descárgalo en las <a href="https://github.com/blacknoize404/MathUtils/releases">releases</a>; no necesita Java.</sub></p>
+> **MathUtils Studio**, la aplicación de escritorio construida sobre esta librería (solucionadores paso a paso,
+> árboles de expresión, matrices, estadística y más), tiene su propio repositorio: [blacknoize404/MathUtils-Studio](https://github.com/blacknoize404/MathUtils-Studio).
 
 ## Características Principales
 
@@ -77,10 +73,10 @@ double r = f.eval(new Evaluation("x", 1.0), new Evaluation("y", 4.0));
 
 ---
 
-## Motor simbólico y MathUtils Studio
+## Motor simbólico
 
-El repositorio es un build Maven multi-módulo: `mathutils-core` (la librería reutilizable, sin
-dependencias de interfaz, Java 21) y `mathutils-app` (la aplicación de escritorio JavaFX).
+La librería no tiene dependencias de interfaz y necesita Java 21. La aplicación de escritorio que la usa vive en
+[MathUtils Studio](https://github.com/blacknoize404/MathUtils-Studio).
 
 **Solucionadores paso a paso** (`MathUtils.cas.*`): cada resultado incluye la regla aplicada en
 cada paso, explicada en español e inglés y renderizable como texto plano, Markdown, LaTeX o JSON.
@@ -115,32 +111,26 @@ i.render(Locale.forLanguageTag("es"), Format.LATEX);
   verifica derivándolo, así que el motor responde "no resuelta" o "no elemental" en vez de devolver
   una antiderivada incorrecta.
 
-**MathUtils Studio** (`mathutils-app`): calculadora con resultado exacto y decimal, árbol de
-expresión interactivo, orden de operaciones, los solucionadores de derivadas, límites e integrales
-(con el área bajo la curva) y paneles de matrices, complejos, estadística y ecuaciones
-diferenciales, con la identidad visual de barnesinside. Cada solucionador muestra sus pasos en tres niveles de detalle (resumen,
-principal, completo) y un animador plegable con el árbol de la expresión antes y después de cada paso; una paleta
-de símbolos escribe lo que el teclado no tiene. Para ejecutarla:
+### Usarla desde otro proyecto
 
-```bash
-mvn javafx:run -pl mathutils-app
+La librería se publica con [JitPack](https://jitpack.io/#blacknoize404/MathUtils) a partir de cada etiqueta de versión:
+
+```xml
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+  </repository>
+</repositories>
+
+<dependency>
+  <groupId>com.github.blacknoize404.MathUtils</groupId>
+  <artifactId>mathutils-core</artifactId>
+  <version>v0.6.2</version>
+</dependency>
 ```
 
-**Aplicación independiente (sin Java).** `mathutils-app` es un módulo Java (`barnesinside.mathutils`),
-así que `jlink` crea un runtime con solo los módulos que realmente usa (14, incluido JavaFX) y
-`jpackage` lo envuelve con un lanzador nativo y el icono de la marca. En Windows queda como
-`MathUtilsStudio.exe`, que Inno Setup empaqueta en un instalador con las imágenes de la marca
-(renderizadas desde los SVG de los logos); en Linux, como `bin/MathUtilsStudio`, en `.tar.gz` y `.deb`.
-
-```bash
-python mathutils-app/packaging/tools/build_app.py --installer   # Windows: app + instalador Inno Setup
-python mathutils-app/packaging/tools/build_app.py --deb         # Linux: app + tar.gz + .deb
-```
-
-Hace falta un JDK 21 o superior con `jmods` (como Temurin) y Maven; el script descarga los jmods de
-JavaFX. El flujo `Empaquetar MathUtils Studio` construye las dos plataformas y las adjunta a cada
-release `v*`. Los iconos y las imágenes del instalador se regeneran con
-`packaging/tools/render_assets.py` (necesita Edge o Chrome).
+Es un módulo Java llamado `MathUtils` (`requires MathUtils;`).
 
 ## Estructura del proyecto
 

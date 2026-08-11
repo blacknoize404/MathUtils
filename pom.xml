@@ -6,15 +6,14 @@
 
     <groupId>io.github.blacknoize404</groupId>
     <artifactId>mathutils-parent</artifactId>
-    <version>0.6.1</version>
+    <version>0.6.2</version>
     <packaging>pom</packaging>
 
     <name>MathUtils</name>
-    <description>Librería de matemáticas simbólicas y numéricas, y su aplicación de escritorio.</description>
+    <description>Librería de matemáticas simbólicas y numéricas con soluciones paso a paso.</description>
 
     <modules>
         <module>mathutils-core</module>
-        <module>mathutils-app</module>
     </modules>
 
     <properties>

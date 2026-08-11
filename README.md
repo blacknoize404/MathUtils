@@ -12,12 +12,8 @@ Plain Java evaluates math eagerly. You pass values in and get a number out, so t
 
 > **Spanish documentation**: [README.md](README.es.md)
 
-<p align="center">
-  <img src="docs/images/studio-integral-light.png" alt="MathUtils Studio solving an improper integral, with the live preview, the steps and the animator" width="49%">
-  <img src="docs/images/studio-hessian-dark.png" alt="MathUtils Studio computing a Hessian in dark mode" width="49%">
-</p>
-
-<p align="center"><sub><b>MathUtils Studio</b>: step-by-step solvers with a live preview of what you type, an animator with the expression tree, and panels for matrices, complex numbers, statistics and differential equations. Download it from the <a href="https://github.com/blacknoize404/MathUtils/releases">releases</a>; it needs no Java.</sub></p>
+> **MathUtils Studio**, the desktop app built on this library (step-by-step solvers, expression trees, matrices,
+> statistics and more), has its own repository: [blacknoize404/MathUtils-Studio](https://github.com/blacknoize404/MathUtils-Studio).
 
 ## Features
 
@@ -77,10 +73,10 @@ double r = f.eval(new Evaluation("x", 1.0), new Evaluation("y", 4.0));
 
 ---
 
-## Symbolic engine and MathUtils Studio
+## Symbolic engine
 
-The repository is a Maven multi-module build: `mathutils-core` (the reusable library, no UI
-dependencies, Java 21) and `mathutils-app` (the JavaFX desktop app).
+The library has no UI dependencies and needs Java 21. The desktop app that uses it lives in
+[MathUtils Studio](https://github.com/blacknoize404/MathUtils-Studio).
 
 **Step-by-step solvers** (`MathUtils.cas.*`): every result comes with the rule applied at each
 step, explained in Spanish and English and renderable as plain text, Markdown, LaTeX or JSON.
@@ -113,31 +109,26 @@ i.render(Locale.ENGLISH, Format.LATEX);
   numerical quadrature, and the decimal value comes with the solution. Every result is verified by differentiating it, so the
   engine reports "unsolved" or "non-elementary" instead of returning a wrong antiderivative.
 
-**MathUtils Studio** (`mathutils-app`): calculator with exact and decimal results, interactive
-expression tree, order of operations, the derivative, limit and integral solvers (with the area
-under the curve), and panels for matrices, complex numbers, statistics and differential equations,
-with the barnesinside visual identity. Every solver shows its steps in three levels of detail (summary, main, full)
-and a collapsible animator with the expression tree before and after each step; a symbol palette writes what the
-keyboard does not have. Run it with:
+### Using it from another project
 
-```bash
-mvn javafx:run -pl mathutils-app
+The library is published through [JitPack](https://jitpack.io/#blacknoize404/MathUtils) from each release tag:
+
+```xml
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+  </repository>
+</repositories>
+
+<dependency>
+  <groupId>com.github.blacknoize404.MathUtils</groupId>
+  <artifactId>mathutils-core</artifactId>
+  <version>v0.6.2</version>
+</dependency>
 ```
 
-**Standalone app (no Java needed).** `mathutils-app` is a Java module (`barnesinside.mathutils`), so
-`jlink` builds a runtime with only the modules it really uses (14 of them, including JavaFX), and
-`jpackage` wraps it with a native launcher and the brand icon. On Windows that is
-`MathUtilsStudio.exe`, and Inno Setup packs it as an installer with the brand images (rendered from
-the SVG logos); on Linux it is `bin/MathUtilsStudio`, as a `.tar.gz` and a `.deb`.
-
-```bash
-python mathutils-app/packaging/tools/build_app.py --installer   # Windows: app + Inno Setup installer
-python mathutils-app/packaging/tools/build_app.py --deb         # Linux: app + tar.gz + .deb
-```
-
-It needs a JDK 21+ with `jmods` (such as Temurin) and Maven; the script downloads the JavaFX jmods.
-The `Package MathUtils Studio` workflow builds both platforms and attaches them to each `v*` release.
-Icons and installer images are regenerated with `packaging/tools/render_assets.py` (needs Edge or Chrome).
+It is a Java module named `MathUtils` (`requires MathUtils;`).
 
 ## Project Structure
 

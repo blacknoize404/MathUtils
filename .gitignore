@@ -73,6 +73,3 @@ local.properties
 # Annotation processors
 *.apt_generated/
 /.maven
-
-# Resultados del empaquetado (runtime, imagen de la aplicación e instaladores)
-mathutils-app/packaging/build/
