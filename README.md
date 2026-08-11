@@ -111,7 +111,7 @@ i.render(Locale.ENGLISH, Format.LATEX);
 
 ### Using it from another project
 
-The library is published through [JitPack](https://jitpack.io/#blacknoize404/MathUtils) from each release tag:
+The library is published through [JitPack](https://jitpack.io/#blacknoize404/BI.MathUtils) from each release tag:
 
 ```xml
 <repositories>
@@ -122,7 +122,7 @@ The library is published through [JitPack](https://jitpack.io/#blacknoize404/Mat
 </repositories>
 
 <dependency>
-  <groupId>com.github.blacknoize404.MathUtils</groupId>
+  <groupId>com.github.blacknoize404.BI.MathUtils</groupId>
   <artifactId>mathutils-core</artifactId>
   <version>v0.6.2</version>
 </dependency>
