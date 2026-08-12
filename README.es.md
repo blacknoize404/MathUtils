@@ -124,9 +124,9 @@ La librería se publica con [JitPack](https://jitpack.io/#blacknoize404/BI.MathU
 </repositories>
 
 <dependency>
-  <groupId>com.github.blacknoize404.BI.MathUtils</groupId>
-  <artifactId>mathutils-core</artifactId>
-  <version>v0.6.2</version>
+  <groupId>com.github.blacknoize404</groupId>
+  <artifactId>BI.MathUtils</artifactId>
+  <version>v0.6.3</version>
 </dependency>
 ```
 

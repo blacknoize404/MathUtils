@@ -5,16 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.blacknoize404</groupId>
-    <artifactId>mathutils-parent</artifactId>
-    <version>0.6.2</version>
-    <packaging>pom</packaging>
+    <artifactId>mathutils-core</artifactId>
+    <version>0.6.3</version>
+    <packaging>jar</packaging>
 
-    <name>MathUtils</name>
+    <name>BI.MathUtils</name>
     <description>Librería de matemáticas simbólicas y numéricas con soluciones paso a paso.</description>
-
-    <modules>
-        <module>mathutils-core</module>
-    </modules>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -22,40 +18,44 @@
         <junit.version>5.11.0</junit.version>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-api</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.11.0</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.2.5</version>
-                    <configuration>
-                        <!-- Los tests corren en classpath: con release 21 el modo módulo no encuentra las clases de test -->
-                        <useModulePath>false</useModulePath>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>3.3.0</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <!-- Los tests corren en classpath: con release 21 el modo módulo no encuentra las clases de test -->
+                    <useModulePath>false</useModulePath>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>
