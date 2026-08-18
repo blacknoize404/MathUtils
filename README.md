@@ -124,7 +124,7 @@ The library is published through [JitPack](https://jitpack.io/#blacknoize404/BI.
 <dependency>
   <groupId>com.github.blacknoize404</groupId>
   <artifactId>BI.MathUtils</artifactId>
-  <version>v0.6.3</version>
+  <version>v0.6.4</version>
 </dependency>
 ```
 

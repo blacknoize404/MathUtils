@@ -12,6 +12,7 @@ import java.util.Optional;
  * ({@code 2x}, {@code 3(x+1)}, {@code x sin(x)}), las constantes {@code pi}/{@code π},
  * {@code e} y {@code oo}, y las funciones {@code sin cos tan cot sec csc asin acos atan sinh cosh
  * tanh ln log sqrt cbrt exp abs erf root pow} (con los alias {@code arcsin}, {@code arctan}…).
+ * También la potencia de una función escrita a mano: {@code sin^2(x)} es {@code (sin(x))^2}.
  */
 public final class ExprParser {
 
@@ -22,7 +23,7 @@ public final class ExprParser {
      * @throws ExpressionParseException si la expresión es inválida (con línea y columna)
      */
     public static Expr parse(String source) {
-        return ExpressionParser.parse(source, new ExprBuilder(), true);
+        return ExpressionParser.parse(FunctionPowers.rewrite(source), new ExprBuilder(), true);
     }
 
     /**
@@ -30,7 +31,7 @@ public final class ExprParser {
      * @throws ExpressionParseException si la expresión es inválida
      */
     public static Expr parse(String source, Map<String, UserFunction> userFunctions, AngleUnit angleUnit) {
-        return ExpressionParser.parse(source, new ExprBuilder(userFunctions, angleUnit), true);
+        return ExpressionParser.parse(FunctionPowers.rewrite(source), new ExprBuilder(userFunctions, angleUnit), true);
     }
 
     /**
