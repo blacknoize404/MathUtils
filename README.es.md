@@ -78,7 +78,7 @@ double r = f.eval(new Evaluation("x", 1.0), new Evaluation("y", 4.0));
 La librería no tiene dependencias de interfaz y necesita Java 21. La aplicación de escritorio que la usa vive en
 [MathUtils Studio](https://github.com/blacknoize404/MathUtils-Studio).
 
-**Solucionadores paso a paso** (`MathUtils.cas.*`): cada resultado incluye la regla aplicada en
+**Solucionadores paso a paso** (`barnesinside.mathutils.cas.*`): cada resultado incluye la regla aplicada en
 cada paso, explicada en español e inglés y renderizable como texto plano, Markdown, LaTeX o JSON.
 
 ```java
@@ -126,16 +126,16 @@ La librería se publica con [JitPack](https://jitpack.io/#blacknoize404/BI.MathU
 <dependency>
   <groupId>com.github.blacknoize404</groupId>
   <artifactId>BI.MathUtils</artifactId>
-  <version>v0.6.4</version>
+  <version>v0.7.0</version>
 </dependency>
 ```
 
-Es un módulo Java llamado `MathUtils` (`requires MathUtils;`).
+Es un módulo Java llamado `barnesinside.mathutils` (`requires barnesinside.mathutils;`).
 
 ## Estructura del proyecto
 
 ```
-src/main/java/MathUtils/
+src/main/java/barnesinside/mathutils/
 ├── algebra/
 │   ├── primitives/     # MathElement, Expression, Operator (base)
 │   ├── operators/      # Sum, Sub, Mult, Div (n-arios)

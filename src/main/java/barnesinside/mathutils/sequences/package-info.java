@@ -1,0 +1,1 @@
+package barnesinside.mathutils.sequences;

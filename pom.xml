@@ -6,7 +6,7 @@
 
     <groupId>io.github.blacknoize404</groupId>
     <artifactId>mathutils-core</artifactId>
-    <version>0.6.4</version>
+    <version>0.7.0</version>
     <packaging>jar</packaging>
 
     <name>BI.MathUtils</name>
