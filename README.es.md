@@ -184,6 +184,10 @@ Las contribuciones son bienvenidas:
 
 ---
 
+## Agradecimientos
+
+A mi profesor de Matemática Continua de la Universidad de Holguín, Alberto, y a mi tutora, Yisel Clavel Quintero, por su apoyo incondicional.
+
 ## Licencia
 
 Este proyecto se distribuye bajo la licencia CC-BY-NC-SA 4.0. Tu uso académico mantiene el código abierto y accesible para la comunidad científica.

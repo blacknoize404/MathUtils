@@ -183,6 +183,10 @@ Contributions are welcome:
 
 ---
 
+## Acknowledgements
+
+To my Continuous Mathematics professor at the University of Holguín, Alberto, and to my tutor, Yisel Clavel Quintero, for their unconditional support.
+
 ## License
 
 This project is distributed under the CC-BY-NC-SA 4.0 license. Your academic use keeps the code open and accessible to the scientific community.
