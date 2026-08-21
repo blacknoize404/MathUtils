@@ -188,6 +188,10 @@ Las contribuciones son bienvenidas:
 
 A mi profesor de Matemática Continua de la Universidad de Holguín, Alberto, y a mi tutora, Yisel Clavel Quintero, por su apoyo incondicional.
 
+## Historial del proyecto
+
+MathUtils empezó en 2023 como una librería personal llamada JavaMath, escrita sin control de versiones. Los primeros commits en git son de marzo de 2024, hechos en un repositorio de librerías personales y traídos aquí; el repositorio de MathUtils como tal se creó en junio de 2026.
+
 ## Licencia
 
 Este proyecto se distribuye bajo la [Apache License 2.0](LICENSE). Puedes usarlo en proyectos académicos, de código abierto y comerciales. Las versiones publicadas antes del cambio de licencia (hasta `v0.7.0`) siguen disponibles con los términos con los que se publicaron.
