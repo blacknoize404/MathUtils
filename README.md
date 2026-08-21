@@ -1,7 +1,7 @@
 # MathUtils
 
 ![Java Version](https://img.shields.io/badge/Java-25-orange.svg)
-![License](https://img.shields.io/badge/License-CC--BY--NC--SA%204.0-lightgrey.svg)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![Build](https://img.shields.io/badge/Build-passing-brightgreen.svg)
 
 > MathUtils started as a study project to link university mathematics with programming.
@@ -189,4 +189,4 @@ To my Continuous Mathematics professor at the University of Holguín, Alberto, a
 
 ## License
 
-This project is distributed under the CC-BY-NC-SA 4.0 license. Your academic use keeps the code open and accessible to the scientific community.
+This project is distributed under the [Apache License 2.0](LICENSE). You can use it in academic, open source and commercial projects. Versions published before the change of license (up to `v0.7.0`) remain available under the terms they were released with.
