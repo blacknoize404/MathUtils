@@ -75,7 +75,7 @@ double r = f.eval(new Evaluation("x", 1.0), new Evaluation("y", 4.0));
 
 ## Symbolic engine
 
-The library has no UI dependencies and needs Java 21. The desktop app that uses it lives in
+The desktop app that uses it lives in
 [MathUtils Studio](https://github.com/blacknoize404/MathUtils-Studio).
 
 **Step-by-step solvers** (`barnesinside.mathutils.cas.*`): every result comes with the rule applied at each

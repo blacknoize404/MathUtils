@@ -75,7 +75,7 @@ double r = f.eval(new Evaluation("x", 1.0), new Evaluation("y", 4.0));
 
 ## Motor simbólico
 
-La librería no tiene dependencias de interfaz y necesita Java 21. La aplicación de escritorio que la usa vive en
+La aplicación de escritorio que la usa vive en
 [MathUtils Studio](https://github.com/blacknoize404/MathUtils-Studio).
 
 **Solucionadores paso a paso** (`barnesinside.mathutils.cas.*`): cada resultado incluye la regla aplicada en

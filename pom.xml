@@ -21,7 +21,7 @@
     </licenses>
 
     <properties>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.11.0</junit.version>
     </properties>
@@ -47,7 +47,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
-                    <!-- Los tests corren en classpath: con release 21 el modo módulo no encuentra las clases de test -->
+                    <!-- Los tests corren en classpath: en modo módulo no se encuentran las clases de test -->
                     <useModulePath>false</useModulePath>
                 </configuration>
             </plugin>
