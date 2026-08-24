@@ -160,14 +160,16 @@ src/main/java/barnesinside/mathutils/
 
 ## Roadmap
 
-> These topics are **planned** but **not implemented**. See `TODO.md` for details.
+> Derivatives, integrals, limits, the expression parser, matrices, complex numbers and ODE solvers are already implemented. What is still missing is listed in `TODO.md`.
 
-- **Symbolic calculus:** Automatic derivatives, numeric/symbolic integrals, gradients, and Jacobian matrices.
-- **Algebraic interpreter:** Shunting Yard algorithm to transform direct text expressions into `Function` objects and clean LaTeX export.
-- **Advanced linear algebra:** Native support for matrices, SVD decomposition, eigenvalues, and linear system solvers.
-- Complex numbers
-- ODEs / numerical analysis (root finding, interpolation, adaptive quadrature)
-- Advanced probability, optimization, Fourier transforms, special functions, tensor algebra
+- Eigenvalues, eigenvectors, SVD and vector spaces
+- Interpolation, adaptive quadrature and more root-finding methods
+- Line and surface integrals
+- More probability distributions, hypothesis tests and regression
+- Graph algorithms
+- Optimization, Fourier transforms and signal processing
+- Gamma, Bessel and other special functions
+- Tensor algebra
 
 ---
 

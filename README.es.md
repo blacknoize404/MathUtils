@@ -162,14 +162,16 @@ src/main/java/barnesinside/mathutils/
 
 ## Roadmap
 
-> Estos temas están **planificados** pero **no implementados**. Ver `TODO.md` para detalle.
+> Las derivadas, integrales, límites, el analizador de expresiones, las matrices, los números complejos y los solucionadores de EDO ya están implementados. Lo que falta está en `TODO.md`.
 
-- **Cálculo simbólico:** Derivadas automáticas, integrales numéricas, gradientes y matrices jacobianas.
-- **Intérprete algebraico:** Algoritmo Shunting Yard para transformar expresiones de texto directo a objetos Function y exportación limpia a LaTeX.
-- **Álgebra lineal avanzada:** Soporte nativo para matrices, descomposición SVD, autovalores y resolutores de sistemas lineales.
-- Números complejos
-- EDOs / análisis numérico (raíces, interpolación, cuadratura adaptativa)
-- Probabilidad avanzada, optimización, transformadas de Fourier, funciones especiales, álgebra tensorial
+- Autovalores, autovectores, SVD y espacios vectoriales
+- Interpolación, cuadratura adaptativa y más métodos de búsqueda de raíces
+- Integrales de línea y de superficie
+- Más distribuciones de probabilidad, pruebas de hipótesis y regresión
+- Algoritmos de grafos
+- Optimización, transformadas de Fourier y procesamiento de señales
+- Funciones especiales como Gamma y Bessel
+- Álgebra tensorial
 
 ---
 
