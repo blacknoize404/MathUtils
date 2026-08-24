@@ -247,6 +247,21 @@ public sealed interface Expr permits Expr.Num, Expr.Const, Expr.Sym, Expr.Add, E
         return ExprLatex.print(this);
     }
 
+    /** Representación en MathML de presentación. */
+    default String toMathML() {
+        return ExprMathML.print(this);
+    }
+
+    /** Representación en ASCIIMath. */
+    default String toAsciiMath() {
+        return ExprAsciiMath.print(this);
+    }
+
+    /** Expande productos y potencias enteras de sumas; ver {@link Expand}. */
+    default Expr expand() {
+        return Expand.expand(this);
+    }
+
     /** Representación en texto plano, interpretable por {@link ExprParser}. */
     String toString();
 }
