@@ -103,6 +103,11 @@ i.render(Locale.forLanguageTag("es"), Format.LATEX);
   con límites interiores que dependen de las variables exteriores; `MultiLimits.limit` demuestra que un
   límite en un punto no existe (caminos distintos o límites iterados) o demuestra su valor (continuidad o una
   cota en polares) y, si no, solo ofrece un candidato, porque comprobar caminos no es una demostración.
+- **Álgebra simbólica:** `Expand.expand` aplica la propiedad distributiva, el binomio de Newton y el teorema
+  multinomial; `Factor.factor` saca el factor común y usa raíces racionales, diferencia de cuadrados, suma y
+  diferencia de cubos, cuadrados perfectos y agrupación (sobre los racionales, así que `x² − 2` se queda como
+  está); `Pattern` busca y reescribe subexpresiones con comodines, por ejemplo `sin(a)² + cos(a)²` → `1`.
+  Las expresiones se exportan a LaTeX, MathML y ASCIIMath (`toLatex()`, `toMathML()`, `toAsciiMath()`).
 - **Notación:** `2π`, `√(x²+1)`, `x⁻¹`, `30°`, `∞` y las letras griegas se aceptan en cualquier expresión.
 - **Integrales definidas e impropias:** `Integrals.definite("e^(-x^2)", "x", "0", "oo")` aplica la regla
   de Barrow con límites en los extremos infinitos o singulares, parte el intervalo en las singularidades

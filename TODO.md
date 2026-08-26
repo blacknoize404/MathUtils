@@ -18,7 +18,7 @@
 
 ## Conversor Función-a-Texto
 - [x] Serialización a string legible
-- [ ] Pretty-printing: texto plano y LaTeX (hechos), MathML (pendiente)
+- [x] Pretty-printing: texto plano, LaTeX, MathML y ASCIIMath
 - [x] Simplificación antes de salida (`x + 0` → `x`, `x * 1` → `x`, `x^1` → `x`)
 
 ## Álgebra Lineal
@@ -93,10 +93,10 @@
 
 ## Álgebra Simbólica
 - [x] Simplificador: reglas de reescritura, normalización (núcleo exacto en `cas.expr`)
-- [ ] Expandir: distributiva, binomio de Newton, multinomial
-- [ ] Factorizar: común, diferencia de cuadrados, trinomios, agrupación
-- [ ] Sustitución y pattern matching
-- [ ] Exportación LaTeX (hecha), MathML / ASCIIMath (pendientes)
+- [x] Expandir: distributiva, binomio de Newton, multinomial (`Expand`)
+- [x] Factorizar: común, diferencia de cuadrados, suma y diferencia de cubos, trinomios, agrupación (`Factor`, sobre los racionales)
+- [x] Sustitución y pattern matching (`Expr.substitute`, `Pattern`)
+- [x] Exportación LaTeX, MathML y ASCIIMath (`toLatex`, `toMathML`, `toAsciiMath`)
 
 ## Álgebra Tensorial
 - [ ] Tensor N-dimensional (índices covariantes/contravariantes)

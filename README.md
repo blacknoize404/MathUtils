@@ -102,6 +102,12 @@ i.render(Locale.ENGLISH, Format.LATEX);
   with inner limits that depend on the outer variables; `MultiLimits.limit` proves that a limit at a point
   does not exist (different paths or iterated limits) or proves its value (continuity or a polar bound), and
   otherwise only offers a candidate, because checking paths is not a proof.
+- **Symbolic algebra:** `Expand.expand` applies the distributive property, the binomial theorem and the
+  multinomial theorem; `Factor.factor` pulls out common factors and uses rational roots, differences of
+  squares, sums and differences of cubes, perfect squares and grouping (over the rationals, so `x² − 2`
+  stays as it is); `Pattern` finds and rewrites subexpressions with wildcards, for example
+  `sin(a)² + cos(a)²` → `1`. Expressions export to LaTeX, MathML and ASCIIMath
+  (`toLatex()`, `toMathML()`, `toAsciiMath()`).
 - **Notation:** `2π`, `√(x²+1)`, `x⁻¹`, `30°`, `∞` and Greek letters are accepted anywhere an expression is.
 - **Definite and improper integrals:** `Integrals.definite("e^(-x^2)", "x", "0", "oo")` applies the
   fundamental theorem with limits at infinite or singular endpoints, splits at interior singularities,
