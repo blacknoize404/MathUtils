@@ -57,6 +57,7 @@ public final class StepRenderer {
         params.put("f", s.problem());
         params.put("x", Expr.sym(s.variable()));
         params.put("k", Expr.num(s.order()));
+        if (s.statement() != null) params.putAll(s.statement().toParams());
         List<String> limitVariables = limitVariables(s);
         if (limitVariables.size() > 1) {
             key = base + ".problem.multiple";
@@ -221,6 +222,8 @@ public final class StepRenderer {
                     ? iteratedSigns(s, false) + s.problem() + iteratedDifferentials(s, false)
                     : (isDefinite(s) ? "∫[" + s.extras().get("lower") + ", " + s.extras().get("upper") + "] " : "∫ ")
                     + s.problem() + " d" + s.variable();
+            case EQUATION, INEQUALITY -> String.valueOf(s.statement());
+            case FACTORIZATION, EXPANSION -> String.valueOf(s.problem());
         };
     }
 
@@ -275,6 +278,8 @@ public final class StepRenderer {
                     : "\\int" + (isDefinite(s)
                     ? "_{" + s.extras().get("lower").toLatex() + "}^{" + s.extras().get("upper").toLatex() + "}" : "")
                     + " " + s.problem().toLatex() + " \\, d" + v;
+            case EQUATION, INEQUALITY -> s.statement().toLatex();
+            case FACTORIZATION, EXPANSION -> s.problem().toLatex();
         };
     }
 
@@ -316,7 +321,10 @@ public final class StepRenderer {
         }
 
         sb.append('\n');
-        if (s.isSolved()) {
+        if (s.isSolved() && s.answer() != null) {
+            sb.append(Messages.get("solution.result", locale)).append(": ")
+                    .append(s.variable()).append(" ∈ ").append(s.answer()).append('\n');
+        } else if (s.isSolved()) {
             sb.append(Messages.get("solution.result", locale)).append(": ")
                     .append(resultOperationPlain(s))
                     .append(" = ").append(s.result()).append(resultSuffixPlain(s)).append('\n');
@@ -354,7 +362,10 @@ public final class StepRenderer {
         }
 
         sb.append('\n');
-        if (s.isSolved()) {
+        if (s.isSolved() && s.answer() != null) {
+            sb.append("**").append(Messages.get("solution.result", locale)).append("**\n\n$$")
+                    .append(Expr.sym(s.variable()).toLatex()).append(" \\in ").append(s.answer().toLatex()).append("$$\n");
+        } else if (s.isSolved()) {
             sb.append("**").append(Messages.get("solution.result", locale)).append("**\n\n$$")
                     .append(resultOperationLatex(s))
                     .append(" = ").append(s.result().toLatex()).append(resultSuffixLatex(s)).append("$$\n");
@@ -387,7 +398,10 @@ public final class StepRenderer {
         }
 
         sb.append('\n');
-        if (s.isSolved()) {
+        if (s.isSolved() && s.answer() != null) {
+            sb.append("\\textbf{").append(escapeLatex(Messages.get("solution.result", locale))).append("}\n\\[")
+                    .append(Expr.sym(s.variable()).toLatex()).append(" \\in ").append(s.answer().toLatex()).append("\\]\n");
+        } else if (s.isSolved()) {
             sb.append("\\textbf{").append(escapeLatex(Messages.get("solution.result", locale))).append("}\n\\[")
                     .append(resultOperationLatex(s))
                     .append(" = ").append(s.result().toLatex()).append(resultSuffixLatex(s)).append("\\]\n");
@@ -434,6 +448,14 @@ public final class StepRenderer {
         sb.append(",\"order\":").append(s.order());
         sb.append(",\"problem\":").append(jsonExpr(s.problem()));
         sb.append(",\"result\":").append(s.result() == null ? "null" : jsonExpr(s.result()));
+        if (s.statement() != null) {
+            sb.append(",\"statement\":{\"text\":").append(quote(s.statement().toString()))
+                    .append(",\"latex\":").append(quote(s.statement().toLatex())).append('}');
+        }
+        if (s.answer() != null) {
+            sb.append(",\"answer\":{\"text\":").append(quote(s.answer().toString()))
+                    .append(",\"latex\":").append(quote(s.answer().toLatex())).append('}');
+        }
         sb.append(",\"extras\":{");
         boolean first = true;
         for (Map.Entry<String, Expr> e : s.extras().entrySet()) {

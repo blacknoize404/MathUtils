@@ -1,6 +1,8 @@
 package barnesinside.mathutils.cas.steps;
 
 import barnesinside.mathutils.cas.expr.Expr;
+import barnesinside.mathutils.cas.expr.Relation;
+import barnesinside.mathutils.cas.expr.SolutionSet;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -20,12 +22,17 @@ import java.util.Map;
  * @param order    orden de la derivada (1 para el resto de problemas)
  * @param extras   datos propios del tipo de problema: {@code a} (punto de un límite) y
  *                 {@code direction} (1 por la derecha, -1 por la izquierda, 0 por ambos lados)
+ * @param statement la ecuación o inecuación que se resuelve, o {@code null} en los demás problemas
+ * @param answer   conjunto de soluciones de una ecuación o inecuación, o {@code null} en los demás problemas
  */
 public record Solution(Kind kind, Status status, Expr problem, Expr result, List<Step> steps, String variable,
-                       int order, Map<String, Expr> extras) {
+                       int order, Map<String, Expr> extras, Relation statement, SolutionSet answer) {
 
-    /** Tipo de problema. */
-    public enum Kind {DERIVATIVE, LIMIT, INTEGRAL}
+    /**
+     * Tipo de problema. {@code EQUATION} e {@code INEQUALITY} traen el enunciado y el conjunto de soluciones;
+     * {@code FACTORIZATION} y {@code EXPANSION} traen la expresión de partida y el resultado.
+     */
+    public enum Kind {DERIVATIVE, LIMIT, INTEGRAL, EQUATION, INEQUALITY, FACTORIZATION, EXPANSION}
 
     /** Estado final de la resolución. */
     public enum Status {
@@ -45,8 +52,13 @@ public record Solution(Kind kind, Status status, Expr problem, Expr result, List
     }
 
     public Solution(Kind kind, Status status, Expr problem, Expr result, List<Step> steps, String variable,
+                    int order, Map<String, Expr> extras) {
+        this(kind, status, problem, result, steps, variable, order, extras, null, null);
+    }
+
+    public Solution(Kind kind, Status status, Expr problem, Expr result, List<Step> steps, String variable,
                     int order) {
-        this(kind, status, problem, result, steps, variable, order, Map.of());
+        this(kind, status, problem, result, steps, variable, order, Map.of(), null, null);
     }
 
     public boolean isSolved() {
