@@ -42,7 +42,7 @@ public final class Factor {
     }
 
     /** Resultado de sacar un factor común: {@code factor · quotient}. */
-    private record Split(Expr factor, Expr quotient) {
+    public record CommonFactor(Expr factor, Expr quotient) {
     }
 
     /** Un polinomio como constante por polinomios primitivos de coeficientes enteros. */
@@ -76,7 +76,7 @@ public final class Factor {
         Expr expanded = Expand.expand(original);
         if (!(expanded instanceof Expr.Add sum)) return factor(expanded, depth + 1);
 
-        Optional<Split> common = commonFactor(sum.terms());
+        Optional<CommonFactor> common = commonFactor(sum.terms());
         if (common.isPresent()) {
             return Expr.mul(common.get().factor(), factor(common.get().quotient(), depth + 1));
         }
@@ -113,7 +113,11 @@ public final class Factor {
 
     // ---------------------------------------------------------------- factor común
 
-    private static Optional<Split> commonFactor(List<Expr> terms) {
+    /**
+     * El factor común de los términos de una suma: el máximo común divisor de los coeficientes y las potencias que
+     * comparten todos, con el signo menos si el término principal es negativo. Vacío si no hay ninguno.
+     */
+    public static Optional<CommonFactor> commonFactor(List<Expr> terms) {
         List<Rational> coefficients = new ArrayList<>();
         List<Map<Expr, Integer>> powers = new ArrayList<>();
         for (Expr term : terms) {
@@ -149,7 +153,7 @@ public final class Factor {
         Expr factor = Expr.mul(factors);
         List<Expr> quotients = new ArrayList<>();
         for (Expr term : terms) quotients.add(Expr.div(term, factor));
-        return Optional.of(new Split(factor, Expr.add(quotients)));
+        return Optional.of(new CommonFactor(factor, Expr.add(quotients)));
     }
 
     /**
@@ -275,7 +279,38 @@ public final class Factor {
     }
 
     /** Una raíz racional del polinomio, buscada con el teorema de la raíz racional. */
-    private static Optional<Rational> rationalRoot(Polynomial p) {
+    /**
+     * Los candidatos a raíz racional {@code ±p/q} de un polinomio (teorema de la raíz racional), de menor a mayor.
+     * Vacío si los coeficientes son demasiado grandes o los candidatos demasiados.
+     */
+    public static List<Rational> rationalRootCandidates(Polynomial p) {
+        BigInteger lcm = BigInteger.ONE;
+        for (int k = 0; k <= p.degree(); k++) {
+            BigInteger d = p.coefficient(k).denominator();
+            lcm = lcm.multiply(d).divide(lcm.gcd(d));
+        }
+        BigInteger constantTerm = p.coefficient(0).multiply(Rational.of(lcm)).numerator();
+        BigInteger leading = p.leading().multiply(Rational.of(lcm)).numerator();
+        if (constantTerm.signum() == 0 || constantTerm.bitLength() > MAX_BITS || leading.bitLength() > MAX_BITS) return List.of();
+
+        List<BigInteger> numerators = divisors(constantTerm.abs());
+        List<BigInteger> denominators = divisors(leading.abs());
+        if ((long) numerators.size() * denominators.size() * 2 > MAX_CANDIDATES) return List.of();
+
+        List<Rational> candidates = new ArrayList<>();
+        for (BigInteger n : numerators) {
+            for (BigInteger d : denominators) {
+                if (!n.gcd(d).equals(BigInteger.ONE)) continue;
+                candidates.add(Rational.of(n, d));
+                candidates.add(Rational.of(n, d).negate());
+            }
+        }
+        candidates.sort(null);
+        return candidates;
+    }
+
+    /** Una raíz racional del polinomio, o vacío si no tiene. */
+    public static Optional<Rational> rationalRoot(Polynomial p) {
         BigInteger lcm = BigInteger.ONE;
         for (int k = 0; k <= p.degree(); k++) {
             BigInteger d = p.coefficient(k).denominator();
@@ -411,24 +446,30 @@ public final class Factor {
     private static Optional<Expr> grouping(List<Expr> terms) {
         int[][] pairings = {{0, 1, 2, 3}, {0, 2, 1, 3}, {0, 3, 1, 2}};
         for (int[] p : pairings) {
-            Optional<Split> left = commonFactor(List.of(terms.get(p[0]), terms.get(p[1])));
-            Optional<Split> right = commonFactor(List.of(terms.get(p[2]), terms.get(p[3])));
-            if (left.isEmpty() || right.isEmpty()) continue;
+            CommonFactor left = groupOf(terms.get(p[0]), terms.get(p[1]));
+            CommonFactor right = groupOf(terms.get(p[2]), terms.get(p[3]));
+            if (left.factor().isOne() && right.factor().isOne()) continue;
 
-            Expr q1 = left.get().quotient();
-            Expr q2 = right.get().quotient();
-            if (q1.equals(q2)) return Optional.of(Expr.mul(q1, Expr.add(left.get().factor(), right.get().factor())));
+            Expr q1 = left.quotient();
+            Expr q2 = right.quotient();
+            if (q1.equals(q2)) return Optional.of(Expr.mul(q1, Expr.add(left.factor(), right.factor())));
             if (q1.equals(Expand.expand(Expr.neg(q2)))) {
-                return Optional.of(Expr.mul(q1, Expr.sub(left.get().factor(), right.get().factor())));
+                return Optional.of(Expr.mul(q1, Expr.sub(left.factor(), right.factor())));
             }
         }
         return Optional.empty();
     }
 
+    /** El factor común de un par de términos, o el par entero (con factor 1) si no comparten nada. */
+    private static CommonFactor groupOf(Expr first, Expr second) {
+        List<Expr> pair = List.of(first, second);
+        return commonFactor(pair).orElseGet(() -> new CommonFactor(Expr.ONE, Expr.add(pair)));
+    }
+
     // ---------------------------------------------------------------- raíces exactas
 
     /** La raíz {@code n}-ésima exacta de la expresión, si existe como producto de potencias y números. */
-    private static Optional<Expr> exactRoot(Expr e, int n) {
+    public static Optional<Expr> exactRoot(Expr e, int n) {
         return switch (e) {
             case Expr.Num num -> rationalRoot(num.value(), n).map(Expr::num);
             case Expr.Pow p when p.exponent() instanceof Expr.Num k && k.value().isInteger() && k.value().fitsInt()
