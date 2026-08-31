@@ -27,6 +27,7 @@ module barnesinside.mathutils {
     exports barnesinside.mathutils.discrete;
     exports barnesinside.mathutils.cas.expr;
     exports barnesinside.mathutils.cas.steps;
+    exports barnesinside.mathutils.cas.algebra;
     exports barnesinside.mathutils.cas.poly;
     exports barnesinside.mathutils.cas.limit;
     exports barnesinside.mathutils.cas.integral;
