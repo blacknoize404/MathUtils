@@ -26,15 +26,23 @@ public sealed interface SolutionSet {
         }
     }
 
-    /** Un número finito de valores aislados, sin repetir y de menor a mayor. */
-    record Finite(List<Expr> values) implements SolutionSet {
+    /**
+     * Un número finito de valores aislados, sin repetir y de menor a mayor. Si es {@code approximate}, los valores
+     * se han encontrado numéricamente y se escriben en decimales.
+     */
+    record Finite(List<Expr> values, boolean approximate) implements SolutionSet {
         public Finite {
             values = List.copyOf(values);
         }
 
+        public Finite(List<Expr> values) {
+            this(values, false);
+        }
+
         @Override
         public String toString() {
-            return "{" + values.stream().map(Expr::toString).collect(Collectors.joining(", ")) + "}";
+            return "{" + values.stream().map(v -> approximate ? decimal(Eval.value(v)) : v.toString())
+                    .collect(Collectors.joining(", ")) + "}";
         }
     }
 
@@ -73,6 +81,19 @@ public sealed interface SolutionSet {
 
     static SolutionSet allReals() {
         return new AllReals();
+    }
+
+    /** Un decimal con seis cifras significativas y sin ceros de más: {@code 1.41421}. */
+    static String decimal(double value) {
+        if (Double.isNaN(value) || Double.isInfinite(value)) return String.valueOf(value);
+        java.math.BigDecimal rounded = new java.math.BigDecimal(value).round(new java.math.MathContext(6));
+        String text = rounded.stripTrailingZeros().toPlainString();
+        return text.equals("-0") ? "0" : text;
+    }
+
+    /** Como {@link #finite(List)}, pero los valores son aproximaciones numéricas. */
+    static SolutionSet approximate(List<Expr> values) {
+        return finite(values) instanceof Finite f ? new Finite(f.values(), true) : new Empty();
     }
 
     /** Valores aislados, ordenados y sin repeticiones; sin valores es el conjunto vacío. */

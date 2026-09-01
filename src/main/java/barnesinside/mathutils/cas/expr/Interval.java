@@ -41,13 +41,20 @@ public record Interval(Expr lower, boolean lowerClosed, Expr upper, boolean uppe
         return true;
     }
 
+    /** Si es un único punto, {@code [a, a]}. */
+    public boolean isPoint() {
+        return lower != null && upper != null && lowerClosed && upperClosed && lower.equals(upper);
+    }
+
     @Override
     public String toString() {
+        if (isPoint()) return "{" + lower + "}";
         return (lowerClosed ? "[" : "(") + (lower == null ? "-∞" : lower.toString()) + ", "
                 + (upper == null ? "∞" : upper.toString()) + (upperClosed ? "]" : ")");
     }
 
     public String toLatex() {
+        if (isPoint()) return "\\left\\{" + lower.toLatex() + "\\right\\}";
         return (lowerClosed ? "[" : "(") + (lower == null ? "-\\infty" : lower.toLatex()) + ", "
                 + (upper == null ? "\\infty" : upper.toLatex()) + (upperClosed ? "]" : ")");
     }
