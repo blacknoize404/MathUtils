@@ -134,7 +134,8 @@ public final class Factoring {
 
     // ================================================================ Automático
 
-    private static Expr auto(Rec rec, Expr e) {
+    /** Factoriza del todo registrando los pasos en {@code rec}; la usan también las ecuaciones. */
+    static Expr auto(Rec rec, Expr e) {
         Expr expanded = Expand.expand(e);
         if (!e.equals(expanded) && !(e instanceof Expr.Add)) {
             // Un producto o una potencia sin desarrollar: se desarrolla primero para trabajar con la suma
