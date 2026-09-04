@@ -33,6 +33,10 @@ final class DefiniteIntegrals {
     }
 
     static Solution solve(Expr f, String v, Expr lower, Expr upper) {
+        return solve(f, v, lower, upper, IntegralMethod.AUTO);
+    }
+
+    static Solution solve(Expr f, String v, Expr lower, Expr upper, IntegralMethod method) {
         Map<String, Expr> extras = new LinkedHashMap<>();
         extras.put("lower", lower);
         extras.put("upper", upper);
@@ -51,7 +55,7 @@ final class DefiniteIntegrals {
 
         Outcome outcome;
         try {
-            outcome = compute(f, v, lower, upper, a, b);
+            outcome = compute(f, v, lower, upper, a, b, method);
         } catch (RuntimeException e) {
             outcome = Outcome.of(Solution.Status.UNSOLVED, List.of());
         }
@@ -154,7 +158,7 @@ final class DefiniteIntegrals {
 
     // ================================================================ Resolución
 
-    private static Outcome compute(Expr f, String v, Expr lower, Expr upper, double a, double b) {
+    private static Outcome compute(Expr f, String v, Expr lower, Expr upper, double a, double b, IntegralMethod method) {
         List<Step> steps = new ArrayList<>();
 
         if (a == b && Double.isFinite(a)) {
@@ -162,7 +166,7 @@ final class DefiniteIntegrals {
             return new Outcome(Solution.Status.SOLVED, Expr.ZERO, steps);
         }
         if (a > b) {
-            Outcome swapped = compute(f, v, upper, lower, b, a);
+            Outcome swapped = compute(f, v, upper, lower, b, a, method);
             steps.add(new Step(Rule.INT_REVERSE_BOUNDS, null, swapped.value() == null ? null : Expr.neg(swapped.value()),
                     Map.of("a", lower, "b", upper), swapped.steps()));
             return new Outcome(swapped.status(), swapped.value() == null ? null : Expr.neg(swapped.value()), steps);
@@ -176,7 +180,7 @@ final class DefiniteIntegrals {
 
         pTest(f, v, lower, upper, a, b).ifPresent(steps::add);
 
-        Solution indefinite = Integrals.indefinite(f, v);
+        Solution indefinite = Integrals.indefinite(f, v, method);
         if (!indefinite.isSolved()) {
             return Outcome.of(indefinite.status() == Solution.Status.NON_ELEMENTAL
                     ? Solution.Status.NON_ELEMENTAL : Solution.Status.UNSOLVED, steps);

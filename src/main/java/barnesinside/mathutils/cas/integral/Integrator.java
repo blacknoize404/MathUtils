@@ -40,6 +40,8 @@ final class Integrator {
 
     private final Trace trace;
     private final int maxCalls;
+    /** Técnica obligada en la primera llamada, o {@code null} para probarlas todas. */
+    private final IntegralMethod only;
     private int calls;
     private final Set<Key> inProgress = new HashSet<>();
     private final Set<Key> failed;
@@ -50,14 +52,20 @@ final class Integrator {
      *                 sin solución falle rápido en vez de agotar el tiempo
      */
     Integrator(Trace trace, int maxCalls) {
-        this(trace, maxCalls, new HashSet<>());
+        this(trace, maxCalls, new HashSet<>(), null);
+    }
+
+    /** Integrador que en la primera llamada usa solo la técnica indicada (todas si es {@code AUTO} o {@code null}). */
+    Integrator(Trace trace, int maxCalls, IntegralMethod only) {
+        this(trace, maxCalls, new HashSet<>(), only == IntegralMethod.AUTO ? null : only);
     }
 
     /** Los integradores auxiliares comparten la memoria de integrandos que ya fallaron. */
-    private Integrator(Trace trace, int maxCalls, Set<Key> failed) {
+    private Integrator(Trace trace, int maxCalls, Set<Key> failed, IntegralMethod only) {
         this.trace = trace;
         this.maxCalls = maxCalls;
         this.failed = failed;
+        this.only = only;
     }
 
     // ================================================================ Punto de entrada
@@ -81,26 +89,61 @@ final class Integrator {
         Key key = new Key(f, v);
         if (failed.contains(key) || !inProgress.add(key)) return Optional.empty();
         try {
-            Optional<Expr> result = constant(f, v);
-            if (result.isEmpty()) result = sum(f, v, depth);
-            if (result.isEmpty()) result = constantMultiple(f, v, depth);
-            if (result.isEmpty()) result = table(f, v);
-            if (result.isEmpty()) result = reduction(f, v, depth);
-            if (result.isEmpty()) result = exponentialReduction(f, v, depth);
-            if (result.isEmpty()) result = quadraticDenominator(f, v, depth);
-            if (result.isEmpty()) result = partialFractions(f, v, depth);
-            if (result.isEmpty()) result = productToSum(f, v, depth);
-            if (result.isEmpty()) result = substitution(f, v, depth);
-            if (result.isEmpty()) result = trigonometric(f, v, depth);
-            if (result.isEmpty()) result = radical(f, v, depth);
-            if (result.isEmpty()) result = polynomialDivision(f, v, depth);
-            if (result.isEmpty()) result = expand(f, v, depth);
-            if (result.isEmpty()) result = parts(f, v, depth);
+            IntegralMethod forced = depth == 0 ? only : null;
+            Optional<Expr> result;
+            if (forced != null) {
+                result = forced(forced, f, v, depth);
+            } else {
+                result = constant(f, v);
+                if (result.isEmpty()) result = sum(f, v, depth);
+                if (result.isEmpty()) result = constantMultiple(f, v, depth);
+                if (result.isEmpty()) result = table(f, v);
+                if (result.isEmpty()) result = reduction(f, v, depth);
+                if (result.isEmpty()) result = exponentialReduction(f, v, depth);
+                if (result.isEmpty()) result = quadraticDenominator(f, v, depth);
+                if (result.isEmpty()) result = partialFractions(f, v, depth);
+                if (result.isEmpty()) result = productToSum(f, v, depth);
+                if (result.isEmpty()) result = substitution(f, v, depth);
+                if (result.isEmpty()) result = trigonometric(f, v, depth);
+                if (result.isEmpty()) result = radical(f, v, depth);
+                if (result.isEmpty()) result = polynomialDivision(f, v, depth);
+                if (result.isEmpty()) result = expand(f, v, depth);
+                if (result.isEmpty()) result = parts(f, v, depth);
+            }
             if (result.isEmpty() && cycles.isEmpty()) failed.add(key);
             return result;
         } finally {
             inProgress.remove(key);
         }
+    }
+
+    /** Solo las estrategias de una técnica, en el orden en que las usa el modo automático. */
+    private Optional<Expr> forced(IntegralMethod method, Expr f, String v, int depth) {
+        Optional<Expr> result = Optional.empty();
+        switch (method) {
+            case LINEARITY -> {
+                result = sum(f, v, depth);
+                if (result.isEmpty()) result = constantMultiple(f, v, depth);
+            }
+            case TABLE -> result = table(f, v);
+            case REDUCTION -> {
+                result = reduction(f, v, depth);
+                if (result.isEmpty()) result = exponentialReduction(f, v, depth);
+            }
+            case COMPLETE_SQUARE -> result = quadraticDenominator(f, v, depth);
+            case PARTIAL_FRACTIONS -> result = partialFractions(f, v, depth);
+            case TRIGONOMETRIC -> {
+                result = productToSum(f, v, depth);
+                if (result.isEmpty()) result = trigonometric(f, v, depth);
+            }
+            case SUBSTITUTION -> result = substitution(f, v, depth);
+            case RADICAL -> result = radical(f, v, depth);
+            case POLYNOMIAL_DIVISION -> result = polynomialDivision(f, v, depth);
+            case EXPAND -> result = expand(f, v, depth);
+            case BY_PARTS -> result = parts(f, v, depth);
+            case AUTO -> { }
+        }
+        return result;
     }
 
     private static Map<String, Expr> params(String v, Object... extra) {
@@ -721,7 +764,7 @@ final class Integrator {
     /** Integra sin dejar rastro en los pasos, con un integrador independiente. */
     private Optional<Expr> quiet(Expr g, String v, int depth) {
         if (g.isOne()) return Optional.of(Expr.sym(v));
-        Integrator scratch = new Integrator(new Trace(100, 800), 150, failed);
+        Integrator scratch = new Integrator(new Trace(100, 800), 150, failed, null);
         try {
             return scratch.integrate(g, v, depth + 1);
         } catch (Trace.BudgetExceededException e) {

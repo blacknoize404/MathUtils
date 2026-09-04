@@ -43,15 +43,43 @@ public final class Integrals {
     }
 
     public static Solution definite(Expr integrand, String variable, Expr lower, Expr upper) {
-        return DefiniteIntegrals.solve(integrand, variable, lower, upper);
+        return DefiniteIntegrals.solve(integrand, variable, lower, upper, IntegralMethod.AUTO);
+    }
+
+    /** Como {@link #definite(Expr, String, Expr, Expr)}, buscando la antiderivada con la técnica indicada. */
+    public static Solution definite(Expr integrand, String variable, Expr lower, Expr upper, IntegralMethod method) {
+        return DefiniteIntegrals.solve(integrand, variable, lower, upper, method);
+    }
+
+    /**
+     * Las técnicas con las que se puede empezar a resolver la integral indefinida; cada una se prueba de verdad con el
+     * integrando. Vacío si no se sabe resolver; si no, empieza por {@link IntegralMethod#AUTO}.
+     */
+    public static java.util.List<IntegralMethod> applicableMethods(Expr integrand, String variable) {
+        java.util.List<IntegralMethod> methods = new java.util.ArrayList<>();
+        if (integrand.isFreeOf(variable)) return methods;
+        if (!indefinite(integrand, variable, IntegralMethod.AUTO).isSolved()) return methods;
+        for (IntegralMethod m : IntegralMethod.values()) {
+            if (m != IntegralMethod.AUTO && indefinite(integrand, variable, m).isSolved()) methods.add(m);
+        }
+        methods.add(0, IntegralMethod.AUTO);
+        return methods;
     }
 
     /**
      * Integra respecto a {@code variable}. El resultado no incluye la constante de integración.
      */
     public static Solution indefinite(Expr integrand, String variable) {
+        return indefinite(integrand, variable, IntegralMethod.AUTO);
+    }
+
+    /**
+     * Integra empezando por la técnica indicada. Si esa técnica no sirve para el integrando, el estado es
+     * {@link Solution.Status#UNSOLVED} (y no se declara no elemental, porque otra técnica podría resolverla).
+     */
+    public static Solution indefinite(Expr integrand, String variable, IntegralMethod method) {
         Trace trace = new Trace(200, 4000);
-        Integrator integrator = new Integrator(trace, 700);
+        Integrator integrator = new Integrator(trace, 700, method);
 
         try {
             Optional<Expr> result = integrator.integrate(integrand, variable, 0);
@@ -63,7 +91,7 @@ public final class Integrals {
             // Se informa como no resuelta
         }
 
-        Solution.Status status = isKnownNonElementary(integrand, variable)
+        Solution.Status status = method == IntegralMethod.AUTO && isKnownNonElementary(integrand, variable)
                 ? Solution.Status.NON_ELEMENTAL
                 : Solution.Status.UNSOLVED;
         return new Solution(Solution.Kind.INTEGRAL, status, integrand, null, trace.steps(), variable, 1);
