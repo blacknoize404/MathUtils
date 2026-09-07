@@ -27,12 +27,19 @@ final class Differentiator {
     private final Trace trace;
     private final String uName;
     private final Expr u;
+    /** Si se evita la regla del cociente y el denominador se trata como una potencia negativa. */
+    private final boolean quotientAsProduct;
 
     /**
      * @param variable variable de derivación
      * @param taken    nombres de variables ya presentes, para elegir una letra libre como función interior
      */
     Differentiator(String variable, Set<String> taken, Trace trace) {
+        this(variable, taken, trace, false);
+    }
+
+    Differentiator(String variable, Set<String> taken, Trace trace, boolean quotientAsProduct) {
+        this.quotientAsProduct = quotientAsProduct;
         this.variable = variable;
         this.x = Expr.sym(variable);
         this.trace = trace;
@@ -98,7 +105,7 @@ final class Differentiator {
             }
         }
 
-        if (!numerator.isEmpty() && !denominator.isEmpty()) {
+        if (!quotientAsProduct && !numerator.isEmpty() && !denominator.isEmpty()) {
             Expr f = Expr.mul(numerator);
             Expr g = Expr.mul(denominator);
             return trace.step(Rule.DIFF_QUOTIENT, m, Trace.params("x", x, "f", f, "g", g), () -> {

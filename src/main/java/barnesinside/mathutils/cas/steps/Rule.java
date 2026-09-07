@@ -45,6 +45,10 @@ public enum Rule {
     DIFF_EI(Category.DERIVATIVE),
     DIFF_LI(Category.DERIVATIVE),
     DIFF_ORDER(Category.DERIVATIVE),
+    DIFF_EXPAND_FIRST(Category.DERIVATIVE),
+    DIFF_SIMPLIFY_FIRST(Category.DERIVATIVE),
+    DIFF_QUOTIENT_AS_PRODUCT(Category.DERIVATIVE),
+    DIFF_LOGARITHMIC(Category.DERIVATIVE),
 
     // ---- Límites
     LIMIT_CONSTANT(Category.LIMIT),
