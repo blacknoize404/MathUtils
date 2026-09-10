@@ -223,7 +223,7 @@ public final class StepRenderer {
                     : (isDefinite(s) ? "∫[" + s.extras().get("lower") + ", " + s.extras().get("upper") + "] " : "∫ ")
                     + s.problem() + " d" + s.variable();
             case EQUATION, INEQUALITY -> String.valueOf(s.statement());
-            case FACTORIZATION, EXPANSION -> String.valueOf(s.problem());
+            case FACTORIZATION, EXPANSION, REWRITE -> String.valueOf(s.problem());
         };
     }
 
@@ -279,7 +279,7 @@ public final class StepRenderer {
                     ? "_{" + s.extras().get("lower").toLatex() + "}^{" + s.extras().get("upper").toLatex() + "}" : "")
                     + " " + s.problem().toLatex() + " \\, d" + v;
             case EQUATION, INEQUALITY -> s.statement().toLatex();
-            case FACTORIZATION, EXPANSION -> s.problem().toLatex();
+            case FACTORIZATION, EXPANSION, REWRITE -> s.problem().toLatex();
         };
     }
 

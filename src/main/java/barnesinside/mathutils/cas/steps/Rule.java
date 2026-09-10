@@ -219,7 +219,8 @@ public enum Rule {
     POLY_BINOMIAL(Category.ALGEBRA),
     POLY_MULTINOMIAL(Category.ALGEBRA),
     POLY_COLLECT(Category.ALGEBRA),
-    POLY_RESULT(Category.ALGEBRA);
+    POLY_RESULT(Category.ALGEBRA),
+    POLY_REWRITE(Category.ALGEBRA);
 
     /**
      * Familia de la regla; el renderizador la usa para mostrar la operación
