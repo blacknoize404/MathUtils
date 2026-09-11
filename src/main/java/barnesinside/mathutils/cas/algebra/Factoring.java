@@ -313,7 +313,8 @@ public final class Factoring {
             return Optional.of(result);
         }
         // Se parte el término central y se agrupa
-        Expr split = Expr.add(Expr.mul(num(a), Expr.pow(x, 2)), Expr.mul(num(m), x), Expr.mul(num(n), x), num(c));
+        // Solo para mostrarlo: Expr.add juntaría los dos términos en x y no se vería la partición
+        Expr split = new Expr.Add(List.of(Expr.mul(num(a), Expr.pow(x, 2)), Expr.mul(num(m), x), Expr.mul(num(n), x), num(c)));
         rec.note(Rule.POLY_TRINOMIAL_SPLIT, "f", sum, "g", split);
         Optional<Expr> grouped = groupedPairs(rec, split, x, a, m, n, c);
         if (grouped.isEmpty()) return Optional.empty();
@@ -341,11 +342,11 @@ public final class Factoring {
         boolean opposite = !same && Expand.expand(Expr.neg(q2)).equals(q1);
         if (!same && !opposite) return Optional.empty();
 
-        Expr grouped = Expr.sym(first.factor() + "·(" + q1 + ") + (" + second.factor() + ")·(" + q2 + ")");
+        Expr grouped = new Expr.Add(List.of(Expr.mul(first.factor(), q1), Expr.mul(second.factor(), q2)));
         rec.note(Rule.POLY_GROUPING, "g", grouped);
         Expr factor = same ? Expr.add(first.factor(), second.factor()) : Expr.sub(first.factor(), second.factor());
         Expr result = Expr.mul(q1, factor);
-        rec.note(Rule.POLY_COMMON_BINOMIAL, "b", q1, "f", Expr.sym(whole.toString()), "g", result);
+        rec.note(Rule.POLY_COMMON_BINOMIAL, "b", q1, "f", whole, "g", result);
         return Optional.of(result);
     }
 
