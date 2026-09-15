@@ -108,6 +108,14 @@ i.render(Locale.ENGLISH, Format.LATEX);
   stays as it is); `Pattern` finds and rewrites subexpressions with wildcards, for example
   `sin(a)² + cos(a)²` → `1`. Expressions export to LaTeX, MathML and ASCIIMath
   (`toLatex()`, `toMathML()`, `toAsciiMath()`).
+- **Equations and inequalities:** `Equations.solve("x^2 - 5x + 6 = 0")` and `Inequalities.solve("(x - 1)/(x + 2) >= 0")`
+  explain every step and answer with a `SolutionSet` (values, intervals or periodic families). They cover first and second
+  degree, polynomials (rational roots, substitution), fractions, radicals, absolute value, exponentials, logarithms and
+  trigonometry, with a numerical search when there is no formula. `Equations.applicableMethods` lists the methods that work
+  (`FACTORING`, `COMPLETE_SQUARE`, `QUADRATIC_FORMULA`, `RATIONAL_ROOTS`...) and `solve` takes the one you pick.
+  `Factoring.factor(expr, FactorMethod.TRINOMIAL)` does the same for polynomials (common factor, difference of squares,
+  trinomials, grouping, synthetic division...), and `Derivatives.applicableMethods` and `Integrals.applicableMethods` list
+  the ways to approach a derivative or an integral.
 - **Notation:** `2π`, `√(x²+1)`, `x⁻¹`, `30°`, `∞` and Greek letters are accepted anywhere an expression is.
 - **Definite and improper integrals:** `Integrals.definite("e^(-x^2)", "x", "0", "oo")` applies the
   fundamental theorem with limits at infinite or singular endpoints, splits at interior singularities,

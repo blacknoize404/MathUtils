@@ -108,6 +108,14 @@ i.render(Locale.forLanguageTag("es"), Format.LATEX);
   diferencia de cubos, cuadrados perfectos y agrupación (sobre los racionales, así que `x² − 2` se queda como
   está); `Pattern` busca y reescribe subexpresiones con comodines, por ejemplo `sin(a)² + cos(a)²` → `1`.
   Las expresiones se exportan a LaTeX, MathML y ASCIIMath (`toLatex()`, `toMathML()`, `toAsciiMath()`).
+- **Ecuaciones e inecuaciones:** `Equations.solve("x^2 - 5x + 6 = 0")` e `Inequalities.solve("(x - 1)/(x + 2) >= 0")` explican
+  cada paso y responden con un `SolutionSet` (valores, intervalos o familias periódicas). Cubren primer y segundo grado,
+  polinomios (raíces racionales, cambio de variable), fracciones, radicales, valor absoluto, exponenciales, logaritmos y
+  trigonometría, con búsqueda numérica cuando no hay fórmula. `Equations.applicableMethods` lista los métodos que sirven
+  (`FACTORING`, `COMPLETE_SQUARE`, `QUADRATIC_FORMULA`, `RATIONAL_ROOTS`...) y `solve` usa el que elijas.
+  `Factoring.factor(expr, FactorMethod.TRINOMIAL)` hace lo mismo con los polinomios (factor común, diferencia de cuadrados,
+  trinomios, agrupación, división sintética...), y `Derivatives.applicableMethods` e `Integrals.applicableMethods` listan las
+  formas de plantear una derivada o una integral.
 - **Notación:** `2π`, `√(x²+1)`, `x⁻¹`, `30°`, `∞` y las letras griegas se aceptan en cualquier expresión.
 - **Integrales definidas e impropias:** `Integrals.definite("e^(-x^2)", "x", "0", "oo")` aplica la regla
   de Barrow con límites en los extremos infinitos o singulares, parte el intervalo en las singularidades
