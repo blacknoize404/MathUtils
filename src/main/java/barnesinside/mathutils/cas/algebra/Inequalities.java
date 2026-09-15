@@ -185,8 +185,8 @@ public final class Inequalities {
             Op op = r.op();
             Expr original = r.difference();
             Expr f = original;
-            Expr together = Algebra.together(original);
-            Expr shown = together.equals(original) ? Expand.expand(original) : together;
+            // Un polinomio se desarrolla; una fracción algebraica se junta en N/D sin desarrollar el numerador
+            Expr shown = Polynomial.from(original, v).isPresent() ? Expand.expand(original) : Algebra.together(original);
             f = shown;
             Relation moved = new Relation(shown, op, Expr.ZERO);
             boolean sameAsBefore = r.right().isZero() && r.left().equals(shown);
