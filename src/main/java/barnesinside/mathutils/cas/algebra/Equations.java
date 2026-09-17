@@ -76,7 +76,9 @@ public final class Equations {
             Map<String, Expr> extras = solver.approximate() ? Map.of("approximate", Expr.ONE) : Map.of();
             return new Solution(Solution.Kind.EQUATION, Solution.Status.SOLVED, problem, null, rec.steps(), variable, 1,
                     extras, relation, answer);
-        } catch (Trace.BudgetExceededException | ArithmeticException e) {
+        } catch (Trace.BudgetExceededException | ArithmeticException | IllegalArgumentException e) {
+            // Sin tiempo, sin fórmula o con demasiadas soluciones: se dice sin inventar una respuesta, y nunca se lanza
+            if (e instanceof EquationSolver.TooManyRootsException) rec.note(Rule.ALG_NUMERIC_TOO_MANY, "f", problem, "n", Expr.num(EquationSolver.MAX_NUMERIC_ROOTS));
             return unsolved(relation, variable, rec);
         }
     }

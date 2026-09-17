@@ -729,6 +729,8 @@ final class EquationSolver {
             }
             if (coefficient.isZero()) return Optional.empty();
             Expr h = Expand.expand(Expr.div(Expr.neg(Expr.add(rest)), coefficient));
+            // e^sin(x) = x^2: lo que queda a la derecha aun depende de x, no se puede tomar logaritmos de los dos lados
+            if (!h.isFreeOf(v)) return Optional.empty();
             rec.rel(Rule.ALG_ISOLATE, new Relation(first, Op.EQ, h), "x", x);
             if (Eval.value(h) <= 0) {
                 rec.rel(Rule.ALG_CONTRADICTION, new Relation(first, Op.EQ, h), "x", x);
@@ -910,22 +912,43 @@ final class EquationSolver {
 
     // ---------------------------------------------------------------- Numérico
 
-    /** Busca raíces reales de {@code f} entre −50 y 50: cambios de signo afinados por bisección. */
+    /** Cuántas raíces se listan como mucho al buscar numéricamente; con más, la ecuación se deja sin resolver. */
+    static final int MAX_NUMERIC_ROOTS = 50;
+    private static final int NUMERIC_SAMPLES = 20_000;
+
+    /**
+     * Se lanza cuando {@code f} cambia de signo más de {@link #MAX_NUMERIC_ROOTS} veces en la ventana de búsqueda
+     * (por ejemplo {@code cos(x^2)}): listar esas soluciones una a una no sirve de nada y colgaría a quien las pinte.
+     */
+    static final class TooManyRootsException extends ArithmeticException {
+        TooManyRootsException() {
+            super("Demasiadas soluciones para listarlas");
+        }
+    }
+
+    /**
+     * Busca raíces reales de {@code f} entre −50 y 50: cambios de signo afinados por bisección. Si hay más de
+     * {@link #MAX_NUMERIC_ROOTS}, deja de buscar y lanza {@link TooManyRootsException}.
+     */
     private SolutionSet numeric(Expr f) {
         approximate = true;
         List<Double> roots = new ArrayList<>();
-        int n = 20_000;
+        int n = NUMERIC_SAMPLES;
         double lo = -50;
         double hi = 50;
         double step = (hi - lo) / n;
         double previous = value(f, lo);
         for (int i = 1; i <= n; i++) {
+            if (i % 1000 == 0) rec.trace().checkBudget();
             double current = lo + i * step;
             double fc = value(f, current);
             double before = current - step;
             if (!Double.isNaN(previous) && !Double.isNaN(fc) && (previous == 0 || previous * fc < 0)) {
                 double root = previous == 0 ? before : bisect(f, before, current);
-                if (!Double.isNaN(root) && roots.stream().noneMatch(r -> Math.abs(r - root) < 1e-7)) roots.add(root);
+                if (!Double.isNaN(root) && roots.stream().noneMatch(r -> Math.abs(r - root) < 1e-7)) {
+                    roots.add(root);
+                    if (roots.size() > MAX_NUMERIC_ROOTS) throw new TooManyRootsException();
+                }
             }
             previous = fc;
         }
