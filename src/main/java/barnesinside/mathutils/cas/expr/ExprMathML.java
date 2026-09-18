@@ -67,13 +67,26 @@ final class ExprMathML {
                 case E -> "<mi>e</mi>";
                 case INFINITY -> "<mi>&#x221E;</mi>";
             };
-            case Expr.Sym s -> s.name().length() == 1 ? "<mi>" + escape(s.name()) + "</mi>"
-                    : "<mi mathvariant=\"normal\">" + escape(s.name()) + "</mi>";
+            case Expr.Sym s -> name(s.name());
             case Expr.Func f -> function(f);
             case Expr.Add a -> row(sum(a));
             case Expr.Mul m -> product(Display.split(m));
             case Expr.Pow p -> power(p);
         };
+    }
+
+    /**
+     * El nombre de una variable. {@code a_1} lleva subíndice ({@code <msub>}), como lo escribe quien lo usa; los demás de una letra van en
+     * cursiva y los de varias, en redonda.
+     */
+    private static String name(String name) {
+        int underscore = name.indexOf('_');
+        if (underscore > 0 && underscore < name.length() - 1) {
+            String subscript = name.substring(underscore + 1);
+            String shown = subscript.chars().allMatch(Character::isDigit) ? "<mn>" + subscript + "</mn>" : name(subscript);
+            return "<msub>" + name(name.substring(0, underscore)) + shown + "</msub>";
+        }
+        return name.length() == 1 ? "<mi>" + escape(name) + "</mi>" : "<mi mathvariant=\"normal\">" + escape(name) + "</mi>";
     }
 
     private static String escape(String text) {

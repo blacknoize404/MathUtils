@@ -54,13 +54,26 @@ final class ExprAsciiMath {
                 case E -> "e";
                 case INFINITY -> "oo";
             };
-            // Los nombres de varias letras se citan: si no, ASCIIMath los lee como letras sueltas
-            case Expr.Sym s -> s.name().length() == 1 ? s.name() : "\"" + s.name() + "\"";
+            case Expr.Sym s -> name(s.name());
             case Expr.Func f -> function(f);
             case Expr.Add a -> sum(a);
             case Expr.Mul m -> product(Display.split(m));
             case Expr.Pow p -> power(p);
         };
+    }
+
+    /**
+     * El nombre de una variable. {@code a_1} se queda con su subíndice ({@code a_1}, y {@code a_(12)} si el subíndice tiene varias
+     * cifras o letras); los nombres de varias letras se citan, porque si no ASCIIMath los lee como letras sueltas.
+     */
+    private static String name(String name) {
+        int underscore = name.indexOf('_');
+        if (underscore > 0 && underscore < name.length() - 1) {
+            String subscript = name.substring(underscore + 1);
+            String shown = subscript.chars().allMatch(Character::isDigit) ? subscript : name(subscript);
+            return name(name.substring(0, underscore)) + "_" + (shown.length() == 1 ? shown : "(" + shown + ")");
+        }
+        return name.length() == 1 ? name : "\"" + name + "\"";
     }
 
     private static String function(Expr.Func f) {

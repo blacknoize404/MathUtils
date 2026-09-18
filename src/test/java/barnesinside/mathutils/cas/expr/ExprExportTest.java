@@ -17,6 +17,25 @@ class ExprExportTest {
     }
 
     @Test
+    void aSubscriptedNameKeepsItsSubscriptInAsciiMathAndMathML() {
+        assertAscii("a_1", "a_1");
+        assertAscii("a_1 + b", "a_1 + b");
+        assertAscii("x_(12)", "x_12");
+        assertAscii("a_1^2", "a_1^2");
+        assertAscii("(a_1 + a_2)/2", "(a_1 + a_2)/2");
+        assertAscii("\"abc\"_1", "abc_1");
+        assertAscii("x_i", "x_i");
+        assertAscii("\"abc\"", "abc");
+        String one = p("a_1").toMathML();
+        assert one.contains("<msub><mi>a</mi><mn>1</mn></msub>") : one;
+        assert p("x_12").toMathML().contains("<msub><mi>x</mi><mn>12</mn></msub>");
+        assert p("x_i").toMathML().contains("<msub><mi>x</mi><mi>i</mi></msub>");
+        assert p("abc_1").toMathML().contains("<msub><mi mathvariant=\"normal\">abc</mi><mn>1</mn></msub>");
+        assert p("a_1^2").toMathML().contains("<msup><msub><mi>a</mi><mn>1</mn></msub>");
+        assert p("abc").toMathML().contains("<mi mathvariant=\"normal\">abc</mi>");
+    }
+
+    @Test
     void asciiMathPrintsFractionsPowersAndRoots() {
         assertAscii("x^2 + 1", "x^2 + 1");
         assertAscii("(x + 1)/(x - 1)", "(x + 1)/(x - 1)");
