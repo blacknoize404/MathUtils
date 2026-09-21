@@ -349,7 +349,7 @@ class DerivativesTest {
     void markdownAndLatexRendering() {
         Solution s = d("sin(x^2)");
         String markdown = s.render(EN, Format.MARKDOWN);
-        assert markdown.contains("- **Chain rule**") : markdown;
+        assert markdown.contains("### 1. Chain rule") : markdown;
         assert markdown.contains("$$\\frac{d}{dx}\\left[\\sin\\left(x^{2}\\right)\\right] = 2 x \\cos\\left(x^{2}\\right)$$") : markdown;
 
         String latex = s.render(EN, Format.LATEX);

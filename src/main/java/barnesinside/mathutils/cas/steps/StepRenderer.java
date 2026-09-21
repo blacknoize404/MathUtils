@@ -303,10 +303,20 @@ public final class StepRenderer {
         for (Segment segment : segments) {
             switch (segment) {
                 case Segment.Text t -> sb.append(escapeForLatex ? escapeLatex(t.value()) : t.value());
-                case Segment.Math m -> sb.append('$').append(m.expr().toLatex()).append('$');
+                case Segment.Math m -> sb.append('$').append(inlineLatex(m.expr())).append('$');
             }
         }
-        return sb.toString();
+        // Una igualdad o una desigualdad entre dos fórmulas es una sola fórmula: $x - 3$ $=$ $0$ pasa a ser $x - 3 = 0$
+        return sb.toString().replaceAll("\\$ \\$(=|<|>|\\\\leq|\\\\geq|\\\\neq|\\\\le|\\\\ge|\\\\ne)\\$ \\$", " $1 ");
+    }
+
+    /**
+     * La fórmula en LaTeX para ir dentro de un texto. Un símbolo cuyo nombre no es un nombre de variable (lleva espacios u operadores:
+     * {@code x - 3 = 0, x - 2 = 0}) es un texto matemático ya escrito y se deja tal cual, no en redonda.
+     */
+    private static String inlineLatex(Expr e) {
+        if (e instanceof Expr.Sym sym && !sym.name().matches("\\p{L}[\\p{L}\\p{N}_]*")) return sym.name().replaceAll("\\s+", " ");
+        return e.toLatex();
     }
 
     // ================================================================ Texto plano
@@ -352,27 +362,52 @@ public final class StepRenderer {
 
     // ================================================================ Markdown
 
+    /**
+     * La solución completa como un documento Markdown con esquema: un título, el problema (con su enunciado y la fórmula destacada), los
+     * pasos como encabezados numerados (1, 1.1, 1.1.1; más abajo, en negrita) y el resultado. Así sirve en Obsidian, GitHub o cualquier
+     * visor con índice, y las fórmulas van en bloques {@code $$} que no se mezclan con la lista.
+     */
     private static String markdown(Solution s, Locale locale) {
         StringBuilder sb = new StringBuilder();
+        sb.append("# ").append(Messages.get("solution.title", locale)).append("\n\n");
+
+        sb.append("## ").append(Messages.get("solution.problem", locale)).append("\n\n");
         sb.append(segmentsMath(problemText(s, locale), false)).append("\n\n");
+        sb.append("$$").append(resultOperationLatex(s)).append("$$\n\n");
 
         if (!s.steps().isEmpty()) {
-            sb.append("**").append(Messages.get("solution.steps", locale)).append("**\n\n");
-            markdownSteps(sb, s.steps(), 0, locale);
+            sb.append("## ").append(Messages.get("solution.steps", locale)).append("\n\n");
+            markdownOutline(sb, s.steps(), "", 0, locale);
         }
 
-        sb.append('\n');
+        sb.append("## ").append(Messages.get("solution.result", locale)).append("\n\n");
         if (s.isSolved() && s.answer() != null) {
-            sb.append("**").append(Messages.get("solution.result", locale)).append("**\n\n$$")
-                    .append(Expr.sym(s.variable()).toLatex()).append(" \\in ").append(s.answer().toLatex()).append("$$\n");
+            sb.append("$$").append(Expr.sym(s.variable()).toLatex()).append(" \\in ").append(s.answer().toLatex()).append("$$\n");
         } else if (s.isSolved()) {
-            sb.append("**").append(Messages.get("solution.result", locale)).append("**\n\n$$")
-                    .append(resultOperationLatex(s))
+            sb.append("$$").append(resultOperationLatex(s))
                     .append(" = ").append(s.result().toLatex()).append(resultSuffixLatex(s)).append("$$\n");
         } else {
-            sb.append(statusText(s, locale)).append('\n');
+            sb.append("> ").append(statusText(s, locale)).append('\n');
         }
         return sb.toString();
+    }
+
+    /** Los pasos como encabezados numerados: {@code ###} los de arriba, {@code ####} los subpasos, {@code #####} los siguientes y, más abajo, párrafos en negrita. */
+    private static void markdownOutline(StringBuilder sb, List<Step> steps, String number, int depth, Locale locale) {
+        for (int i = 0; i < steps.size(); i++) {
+            Step step = steps.get(i);
+            String label = number.isEmpty() ? String.valueOf(i + 1) : number + "." + (i + 1);
+            String title = (depth == 0 ? label + ". " : label + " ") + step.title(locale);
+            if (depth < 3) sb.append("#".repeat(3 + depth)).append(' ').append(title).append("\n\n");
+            else sb.append("**").append(title).append("**\n\n");
+
+            String explanation = segmentsMath(step.explanation(locale), false).strip();
+            if (!explanation.isEmpty()) sb.append(explanation).append("\n\n");
+            String equation = equationLatex(step);
+            if (equation != null) sb.append("$$").append(equation).append("$$\n\n");
+
+            markdownOutline(sb, step.substeps(), label, depth + 1, locale);
+        }
     }
 
     private static void markdownSteps(StringBuilder sb, List<Step> steps, int depth, Locale locale) {
