@@ -307,7 +307,7 @@ public final class StepRenderer {
             }
         }
         // Una igualdad o una desigualdad entre dos fórmulas es una sola fórmula: $x - 3$ $=$ $0$ pasa a ser $x - 3 = 0$
-        return sb.toString().replaceAll("\\$ \\$(=|<|>|\\\\leq|\\\\geq|\\\\neq|\\\\le|\\\\ge|\\\\ne)\\$ \\$", " $1 ");
+        return sb.toString().replaceAll("\\$ \\$?(=|<|>|\\\\leq|\\\\geq|\\\\neq|\\\\le|\\\\ge|\\\\ne)\\$? \\$", " $1 ");
     }
 
     /**

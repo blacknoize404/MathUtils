@@ -37,6 +37,7 @@ class MarkdownSolutionTest {
         String md = Equations.solve("x^2-5*x+6=0").render(ES, Format.MARKDOWN);
         assert !md.contains("$=$") : "una igualdad no se parte en fórmulas sueltas: " + md;
         assert md.contains("$x - 3 = 0$") && md.contains("$x^{2} - 5 x + 6 = 0$") : md;
+        assert !md.contains("$ = $") && md.contains("$x^{2} - 5 x + 6 = \\left(x - 3\\right) \\left(x - 2\\right)$") : "ni con el = escrito como texto: " + md;
         assert !md.contains("\\mathrm{x - 3") : "un texto matemático ya escrito no va en redonda: " + md;
         assert md.contains("x - 3 = 0, x - 2 = 0") : md;
         assert md.contains("$$x \\in \\left\\{2, 3\\right\\}$$") : md;
