@@ -98,6 +98,12 @@ public sealed interface SolutionSet {
 
     /** Valores aislados, ordenados y sin repeticiones; sin valores es el conjunto vacío. */
     static SolutionSet finite(List<Expr> values) {
+        // Con letras sin valor (parámetros) no hay orden numérico ni se pueden comparar: se quedan como vienen, sin repetidos exactos
+        if (values.stream().anyMatch(v -> !v.variables().isEmpty())) {
+            List<Expr> distinct = new ArrayList<>();
+            for (Expr v : values) if (!distinct.contains(v)) distinct.add(v);
+            return distinct.isEmpty() ? new Empty() : new Finite(distinct);
+        }
         List<Expr> sorted = new ArrayList<>();
         for (Expr v : values) {
             boolean seen = sorted.stream().anyMatch(o -> o.equals(v) || close(o, v));

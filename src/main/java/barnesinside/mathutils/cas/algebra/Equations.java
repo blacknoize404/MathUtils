@@ -62,9 +62,7 @@ public final class Equations {
 
         Rec rec = new Rec(new Trace(200, 10_000));
         Expr problem = relation.difference();
-        for (String other : relation.variables()) {
-            if (!other.equals(variable)) return unsolved(relation, variable, rec);
-        }
+        if (relation.variables().stream().anyMatch(other -> !other.equals(variable))) return solveWithParameters(relation, variable, method, rec, problem);
         if (method != SolveMethod.AUTO && !applicableMethods(relation, variable).contains(method)) {
             rec.note(Rule.POLY_NOT_APPLICABLE, "f", problem);
             return unsolved(relation, variable, rec);
@@ -83,6 +81,17 @@ public final class Equations {
         }
     }
 
+    /** Las otras letras son parámetros: se resuelven las de primer y segundo grado en la variable; el resto queda sin resolver. */
+    private static Solution solveWithParameters(Relation relation, String variable, SolveMethod method, Rec rec, Expr problem) {
+        if (method != SolveMethod.AUTO || !Parametric.applies(relation, variable)) return unsolved(relation, variable, rec);
+        try {
+            SolutionSet answer = Parametric.solve(rec, relation, variable);
+            return new Solution(Solution.Kind.EQUATION, Solution.Status.SOLVED, problem, null, rec.steps(), variable, 1, Map.of(), relation, answer);
+        } catch (Trace.BudgetExceededException | ArithmeticException | IllegalArgumentException e) {
+            return unsolved(relation, variable, rec);
+        }
+    }
+
     private static Solution unsolved(Relation relation, String variable, Rec rec) {
         return new Solution(Solution.Kind.EQUATION, Solution.Status.UNSOLVED, relation.difference(), null, rec.steps(), variable,
                 1, Map.of(), relation, null);
@@ -95,6 +104,10 @@ public final class Equations {
     public static List<SolveMethod> applicableMethods(Relation relation, String variable) {
         List<SolveMethod> methods = new ArrayList<>();
         Expr f = relation.difference();
+        // Con otras letras solo vale el método automático, y solo si la ecuación es de primer o segundo grado en la variable
+        if (relation.variables().stream().anyMatch(other -> !other.equals(variable))) {
+            return Parametric.applies(relation, variable) ? List.of(SolveMethod.AUTO) : methods;
+        }
         EquationSolver probe = new EquationSolver(Rec.scratch(), variable, SolveMethod.AUTO);
 
         switch (probe.kind(f)) {

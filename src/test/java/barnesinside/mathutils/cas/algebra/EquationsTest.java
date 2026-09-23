@@ -243,9 +243,12 @@ class EquationsTest {
     // ---------------------------------------------------------------- Varios
 
     @Test
-    void anEquationWithOtherVariablesIsNotSolved() {
+    void anEquationWithOtherVariablesIsSolvedWhenItIsOfFirstOrSecondDegree() {
         Relation r = Relation.parse("a*x = 3").orElseThrow();
-        assert !Equations.solve(r, "x").isSolved();
+        Solution s = Equations.solve(r, "x");
+        assert s.isSolved() && s.answer().toString().equals("{3/a}") : s.answer();
+        // Lo que no tiene esa forma sigue sin resolverse
+        assert !Equations.solve(Relation.parse("a*sin(x) = 3").orElseThrow(), "x").isSolved();
     }
 
     @Test
