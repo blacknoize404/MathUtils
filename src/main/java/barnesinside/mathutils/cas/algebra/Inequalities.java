@@ -75,7 +75,7 @@ public final class Inequalities {
                     extras, relation, answer);
         } catch (Trace.BudgetExceededException | ArithmeticException | IllegalArgumentException e) {
             // Sin tiempo, sin fórmula o con demasiadas soluciones: se dice sin inventar una respuesta, y nunca se lanza
-            if (e instanceof EquationSolver.TooManyRootsException) rec.note(Rule.ALG_NUMERIC_TOO_MANY, "f", problem, "n", Expr.num(EquationSolver.MAX_NUMERIC_ROOTS));
+            if (e instanceof EquationSolver.TooManyRootsException many) return Equations.described(relation, variable, rec, problem, many);
             return unsolved(relation, variable, rec);
         }
     }

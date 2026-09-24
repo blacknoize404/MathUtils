@@ -73,6 +73,22 @@ public sealed interface SolutionSet {
         }
     }
 
+    /**
+     * Un conjunto que no se puede escribir como valores o intervalos porque tiene demasiados puntos aislados (a menudo
+     * infinitos, como las raíces de {@code 2 + 2x²cos(2x)}): se da como la condición que cumplen sus elementos,
+     * {@code {x ∈ ℝ : f(x) ≠ 0}}. {@code samples} son algunas de las raíces más cercanas al origen, para hacerse una idea.
+     */
+    record Described(Relation relation, String variable, List<Expr> samples) implements SolutionSet {
+        public Described {
+            samples = List.copyOf(samples);
+        }
+
+        @Override
+        public String toString() {
+            return "{" + variable + " ∈ ℝ : " + relation + "}";
+        }
+    }
+
     // ---------------------------------------------------------------- Constructores
 
     static SolutionSet empty() {
@@ -173,6 +189,15 @@ public sealed interface SolutionSet {
             case AllReals a -> true;
             case Finite f -> f.values().stream().anyMatch(v -> Math.abs(Eval.value(v) - x) <= 1e-9 * Math.max(1, Math.abs(x)));
             case Intervals i -> i.parts().stream().anyMatch(p -> p.contains(x));
+            case Described d -> {
+                try {
+                    double difference = Eval.value(d.relation().difference(), java.util.Map.of(d.variable(), x));
+                    int sign = Math.abs(difference) < 1e-9 ? 0 : (int) Math.signum(difference);
+                    yield !Double.isNaN(difference) && d.relation().op().holdsForSign(sign);
+                } catch (RuntimeException e) {
+                    yield false;
+                }
+            }
             case Periodic p -> {
                 for (Expr family : p.families()) {
                     for (int k = -50; k <= 50; k++) {
@@ -200,6 +225,7 @@ public sealed interface SolutionSet {
                     if (p.upper() != null) points.add(p.upper());
                 }
             }
+            case Described d -> points.addAll(d.samples());
             case Periodic p -> {
                 for (Expr family : p.families()) {
                     for (int k = -2; k <= 2; k++) points.add(family.substitute(p.parameter(), Expr.num(k)));
@@ -219,6 +245,7 @@ public sealed interface SolutionSet {
             case AllReals a -> "\\mathbb{R}";
             case Finite f -> "\\left\\{" + f.values().stream().map(Expr::toLatex).collect(Collectors.joining(", ")) + "\\right\\}";
             case Intervals i -> i.parts().stream().map(Interval::toLatex).collect(Collectors.joining(" \\cup "));
+            case Described d -> "\\left\\{" + Expr.sym(d.variable()).toLatex() + " \\in \\mathbb{R} : " + d.relation().toLatex() + "\\right\\}";
             case Periodic p -> "\\left\\{" + p.families().stream().map(Expr::toLatex).collect(Collectors.joining(", "))
                     + " : " + Expr.sym(p.parameter()).toLatex() + " \\in \\mathbb{Z}\\right\\}";
         };

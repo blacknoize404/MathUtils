@@ -76,7 +76,7 @@ public final class Equations {
                     extras, relation, answer);
         } catch (Trace.BudgetExceededException | ArithmeticException | IllegalArgumentException e) {
             // Sin tiempo, sin fórmula o con demasiadas soluciones: se dice sin inventar una respuesta, y nunca se lanza
-            if (e instanceof EquationSolver.TooManyRootsException) rec.note(Rule.ALG_NUMERIC_TOO_MANY, "f", problem, "n", Expr.num(EquationSolver.MAX_NUMERIC_ROOTS));
+            if (e instanceof EquationSolver.TooManyRootsException many) return described(relation, variable, rec, problem, many);
             return unsolved(relation, variable, rec);
         }
     }
@@ -90,6 +90,20 @@ public final class Equations {
         } catch (Trace.BudgetExceededException | ArithmeticException | IllegalArgumentException e) {
             return unsolved(relation, variable, rec);
         }
+    }
+
+    /** Demasiadas soluciones para listarlas: la respuesta es el conjunto descrito por su condición, con unas raíces de ejemplo. */
+    static Solution described(Relation relation, String variable, Rec rec, Expr problem, EquationSolver.TooManyRootsException many) {
+        rec.note(Rule.ALG_NUMERIC_TOO_MANY, "f", problem, "n", Expr.num(EquationSolver.MAX_NUMERIC_ROOTS));
+        List<Expr> samples = new ArrayList<>();
+        for (double root : many.samples()) samples.add(Expr.num(Rational.fromDouble(Math.rint(root * 1e4) / 1e4)));
+        if (!samples.isEmpty()) {
+            rec.note(Rule.ALG_NUMERIC_SAMPLES, "f", problem,
+                    "list", Expr.sym(many.samples().stream().map(SolutionSet::decimal).collect(java.util.stream.Collectors.joining(", "))));
+        }
+        SolutionSet answer = new SolutionSet.Described(relation, variable, samples);
+        Solution.Kind kind = relation.op() == Op.EQ ? Solution.Kind.EQUATION : Solution.Kind.INEQUALITY;
+        return new Solution(kind, Solution.Status.SOLVED, problem, null, rec.steps(), variable, 1, Map.of("described", Expr.ONE), relation, answer);
     }
 
     private static Solution unsolved(Relation relation, String variable, Rec rec) {

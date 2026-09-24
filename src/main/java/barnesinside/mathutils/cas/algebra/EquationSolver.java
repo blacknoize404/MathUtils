@@ -921,8 +921,16 @@ final class EquationSolver {
      * (por ejemplo {@code cos(x^2)}): listar esas soluciones una a una no sirve de nada y colgaría a quien las pinte.
      */
     static final class TooManyRootsException extends ArithmeticException {
-        TooManyRootsException() {
+        /** Algunas de las raíces más cercanas al origen, de menor a mayor, para dar una idea de cómo son. */
+        private final List<Double> samples;
+
+        TooManyRootsException(List<Double> samples) {
             super("Demasiadas soluciones para listarlas");
+            this.samples = List.copyOf(samples);
+        }
+
+        List<Double> samples() {
+            return samples;
         }
     }
 
@@ -932,10 +940,25 @@ final class EquationSolver {
      */
     private SolutionSet numeric(Expr f) {
         approximate = true;
+        List<Double> roots = scan(f, -50, 50, NUMERIC_SAMPLES, MAX_NUMERIC_ROOTS);
+        if (roots.size() > MAX_NUMERIC_ROOTS) {
+            // Demasiadas para listarlas: se guardan las más cercanas al origen para dar una idea
+            List<Double> near = scan(f, -10, 10, NUMERIC_SAMPLES / 2, 12);
+            throw new TooManyRootsException(near.subList(0, Math.min(near.size(), 12)));
+        }
+        List<Expr> values = new ArrayList<>();
+        for (double root : roots) {
+            double rounded = Math.rint(root * 1e8) / 1e8;
+            Expr value = Expr.num(Rational.fromDouble(rounded));
+            values.add(value);
+            rec.note(Rule.ALG_NUMERIC_ROOT, "x", x, "x0", Expr.sym(SolutionSet.decimal(root)), "v", Expr.sym(SolutionSet.decimal(rounded)));
+        }
+        return values.isEmpty() ? SolutionSet.empty() : SolutionSet.approximate(values);
+    }
+
+    /** Las raíces de {@code f} entre {@code lo} y {@code hi}; si hay más de {@code limit}, devuelve una más y deja de buscar. */
+    private List<Double> scan(Expr f, double lo, double hi, int n, int limit) {
         List<Double> roots = new ArrayList<>();
-        int n = NUMERIC_SAMPLES;
-        double lo = -50;
-        double hi = 50;
         double step = (hi - lo) / n;
         double previous = value(f, lo);
         for (int i = 1; i <= n; i++) {
@@ -947,19 +970,12 @@ final class EquationSolver {
                 double root = previous == 0 ? before : bisect(f, before, current);
                 if (!Double.isNaN(root) && roots.stream().noneMatch(r -> Math.abs(r - root) < 1e-7)) {
                     roots.add(root);
-                    if (roots.size() > MAX_NUMERIC_ROOTS) throw new TooManyRootsException();
+                    if (roots.size() > limit) return roots;
                 }
             }
             previous = fc;
         }
-        List<Expr> values = new ArrayList<>();
-        for (double root : roots) {
-            double rounded = Math.rint(root * 1e8) / 1e8;
-            Expr value = Expr.num(Rational.fromDouble(rounded));
-            values.add(value);
-            rec.note(Rule.ALG_NUMERIC_ROOT, "x", x, "x0", Expr.sym(SolutionSet.decimal(root)), "v", Expr.sym(SolutionSet.decimal(rounded)));
-        }
-        return values.isEmpty() ? SolutionSet.empty() : SolutionSet.approximate(values);
+        return roots;
     }
 
     private double value(Expr f, double at) {

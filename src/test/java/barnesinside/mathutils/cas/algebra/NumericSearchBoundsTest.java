@@ -43,7 +43,8 @@ class NumericSearchBoundsTest {
     @Test
     void cosineSquaredEqualsCosineOfXSquaredReturns() {
         Solution s = assertReturns("cos^2(x) = cos(x^2)");
-        assert !s.isSolved();
+        // Demasiadas raíces para listarlas: se responde con el conjunto descrito por su condición
+        assert s.isSolved() && s.answer() instanceof SolutionSet.Described : s.answer();
         assert uses(s.steps(), Rule.ALG_NUMERIC_TOO_MANY);
     }
 
@@ -60,7 +61,7 @@ class NumericSearchBoundsTest {
         for (String text : List.of("cos^2(x) > cos(x^2)", "cos^2(x) >= cos(x^2)", "cos(x^2) < cos(x)^2", "cos(x^2) <= 0",
                 "cos(x^2) != cos(x)^2", "sin(x^2) > 0")) {
             Solution s = assertReturns(text);
-            assert !s.isSolved() : text;
+            assert !(s.answer() instanceof SolutionSet.Finite) && !(s.answer() instanceof SolutionSet.Intervals) : text + " -> " + s.answer();
         }
         assert uses(Equations.solve("cos^2(x) > cos(x^2)").steps(), Rule.ALG_NUMERIC_TOO_MANY);
     }
