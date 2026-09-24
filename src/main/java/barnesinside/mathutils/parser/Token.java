@@ -9,6 +9,8 @@ package barnesinside.mathutils.parser;
 public record Token(Type type, String text, int position) {
 
     public enum Type {
-        NUMBER, IDENTIFIER, OPERATOR, LEFT_PAREN, RIGHT_PAREN, COMMA
+        NUMBER, IDENTIFIER, OPERATOR, LEFT_PAREN, RIGHT_PAREN, COMMA,
+        /** El factorial {@code !}, que va detrás de lo que afecta. */
+        POSTFIX
     }
 }

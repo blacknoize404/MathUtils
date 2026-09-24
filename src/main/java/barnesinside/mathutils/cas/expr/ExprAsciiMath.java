@@ -79,6 +79,7 @@ final class ExprAsciiMath {
     private static String function(Expr.Func f) {
         String arg = print(f.arg());
         return switch (f.fn()) {
+            case FACTORIAL -> (isAtom(f.arg()) ? arg : "(" + arg + ")") + "!";
             case ABS -> "abs(" + arg + ")";
             case ASIN -> "arcsin(" + arg + ")";
             case ACOS -> "arccos(" + arg + ")";
@@ -155,5 +156,10 @@ final class ExprAsciiMath {
         boolean simple = e instanceof Expr.Sym s && s.name().length() == 1 || e instanceof Expr.Const
                 || (e instanceof Expr.Num n && n.value().isInteger() && n.value().signum() >= 0);
         return simple ? raw(e) : "(" + raw(e) + ")";
+    }
+
+    /** Si se puede poner antes de un {@code !} sin paréntesis: un nombre, una constante o un entero no negativo. */
+    private static boolean isAtom(Expr e) {
+        return e instanceof Expr.Sym || e instanceof Expr.Const || (e instanceof Expr.Num n && n.value().isInteger() && n.value().signum() >= 0);
     }
 }

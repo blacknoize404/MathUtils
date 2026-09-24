@@ -10,7 +10,9 @@ public enum Fn {
     ASIN("asin"), ACOS("acos"), ATAN("atan"),
     SINH("sinh"), COSH("cosh"), TANH("tanh"),
     LN("ln"), ABS("abs"), ERF("erf"),
-    SI("Si"), CI("Ci"), EI("Ei"), LI("li");
+    SI("Si"), CI("Ci"), EI("Ei"), LI("li"),
+    /** El factorial {@code n!}, que para valores no enteros es {@code Γ(x + 1)}. */
+    FACTORIAL("factorial");
 
     private final String symbol;
 
@@ -51,6 +53,7 @@ public enum Fn {
             case "tg" -> n = "tan";
             case "ctg" -> n = "cot";
             case "cosec" -> n = "csc";
+            case "fact" -> n = "factorial";
             case "log" -> { return java.util.Optional.empty(); }
             default -> { }
         }

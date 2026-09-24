@@ -27,6 +27,32 @@ public final class Special {
         return 2 / Math.sqrt(Math.PI) * Math.exp(-x * x) * sum;
     }
 
+    private static final double[] LANCZOS = {0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+            -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7};
+
+    /** La función gamma {@code Γ(x)} (aproximación de Lanczos); en los enteros no positivos no está definida (NaN). */
+    public static double gamma(double x) {
+        if (Double.isNaN(x)) return Double.NaN;
+        if (x <= 0 && x == Math.rint(x)) return Double.NaN;
+        if (x < 0.5) return Math.PI / (Math.sin(Math.PI * x) * gamma(1 - x));
+        if (x > 171.7) return Double.POSITIVE_INFINITY;
+        double shifted = x - 1;
+        double sum = LANCZOS[0];
+        double t = shifted + 7.5;
+        for (int i = 1; i < 9; i++) sum += LANCZOS[i] / (shifted + i);
+        return Math.sqrt(2 * Math.PI) * Math.pow(t, shifted + 0.5) * Math.exp(-t) * sum;
+    }
+
+    /** El factorial {@code x! = Γ(x + 1)}: en los enteros no negativos es el producto de 1 a x. */
+    public static double factorial(double x) {
+        if (x >= 0 && x == Math.rint(x) && x <= 170) {
+            double result = 1;
+            for (int i = 2; i <= (int) x; i++) result *= i;
+            return result;
+        }
+        return gamma(x + 1);
+    }
+
     private static final double EULER_GAMMA = 0.5772156649015329;
 
     /** Seno integral {@code Si(x) = ∫₀ˣ sen t / t dt}. */

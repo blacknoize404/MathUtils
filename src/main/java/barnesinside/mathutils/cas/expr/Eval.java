@@ -80,6 +80,7 @@ public final class Eval {
             case CI -> Special.ci(x);
             case EI -> Special.ei(x);
             case LI -> Special.li(x);
+            case FACTORIAL -> Special.factorial(x);
         };
     }
 }

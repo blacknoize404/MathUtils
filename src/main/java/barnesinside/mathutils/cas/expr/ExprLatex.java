@@ -71,6 +71,7 @@ final class ExprLatex {
     private static String function(Expr.Func f) {
         String arg = print(f.arg());
         return switch (f.fn()) {
+            case FACTORIAL -> (isAtom(f.arg()) ? arg : "\\left(" + arg + "\\right)") + "!";
             case ABS -> "\\left|" + arg + "\\right|";
             case LN -> "\\ln\\left(" + arg + "\\right)";
             case ERF -> "\\operatorname{erf}\\left(" + arg + "\\right)";
@@ -128,5 +129,10 @@ final class ExprLatex {
             return "\\sqrt[" + n.value().denominator() + "]{" + print(p.base()) + "}";
         }
         return print(p.base(), ATOM) + "^{" + print(p.exponent()) + "}";
+    }
+
+    /** Si se puede poner antes de un {@code !} sin paréntesis: un nombre, una constante o un entero no negativo. */
+    private static boolean isAtom(Expr e) {
+        return e instanceof Expr.Sym || e instanceof Expr.Const || (e instanceof Expr.Num n && n.value().isInteger() && n.value().signum() >= 0);
     }
 }

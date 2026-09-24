@@ -57,7 +57,7 @@ final class ExprPrinter {
                 case INFINITY -> "oo";
             };
             case Expr.Sym s -> s.name();
-            case Expr.Func f -> f.fn().symbol() + "(" + print(f.arg()) + ")";
+            case Expr.Func f -> f.fn() == Fn.FACTORIAL ? postfix(f.arg()) : f.fn().symbol() + "(" + print(f.arg()) + ")";
             case Expr.Add a -> printSum(a);
             case Expr.Mul m -> printProduct(Display.split(m));
             case Expr.Pow p -> printPower(p);
@@ -114,5 +114,15 @@ final class ExprPrinter {
         boolean simple = e instanceof Expr.Sym || e instanceof Expr.Const
                 || (e instanceof Expr.Num n && n.value().isInteger() && n.value().signum() >= 0);
         return simple ? raw(e) : "(" + raw(e) + ")";
+    }
+
+    /** Si se puede poner antes de un {@code !} sin paréntesis: un nombre, una constante o un entero no negativo. */
+    private static boolean isAtom(Expr e) {
+        return e instanceof Expr.Sym || e instanceof Expr.Const || (e instanceof Expr.Num n && n.value().isInteger() && n.value().signum() >= 0);
+    }
+
+    /** {@code n!}, o {@code (n + 1)!} si lo de antes no es un átomo. */
+    private static String postfix(Expr arg) {
+        return (isAtom(arg) ? print(arg) : "(" + print(arg) + ")") + "!";
     }
 }

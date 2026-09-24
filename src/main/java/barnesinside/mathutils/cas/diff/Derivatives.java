@@ -95,7 +95,7 @@ public final class Derivatives {
             }
             return new Solution(Solution.Kind.DERIVATIVE, Solution.Status.SOLVED, f, current,
                     trace.steps(), variable, order);
-        } catch (Trace.BudgetExceededException e) {
+        } catch (Trace.BudgetExceededException | UnsupportedOperationException e) {
             return new Solution(Solution.Kind.DERIVATIVE, Solution.Status.UNSOLVED, f, null,
                     trace.steps(), variable, order);
         }

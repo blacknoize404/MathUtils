@@ -116,6 +116,8 @@ public final class ExpressionParser {
                 tokens.add(new Token(Token.Type.RIGHT_PAREN, ")", i++));
             } else if (c == ',') {
                 tokens.add(new Token(Token.Type.COMMA, ",", i++));
+            } else if (c == '!') {
+                tokens.add(new Token(Token.Type.POSTFIX, "!", i++));
             } else {
                 throw new ExpressionParseException("Carácter inesperado '" + c + "'", source, i);
             }
@@ -155,7 +157,8 @@ public final class ExpressionParser {
     }
 
     private static boolean endsOperand(Token t) {
-        return t.type() == Token.Type.NUMBER || t.type() == Token.Type.IDENTIFIER || t.type() == Token.Type.RIGHT_PAREN;
+        return t.type() == Token.Type.NUMBER || t.type() == Token.Type.IDENTIFIER || t.type() == Token.Type.RIGHT_PAREN
+                || t.type() == Token.Type.POSTFIX;
     }
 
     private static boolean startsOperand(Token t) {
@@ -262,6 +265,14 @@ public final class ExpressionParser {
                         argCounts.push(new int[]{noArgs ? 0 : 1});
                     }
                     expectOperand = true;
+                }
+
+                case POSTFIX -> {
+                    // n!: se aplica a lo que acaba de leerse (un número, un nombre, un grupo o una llamada), antes que ^ y que el signo menos
+                    if (expectOperand) {
+                        throw new ExpressionParseException("'!' inesperado, se esperaba un operando", source, t.position());
+                    }
+                    output.add(new Rpn(Kind.FUNCTION, "factorial", t.position(), 1, 0));
                 }
 
                 case COMMA -> {

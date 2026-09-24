@@ -114,7 +114,8 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
                 }
             }
         } catch (ArithmeticException e) {
-            throw new IllegalArgumentException("División por cero");
+            // El factorial de un entero negativo lo explica; lo demás es una división por cero
+            throw new IllegalArgumentException(e.getMessage() != null && e.getMessage().contains("factorial") ? e.getMessage() : "División por cero");
         }
     }
 

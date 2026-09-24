@@ -265,6 +265,9 @@ final class Normalizer {
 
     // ================================================================ Funciones
 
+    /** El mayor n del que se calcula n! de forma exacta. */
+    private static final int MAX_FACTORIAL = 1000;
+
     static Expr func(Fn fn, Expr arg) {
         if ((fn.isOdd() || fn.isEven()) && isNegated(arg)) {
             Expr inner = func(fn, negate(arg));
@@ -272,6 +275,17 @@ final class Normalizer {
         }
 
         switch (fn) {
+            case FACTORIAL -> {
+                // n! de un entero no negativo es exacto; el de un entero negativo no existe; el resto queda como está
+                if (arg instanceof Expr.Num n && n.value().isInteger()) {
+                    if (n.value().signum() < 0) throw new ArithmeticException("El factorial no está definido para enteros negativos");
+                    if (n.value().numerator().bitLength() <= 10 && n.value().numerator().intValue() <= MAX_FACTORIAL) {
+                        java.math.BigInteger product = java.math.BigInteger.ONE;
+                        for (int i = 2; i <= n.value().numerator().intValue(); i++) product = product.multiply(java.math.BigInteger.valueOf(i));
+                        return new Expr.Num(Rational.of(product));
+                    }
+                }
+            }
             case LN -> {
                 if (arg.isOne()) return Expr.ZERO;
                 if (arg.equals(Expr.E)) return Expr.ONE;

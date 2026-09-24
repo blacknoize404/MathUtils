@@ -54,6 +54,11 @@ public final class SyntaxPrinter {
                 out.add(new Piece(op, on));
                 operand(b.right(), highlight, on, out, false);
             }
+            case Syntax.Call c when c.name().equals("factorial") && c.args().size() == 1 -> {
+                // n! se escribe con el signo detrás
+                emit(c.args().get(0), highlight, on, out);
+                out.add(new Piece("!", on));
+            }
             case Syntax.Call c -> {
                 out.add(new Piece(c.name() + "(", on));
                 for (int i = 0; i < c.args().size(); i++) {

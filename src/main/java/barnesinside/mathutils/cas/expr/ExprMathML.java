@@ -113,6 +113,7 @@ final class ExprMathML {
     private static String function(Expr.Func f) {
         String arg = print(f.arg(), 0);
         if (f.fn() == Fn.ABS) return row("<mo>|</mo>" + arg + "<mo>|</mo>");
+        if (f.fn() == Fn.FACTORIAL) return row((isAtom(f.arg()) ? arg : parentheses(arg)) + "<mo>!</mo>");
         return row("<mi>" + name(f.fn()) + "</mi>" + APPLY + parentheses(arg));
     }
 
@@ -160,5 +161,10 @@ final class ExprMathML {
             return "<mroot>" + row(print(p.base(), 0)) + "<mn>" + index + "</mn></mroot>";
         }
         return "<msup>" + print(p.base(), ATOM) + row(print(p.exponent(), 0)) + "</msup>";
+    }
+
+    /** Si se puede poner antes de un {@code !} sin paréntesis: un nombre, una constante o un entero no negativo. */
+    private static boolean isAtom(Expr e) {
+        return e instanceof Expr.Sym || e instanceof Expr.Const || (e instanceof Expr.Num n && n.value().isInteger() && n.value().signum() >= 0);
     }
 }

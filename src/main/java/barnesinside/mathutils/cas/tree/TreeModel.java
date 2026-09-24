@@ -173,7 +173,8 @@ public final class TreeModel {
             case Syntax.Bin b -> new TreeNode(id, TreeNode.Kind.OPERATOR, operatorLabel(b.op()), operatorLatex(b.op()),
                     SyntaxTools.precedence(b.op()), SyntaxTools.associativity(b.op()), parentheses, value, text,
                     evaluationOrder, children);
-            case Syntax.Call c -> new TreeNode(id, TreeNode.Kind.FUNCTION, c.name(), "\\operatorname{" + c.name() + "}",
+            case Syntax.Call c -> new TreeNode(id, TreeNode.Kind.FUNCTION, c.name().equals("factorial") ? "!" : c.name(),
+                    c.name().equals("factorial") ? "!" : "\\operatorname{" + c.name() + "}",
                     SyntaxTools.FUNCTION_PRECEDENCE, null, parentheses, value, text, evaluationOrder, children);
             case Syntax.Group g -> throw new IllegalStateException("Los grupos se aplanan antes");
         };
@@ -248,6 +249,7 @@ public final class TreeModel {
             case CI -> "\\operatorname{Ci}";
             case EI -> "\\operatorname{Ei}";
             case LI -> "\\operatorname{li}";
+            case FACTORIAL -> "!";
             default -> "\\" + fn.symbol();
         };
     }
