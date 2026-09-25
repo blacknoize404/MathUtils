@@ -79,6 +79,7 @@ final class ExprAsciiMath {
     private static String function(Expr.Func f) {
         String arg = print(f.arg());
         return switch (f.fn()) {
+            case FLOOR, CEIL, ROUND -> f.fn().symbol() + "(" + arg + ")";
             case FACTORIAL -> (isAtom(f.arg()) ? arg : "(" + arg + ")") + "!";
             case ABS -> "abs(" + arg + ")";
             case ASIN -> "arcsin(" + arg + ")";

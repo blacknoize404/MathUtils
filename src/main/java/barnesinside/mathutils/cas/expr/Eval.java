@@ -81,6 +81,9 @@ public final class Eval {
             case EI -> Special.ei(x);
             case LI -> Special.li(x);
             case FACTORIAL -> Special.factorial(x);
+            case FLOOR -> Math.floor(x);
+            case CEIL -> Math.ceil(x);
+            case ROUND -> Math.signum(x) * Math.floor(Math.abs(x) + 0.5);
         };
     }
 }

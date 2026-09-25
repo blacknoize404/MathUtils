@@ -265,6 +265,45 @@ final class Normalizer {
 
     // ================================================================ Funciones
 
+    /**
+     * El suelo, el techo o el redondeo de un valor sin variables, como entero exacto: de un racional se calcula con enteros; de lo demás
+     * (π, √2, e…) se mira el valor decimal y solo se da si no cae cerca de un cambio de entero, para no equivocarse por redondeo.
+     */
+    private static Expr integerPart(Fn fn, Expr arg) {
+        if (arg instanceof Expr.Num n) return new Expr.Num(Rational.of(integerOf(fn, n.value())));
+        if (!arg.variables().isEmpty()) return null;
+        double v;
+        try {
+            v = Eval.value(arg);
+        } catch (RuntimeException unreadable) {
+            return null;
+        }
+        if (!Double.isFinite(v) || Math.abs(v) > 1e15) return null;
+        // El punto en que cambia el resultado: un entero para el suelo y el techo, una mitad para el redondeo
+        double edge = fn == Fn.ROUND ? Math.abs(Math.abs(v - Math.floor(v)) - 0.5) : Math.abs(v - Math.rint(v));
+        if (edge < 1e-9) return null;
+        return new Expr.Num(Rational.of((long) (fn == Fn.FLOOR ? Math.floor(v) : fn == Fn.CEIL ? Math.ceil(v)
+                : Math.signum(v) * Math.floor(Math.abs(v) + 0.5))));
+    }
+
+    private static java.math.BigInteger integerOf(Fn fn, Rational r) {
+        return switch (fn) {
+            case FLOOR -> floor(r);
+            case CEIL -> floor(r.negate()).negate();
+            default -> {
+                // Redondeo: las mitades se van al más lejano de cero
+                java.math.BigInteger magnitude = floor(r.abs().add(Rational.of(1, 2)));
+                yield r.signum() < 0 ? magnitude.negate() : magnitude;
+            }
+        };
+    }
+
+    /** El mayor entero que no pasa del racional. */
+    private static java.math.BigInteger floor(Rational r) {
+        java.math.BigInteger[] qr = r.numerator().divideAndRemainder(r.denominator());
+        return qr[1].signum() < 0 ? qr[0].subtract(java.math.BigInteger.ONE) : qr[0];
+    }
+
     /** El mayor n del que se calcula n! de forma exacta. */
     private static final int MAX_FACTORIAL = 1000;
 
@@ -275,6 +314,12 @@ final class Normalizer {
         }
 
         switch (fn) {
+            case FLOOR, CEIL, ROUND -> {
+                // Ya es un entero: el suelo, el techo y el redondeo de un entero (o de otro de ellos) no cambian nada
+                if (arg instanceof Expr.Func inner && (inner.fn() == Fn.FLOOR || inner.fn() == Fn.CEIL || inner.fn() == Fn.ROUND)) return arg;
+                Expr integer = integerPart(fn, arg);
+                if (integer != null) return integer;
+            }
             case FACTORIAL -> {
                 // n! de un entero no negativo es exacto; el de un entero negativo no existe; el resto queda como está
                 if (arg instanceof Expr.Num n && n.value().isInteger()) {

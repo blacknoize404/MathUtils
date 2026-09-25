@@ -12,7 +12,13 @@ public enum Fn {
     LN("ln"), ABS("abs"), ERF("erf"),
     SI("Si"), CI("Ci"), EI("Ei"), LI("li"),
     /** El factorial {@code n!}, que para valores no enteros es {@code Γ(x + 1)}. */
-    FACTORIAL("factorial");
+    FACTORIAL("factorial"),
+    /** El suelo {@code ⌊x⌋}: el mayor entero que no pasa de x. */
+    FLOOR("floor"),
+    /** El techo {@code ⌈x⌉}: el menor entero que no es menor que x. */
+    CEIL("ceil"),
+    /** El redondeo {@code ⌊x⌉}: el entero más cercano; las mitades van al más lejano de cero. */
+    ROUND("round");
 
     private final String symbol;
 
@@ -54,6 +60,9 @@ public enum Fn {
             case "ctg" -> n = "cot";
             case "cosec" -> n = "csc";
             case "fact" -> n = "factorial";
+            case "ceiling", "techo" -> n = "ceil";
+            case "suelo" -> n = "floor";
+            case "redondear" -> n = "round";
             case "log" -> { return java.util.Optional.empty(); }
             default -> { }
         }

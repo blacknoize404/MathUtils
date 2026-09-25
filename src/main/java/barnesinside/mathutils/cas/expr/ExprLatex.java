@@ -71,6 +71,9 @@ final class ExprLatex {
     private static String function(Expr.Func f) {
         String arg = print(f.arg());
         return switch (f.fn()) {
+            case FLOOR -> "\\left\\lfloor " + arg + "\\right\\rfloor";
+            case CEIL -> "\\left\\lceil " + arg + "\\right\\rceil";
+            case ROUND -> "\\left\\lfloor " + arg + "\\right\\rceil";
             case FACTORIAL -> (isAtom(f.arg()) ? arg : "\\left(" + arg + "\\right)") + "!";
             case ABS -> "\\left|" + arg + "\\right|";
             case LN -> "\\ln\\left(" + arg + "\\right)";

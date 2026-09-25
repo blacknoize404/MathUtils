@@ -172,8 +172,8 @@ final class Differentiator {
     // ---------------------------------------------------------------- Funciones
 
     private Expr function(Expr.Func f) {
-        // La derivada de n! lleva la función digamma, que el motor no tiene
-        if (f.fn() == Fn.FACTORIAL) throw new UnsupportedOperationException("No se sabe derivar el factorial de una variable");
+        // La derivada de n! lleva la función digamma, que el motor no tiene; la del suelo, el techo y el redondeo es cero salvo en los saltos
+        if (f.fn() == Fn.FACTORIAL || f.fn() == Fn.FLOOR || f.fn() == Fn.CEIL || f.fn() == Fn.ROUND) throw new UnsupportedOperationException("No se sabe derivar el factorial de una variable");
         Rule rule = ruleFor(f.fn());
         if (f.arg().equals(x)) {
             return trace.leaf(rule, f, derivativeOf(f.fn(), x), Trace.params("x", x));
@@ -203,7 +203,7 @@ final class Differentiator {
             case CI -> Expr.div(Expr.cos(t), t);
             case EI -> Expr.div(Expr.exp(t), t);
             case LI -> Expr.div(Expr.ONE, Expr.ln(t));
-            case FACTORIAL -> throw new UnsupportedOperationException("factorial");
+            case FACTORIAL, FLOOR, CEIL, ROUND -> throw new UnsupportedOperationException("sin derivada");
         };
     }
 
@@ -228,7 +228,7 @@ final class Differentiator {
             case CI -> Rule.DIFF_CI;
             case EI -> Rule.DIFF_EI;
             case LI -> Rule.DIFF_LI;
-            case FACTORIAL -> throw new UnsupportedOperationException("factorial");
+            case FACTORIAL, FLOOR, CEIL, ROUND -> throw new UnsupportedOperationException("sin derivada");
         };
     }
 

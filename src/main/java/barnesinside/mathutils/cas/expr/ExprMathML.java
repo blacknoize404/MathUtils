@@ -113,6 +113,9 @@ final class ExprMathML {
     private static String function(Expr.Func f) {
         String arg = print(f.arg(), 0);
         if (f.fn() == Fn.ABS) return row("<mo>|</mo>" + arg + "<mo>|</mo>");
+        if (f.fn() == Fn.FLOOR) return row("<mo>&#x230A;</mo>" + arg + "<mo>&#x230B;</mo>");
+        if (f.fn() == Fn.CEIL) return row("<mo>&#x2308;</mo>" + arg + "<mo>&#x2309;</mo>");
+        if (f.fn() == Fn.ROUND) return row("<mo>&#x230A;</mo>" + arg + "<mo>&#x2309;</mo>");
         if (f.fn() == Fn.FACTORIAL) return row((isAtom(f.arg()) ? arg : parentheses(arg)) + "<mo>!</mo>");
         return row("<mi>" + name(f.fn()) + "</mi>" + APPLY + parentheses(arg));
     }

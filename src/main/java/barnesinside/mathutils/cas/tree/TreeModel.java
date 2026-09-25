@@ -250,6 +250,9 @@ public final class TreeModel {
             case EI -> "\\operatorname{Ei}";
             case LI -> "\\operatorname{li}";
             case FACTORIAL -> "!";
+            case FLOOR -> "\\lfloor\\cdot\\rfloor";
+            case CEIL -> "\\lceil\\cdot\\rceil";
+            case ROUND -> "\\lfloor\\cdot\\rceil";
             default -> "\\" + fn.symbol();
         };
     }

@@ -33,7 +33,37 @@ public final class Notation {
         s = DEGREES.matcher(s).replaceAll("($1*pi/180)");
         s = superscripts(s);
         s = roots(s);
+        s = brackets(s);
         return s;
+    }
+
+    /**
+     * {@code ⌊x⌋} pasa a {@code floor(x)}, {@code ⌈x⌉} a {@code ceil(x)} y {@code ⌊x⌉} a {@code round(x)}: se casa cada cierre con su
+     * apertura, así que pueden anidarse ({@code ⌊⌈x⌉/2⌋}). Un signo sin pareja se deja como está y el intérprete lo rechaza.
+     */
+    private static String brackets(String s) {
+        if (s.indexOf('⌊') < 0 && s.indexOf('⌈') < 0 && s.indexOf('⌋') < 0 && s.indexOf('⌉') < 0) return s;
+        StringBuilder out = new StringBuilder();
+        java.util.ArrayDeque<int[]> open = new java.util.ArrayDeque<>();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '⌊' || c == '⌈') {
+                open.push(new int[]{out.length(), c});
+                out.append(c == '⌊' ? "floor(" : "ceil(");
+            } else if (c == '⌋' || c == '⌉') {
+                if (open.isEmpty()) {
+                    out.append(c);
+                    continue;
+                }
+                int[] opener = open.pop();
+                // ⌊ cerrado con ⌉ es el redondeo: se corrige el nombre que se escribió al abrir
+                if (opener[1] == '⌊' && c == '⌉') out.replace(opener[0], opener[0] + "floor".length(), "round");
+                out.append(')');
+            } else {
+                out.append(c);
+            }
+        }
+        return out.toString();
     }
 
     /** {@code x²} pasa a {@code x^2}, {@code x⁻¹} a {@code x^-1} y {@code x¹²} a {@code x^12}. */
