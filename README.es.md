@@ -139,7 +139,7 @@ La librería se publica con [JitPack](https://jitpack.io/#blacknoize404/BI.MathU
 <dependency>
   <groupId>com.github.blacknoize404</groupId>
   <artifactId>BI.MathUtils</artifactId>
-  <version>v0.8.1</version>
+  <version>v0.8.2</version>
 </dependency>
 ```
 
