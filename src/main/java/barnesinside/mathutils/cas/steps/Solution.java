@@ -61,6 +61,17 @@ public record Solution(Kind kind, Status status, Expr problem, Expr result, List
         this(kind, status, problem, result, steps, variable, order, Map.of(), null, null);
     }
 
+    /**
+     * La misma resolución con unos pasos delante (por ejemplo, los de las integrales que llevaba escritas la expresión y que se
+     * resolvieron antes). Sin pasos, devuelve la misma.
+     */
+    public Solution withPrelude(List<Step> prelude) {
+        if (prelude == null || prelude.isEmpty()) return this;
+        List<Step> all = new java.util.ArrayList<>(prelude);
+        all.addAll(steps);
+        return new Solution(kind, status, problem, result, all, variable, order, extras, statement, answer);
+    }
+
     public boolean isSolved() {
         return status == Status.SOLVED;
     }

@@ -78,6 +78,18 @@ class GammaIntegralsTest {
     }
 
     @Test
+    void theReciprocalLimitShowsTheIntegralTheSpecialValuesAndTheSubstitution() {
+        Solution s = Limits.limit("1/int(exp(-x) x^z ln(x), x, 0, oo)", "z", "0");
+        java.util.List<Rule> top = s.steps().stream().map(step -> step.rule()).toList();
+        assert top.equals(java.util.List.of(Rule.NESTED_INTEGRAL, Rule.LIMIT_SPECIAL_VALUE, Rule.LIMIT_SPECIAL_VALUE, Rule.LIMIT_DIRECT)) : top;
+        assert uses(s, Rule.INT_GAMMA_LOG) : "la integral lleva su resolución dentro";
+        String es = s.render(Locale.of("es"), Format.PLAIN);
+        String en = s.render(Locale.ENGLISH, Format.PLAIN);
+        assert es.contains("0! = 1") && es.contains("digamma(1) = -γ") : es;
+        assert en.contains("Solve the inner integral first") : en;
+    }
+
+    @Test
     void symbolicLimitsOfIntegrationAreSolvedWithTheAntiderivative() {
         Solution s = Integrals.definite("3*x^2", "x", "0", "b");
         assert s.isSolved() && s.result().equals(ExprParser.parse("b^3")) : s.status() + " " + s.result();

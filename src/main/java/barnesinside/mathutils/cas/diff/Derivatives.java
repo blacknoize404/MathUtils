@@ -54,7 +54,8 @@ public final class Derivatives {
      * @throws barnesinside.mathutils.exceptions.ExpressionParseException si el texto no es una expresión válida
      */
     public static Solution derivative(String source, String variable) {
-        return derivative(ExprParser.parse(source), variable);
+        ExprParser.Parsed parsed = ExprParser.parseDetailed(source);
+        return derivative(parsed.expr(), variable).withPrelude(parsed.steps());
     }
 
     /**

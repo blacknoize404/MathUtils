@@ -46,12 +46,23 @@ public final class ExprParser {
         return parseDetailed(source, userFunctions, angleUnit, values).expr();
     }
 
+    /** Si el texto lleva integrales, derivadas o límites escritos dentro (que {@link #parse(String)} resuelve). */
+    public static boolean hasNestedCalculus(String source) {
+        return NestedCalculus.mentions(source);
+    }
+
+    /** Como {@link #parse(String)}, con los pasos de lo que se resolvió dentro del texto. */
+    public static Parsed parseDetailed(String source) {
+        return parseDetailed(source, Map.of(), AngleUnit.RADIANS, Map.of());
+    }
+
     /**
      * La expresión interpretada y si alguna operación anidada se calculó solo de forma numérica.
      *
      * @param approximate {@code true} si la expresión lleva un valor decimal en lugar de uno exacto
+     * @param steps       un paso por cada integral, derivada o límite anidado que se resolvió (vacío si no hay ninguno)
      */
-    public record Parsed(Expr expr, boolean approximate) {
+    public record Parsed(Expr expr, boolean approximate, java.util.List<barnesinside.mathutils.cas.steps.Step> steps) {
     }
 
     /** Como {@link #parse(String, Map, AngleUnit, Map)}, indicando además si hubo que aproximar. */
@@ -59,7 +70,7 @@ public final class ExprParser {
                                        Map<String, Expr> values) {
         NestedCalculus.Expansion nested = NestedCalculus.expand(source, true, values, userFunctions, angleUnit);
         Expr expr = ExpressionParser.parse(FunctionPowers.rewrite(nested.text()), new ExprBuilder(userFunctions, angleUnit), true);
-        return new Parsed(nested.apply(expr), nested.approximate());
+        return new Parsed(nested.apply(expr), nested.approximate(), nested.steps());
     }
 
     /**

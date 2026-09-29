@@ -150,6 +150,7 @@ final class LimitEngine {
         LV lv = evaluate(f, c);
         switch (lv.kind()) {
             case FINITE -> {
+                if (isSubstitution(f, c, lv.value())) specialValues(f, c);
                 trace.leaf(isSubstitution(f, c, lv.value()) ? Rule.LIMIT_DIRECT : Rule.LIMIT_ALGEBRA, f, lv.value(), params(c));
                 return new Value(lv.value());
             }
@@ -226,6 +227,43 @@ final class LimitEngine {
             return Optional.of(infinity(sign));
         });
         return done.map(Value::new);
+    }
+
+    /**
+     * Antes de sustituir, el factorial y la digamma de lo que sale tras poner el valor (0! = 1, ψ(1) = −γ): un paso por cada
+     * una, para que el resultado no parezca salir de la nada.
+     */
+    private void specialValues(Expr f, Context c) {
+        List<Expr.Func> found = new ArrayList<>();
+        collectSpecial(f, found);
+        for (Expr.Func special : found) {
+            try {
+                Expr point = special.arg().substitute(x, c.point());
+                if (!(point instanceof Expr.Num)) continue;
+                Expr before = new Expr.Func(special.fn(), point);
+                Expr after = Expr.func(special.fn(), point);
+                if (after instanceof Expr.Func) continue;
+                trace.leaf(Rule.LIMIT_SPECIAL_VALUE, before, after, Trace.params("u", before, "v", after));
+            } catch (ArithmeticException e) {
+                // Sin valor exacto: no se explica
+            }
+        }
+    }
+
+    private static void collectSpecial(Expr e, List<Expr.Func> out) {
+        switch (e) {
+            case Expr.Func fn -> {
+                if ((fn.fn() == Fn.FACTORIAL || fn.fn() == Fn.DIGAMMA) && out.stream().noneMatch(fn::equals)) out.add(fn);
+                collectSpecial(fn.arg(), out);
+            }
+            case Expr.Add a -> a.terms().forEach(t -> collectSpecial(t, out));
+            case Expr.Mul m -> m.factors().forEach(t -> collectSpecial(t, out));
+            case Expr.Pow p -> {
+                collectSpecial(p.base(), out);
+                collectSpecial(p.exponent(), out);
+            }
+            default -> { }
+        }
     }
 
     private Map<String, Expr> params(Context c) {

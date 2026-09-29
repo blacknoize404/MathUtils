@@ -29,7 +29,8 @@ public final class Integrals {
      * @throws barnesinside.mathutils.exceptions.ExpressionParseException si el texto no es una expresión válida
      */
     public static Solution indefinite(String integrand, String variable) {
-        return indefinite(ExprParser.parse(integrand), variable);
+        ExprParser.Parsed parsed = ExprParser.parseDetailed(integrand);
+        return indefinite(parsed.expr(), variable).withPrelude(parsed.steps());
     }
 
     /**
@@ -39,7 +40,8 @@ public final class Integrals {
      * todo caso el campo {@code approximation} de los extras trae el valor decimal si se pudo calcular.
      */
     public static Solution definite(String integrand, String variable, String lower, String upper) {
-        return definite(ExprParser.parse(integrand), variable, ExprParser.parse(lower), ExprParser.parse(upper));
+        ExprParser.Parsed parsed = ExprParser.parseDetailed(integrand);
+        return definite(parsed.expr(), variable, ExprParser.parse(lower), ExprParser.parse(upper)).withPrelude(parsed.steps());
     }
 
     public static Solution definite(Expr integrand, String variable, Expr lower, Expr upper) {

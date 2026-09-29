@@ -53,6 +53,10 @@ public enum Rule {
     // ---- Límites
     LIMIT_CONSTANT(Category.LIMIT),
     LIMIT_DIRECT(Category.LIMIT),
+    LIMIT_SPECIAL_VALUE(Category.GENERAL),
+    NESTED_INTEGRAL(Category.INTEGRAL),
+    NESTED_DERIVATIVE(Category.DERIVATIVE),
+    NESTED_LIMIT(Category.LIMIT),
     LIMIT_ALGEBRA(Category.LIMIT),
     LIMIT_INFINITY_RATIONAL(Category.LIMIT),
     LIMIT_LHOPITAL_ZERO(Category.LIMIT),

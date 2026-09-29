@@ -34,7 +34,8 @@ public final class Limits {
     }
 
     public static Solution limit(String function, String variable, String point, Direction direction) {
-        return limit(ExprParser.parse(function), variable, ExprParser.parse(point), direction);
+        ExprParser.Parsed parsed = ExprParser.parseDetailed(function);
+        return limit(parsed.expr(), variable, ExprParser.parse(point), direction).withPrelude(parsed.steps());
     }
 
     public static Solution limit(Expr function, String variable, Expr point) {

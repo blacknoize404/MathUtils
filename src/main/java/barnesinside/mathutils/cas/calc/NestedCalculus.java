@@ -7,7 +7,9 @@ import barnesinside.mathutils.cas.expr.ExprParser;
 import barnesinside.mathutils.cas.expr.UserFunction;
 import barnesinside.mathutils.cas.integral.Integrals;
 import barnesinside.mathutils.cas.limit.Limits;
+import barnesinside.mathutils.cas.steps.Rule;
 import barnesinside.mathutils.cas.steps.Solution;
+import barnesinside.mathutils.cas.steps.Step;
 import barnesinside.mathutils.exceptions.ExpressionParseException;
 
 import java.util.ArrayList;
@@ -40,8 +42,9 @@ public final class NestedCalculus {
      * El texto con las llamadas sustituidas y los resultados que vuelven a su lugar.
      *
      * @param approximate si algún resultado es un valor numérico y no exacto
+     * @param steps       un paso por cada operación resuelta, con su resolución dentro, para mostrarlos antes de lo que sigue
      */
-    public record Expansion(String text, Map<String, Expr> replacements, boolean approximate) {
+    public record Expansion(String text, Map<String, Expr> replacements, boolean approximate, List<Step> steps) {
 
         /** Sustituye los nombres provisionales por los resultados. */
         public Expr apply(Expr e) {
@@ -50,7 +53,7 @@ public final class NestedCalculus {
     }
 
     /** Indica si el texto puede llevar algo que expandir (comprobación barata para no recorrerlo siempre). */
-    static boolean mentions(String source) {
+    public static boolean mentions(String source) {
         if (source == null) return false;
         if (source.indexOf('∫') >= 0) return true;
         if (source.indexOf('(') < 0) return false;
@@ -68,11 +71,12 @@ public final class NestedCalculus {
      */
     public static Expansion expand(String source, boolean solve, Map<String, Expr> values,
                                    Map<String, UserFunction> functions, AngleUnit angleUnit) {
-        if (!mentions(source)) return new Expansion(source, Map.of(), false);
+        if (!mentions(source)) return new Expansion(source, Map.of(), false, List.of());
 
         StringBuilder text = new StringBuilder(source);
         Map<String, Expr> replacements = new LinkedHashMap<>();
         boolean approximate = false;
+        List<Step> steps = new ArrayList<>();
         Context context = new Context(solve, values, functions, angleUnit);
 
         int i = 0;
@@ -87,12 +91,13 @@ public final class NestedCalculus {
                 Value value = context.solve(call, source);
                 replacements.put(placeholder, value.expr());
                 approximate |= value.approximate();
+                steps.add(value.step());
             }
             String padded = placeholder + " ".repeat(Math.max(0, call.end() - i - placeholder.length()));
             text.replace(i, call.end(), padded);
             i = call.end();
         }
-        return new Expansion(text.toString(), replacements, approximate);
+        return new Expansion(text.toString(), replacements, approximate, steps);
     }
 
     private static String placeholder(String source, int n) {
@@ -223,7 +228,7 @@ public final class NestedCalculus {
 
     // ================================================================ Resolución
 
-    private record Value(Expr expr, boolean approximate) {
+    private record Value(Expr expr, boolean approximate, Step step) {
     }
 
     private record Context(boolean solve, Map<String, Expr> values, Map<String, UserFunction> functions, AngleUnit angleUnit) {
@@ -288,17 +293,20 @@ public final class NestedCalculus {
             if (lower == null && upper == null) {
                 Solution s = Integrals.indefinite(f, variable);
                 if (!s.isSolved()) throw failure("No se pudo calcular la integral de " + f + ".", source, call);
-                return new Value(s.result(), false);
+                return value(Rule.NESTED_INTEGRAL, s, false, "f", f, "x", Expr.sym(variable));
             }
             Expr a = parse(lower == null ? "-oo" : lower, variable);
             Expr b = parse(upper == null ? "oo" : upper, variable);
             Solution s = Integrals.definite(f, variable, a, b);
-            if (s.isSolved()) return new Value(s.result(), false);
+            if (s.isSolved()) return value(Rule.NESTED_INTEGRAL, s, false, "f", f, "x", Expr.sym(variable), "a", a, "b", b);
             if (s.status() == Solution.Status.DOES_NOT_EXIST) {
                 throw failure("La integral de " + f + " entre " + a + " y " + b + " diverge.", source, call);
             }
             Expr approximation = s.extras().get("approximation");
-            if (approximation != null && free(f, variable).isEmpty()) return new Value(approximation, true);
+            if (approximation != null && free(f, variable).isEmpty()) {
+                Solution numeric = new Solution(s.kind(), Solution.Status.SOLVED, s.problem(), approximation, s.steps(), s.variable(), s.order(), s.extras());
+                return value(Rule.NESTED_INTEGRAL, numeric, true, "f", f, "x", Expr.sym(variable), "a", a, "b", b);
+            }
             throw failure(unsolved("la integral de " + f + " entre " + a + " y " + b, free(f, variable)), source, call);
         }
 
@@ -317,7 +325,7 @@ public final class NestedCalculus {
             }
             Solution s = Derivatives.nth(f, variable, order);
             if (!s.isSolved()) throw failure("No se pudo derivar " + f + ".", source, call);
-            return new Value(s.result(), false);
+            return value(Rule.NESTED_DERIVATIVE, s, false, "f", f, "x", Expr.sym(variable));
         }
 
         private Value limit(Call call, String source) {
@@ -337,7 +345,15 @@ public final class NestedCalculus {
             Solution s = Limits.limit(f, variable, point, direction);
             if (s.status() == Solution.Status.DOES_NOT_EXIST) throw failure("El límite de " + f + " en " + point + " no existe.", source, call);
             if (!s.isSolved()) throw failure(unsolved("el límite de " + f + " en " + point, free(f, variable)), source, call);
-            return new Value(s.result(), false);
+            return value(Rule.NESTED_LIMIT, s, false, "f", f, "x", Expr.sym(variable), "a", point);
+        }
+
+        /** El resultado de una operación resuelta junto con su paso (con la resolución como subpasos). */
+        private static Value value(Rule rule, Solution s, boolean approximate, Object... params) {
+            Map<String, Expr> map = new LinkedHashMap<>();
+            for (int i = 0; i < params.length; i += 2) map.put((String) params[i], (Expr) params[i + 1]);
+            map.put("value", s.result());
+            return new Value(s.result(), approximate, new Step(rule, null, s.result(), map, s.steps()));
         }
 
         private static Set<String> free(Expr f, String variable) {
