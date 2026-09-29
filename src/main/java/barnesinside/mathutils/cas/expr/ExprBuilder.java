@@ -48,6 +48,7 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
         if (lower.equals("pi") || name.equals("π")) return Expr.PI;
         if (name.equals("e") || name.equals("E")) return Expr.E;
         if (lower.equals("oo") || lower.equals("inf") || lower.equals("infinity") || name.equals("∞")) return Expr.INFINITY;
+        if (name.equals("γ") || lower.equals("euler_gamma")) return Expr.EULER_GAMMA;
         if (isFunction(name)) throw new IllegalArgumentException("Falta '(' tras la función '" + name + "'");
         return Expr.sym(name);
     }

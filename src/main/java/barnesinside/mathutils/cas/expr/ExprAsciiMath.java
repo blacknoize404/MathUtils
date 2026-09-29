@@ -53,6 +53,7 @@ final class ExprAsciiMath {
                 case PI -> "pi";
                 case E -> "e";
                 case INFINITY -> "oo";
+                case EULER_GAMMA -> "gamma";
             };
             case Expr.Sym s -> name(s.name());
             case Expr.Func f -> function(f);
@@ -82,6 +83,7 @@ final class ExprAsciiMath {
             case FLOOR, CEIL, ROUND -> f.fn().symbol() + "(" + arg + ")";
             case FACTORIAL -> (isAtom(f.arg()) ? arg : "(" + arg + ")") + "!";
             case ABS -> "abs(" + arg + ")";
+            case DIGAMMA -> "digamma(" + arg + ")";
             case ASIN -> "arcsin(" + arg + ")";
             case ACOS -> "arccos(" + arg + ")";
             case ATAN -> "arctan(" + arg + ")";

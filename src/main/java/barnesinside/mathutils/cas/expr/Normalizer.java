@@ -331,6 +331,21 @@ final class Normalizer {
                     }
                 }
             }
+            case DIGAMMA -> {
+                // ψ(n) = H(n-1) − γ para los enteros positivos y ψ(1/2) = −γ − 2 ln 2
+                if (arg instanceof Expr.Num n) {
+                    Rational r = n.value();
+                    if (r.isInteger() && r.signum() > 0 && r.numerator().bitLength() <= 10 && r.numerator().intValue() <= MAX_FACTORIAL) {
+                        Rational harmonic = Rational.ZERO;
+                        for (int i = 1; i < r.numerator().intValue(); i++) harmonic = harmonic.add(Rational.of(1, i));
+                        return add(List.of(new Expr.Num(harmonic), mul(List.of(Expr.MINUS_ONE, Expr.EULER_GAMMA))));
+                    }
+                    if (r.equals(Rational.of(1, 2))) {
+                        return add(List.of(mul(List.of(Expr.MINUS_ONE, Expr.EULER_GAMMA)),
+                                mul(List.of(Expr.num(-2), new Expr.Func(Fn.LN, Expr.num(2))))));
+                    }
+                }
+            }
             case LN -> {
                 if (arg.isOne()) return Expr.ZERO;
                 if (arg.equals(Expr.E)) return Expr.ONE;

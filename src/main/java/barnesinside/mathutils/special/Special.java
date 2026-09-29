@@ -53,7 +53,28 @@ public final class Special {
         return gamma(x + 1);
     }
 
-    private static final double EULER_GAMMA = 0.5772156649015329;
+    /** La constante de Euler–Mascheroni {@code γ}. */
+    public static final double EULER_GAMMA = 0.5772156649015329;
+
+    /**
+     * La función digamma {@code ψ(x) = Γ'(x) / Γ(x)}; no está definida (NaN) en los enteros no positivos.
+     * Usa la recurrencia {@code ψ(x) = ψ(x + 1) − 1/x} hasta {@code x ≥ 10} y la serie asintótica, y la
+     * reflexión {@code ψ(1 − x) − ψ(x) = π cot(πx)} para argumentos negativos.
+     */
+    public static double digamma(double x) {
+        if (Double.isNaN(x)) return Double.NaN;
+        if (x <= 0 && x == Math.rint(x)) return Double.NaN;
+        if (x < 0) return digamma(1 - x) - Math.PI / Math.tan(Math.PI * x);
+        double result = 0;
+        while (x < 10) {
+            result -= 1 / x;
+            x += 1;
+        }
+        double inverse = 1 / x;
+        double square = inverse * inverse;
+        return result + Math.log(x) - inverse / 2
+                - square * (1.0 / 12 - square * (1.0 / 120 - square * (1.0 / 252 - square * (1.0 / 240 - square / 132))));
+    }
 
     /** Seno integral {@code Si(x) = ∫₀ˣ sen t / t dt}. */
     public static double si(double x) {

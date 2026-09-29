@@ -53,6 +53,7 @@ final class ExprLatex {
                 case PI -> "\\pi";
                 case E -> "e";
                 case INFINITY -> "\\infty";
+                case EULER_GAMMA -> "\\gamma";
             };
             case Expr.Sym s -> s.name().length() == 1 ? s.name() : "\\mathrm{" + s.name() + "}";
             case Expr.Func f -> function(f);
@@ -82,6 +83,7 @@ final class ExprLatex {
             case CI -> "\\operatorname{Ci}\\left(" + arg + "\\right)";
             case EI -> "\\operatorname{Ei}\\left(" + arg + "\\right)";
             case LI -> "\\operatorname{li}\\left(" + arg + "\\right)";
+            case DIGAMMA -> "\\psi\\left(" + arg + "\\right)";
             case ASIN -> "\\arcsin\\left(" + arg + "\\right)";
             case ACOS -> "\\arccos\\left(" + arg + "\\right)";
             case ATAN -> "\\arctan\\left(" + arg + "\\right)";

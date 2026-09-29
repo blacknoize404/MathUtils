@@ -219,7 +219,7 @@ public final class TreeModel {
             case Expr.Sym s -> new TreeNode(id, TreeNode.Kind.VARIABLE, s.name(), e.toLatex(), LEAF_PRECEDENCE,
                     null, 0, value, text, null, List.of());
             case Expr.Const c -> new TreeNode(id, TreeNode.Kind.CONSTANT, c.kind() == Expr.Const.Kind.PI ? "π"
-                    : c.kind() == Expr.Const.Kind.E ? "e" : "∞", e.toLatex(), LEAF_PRECEDENCE, null, 0, value, text, null, List.of());
+                    : c.kind() == Expr.Const.Kind.E ? "e" : c.kind() == Expr.Const.Kind.EULER_GAMMA ? "γ" : "∞", e.toLatex(), LEAF_PRECEDENCE, null, 0, value, text, null, List.of());
             case Expr.Add a -> branch(id, "+", "+", 1, null, a.terms(), counter, variables, value, text);
             case Expr.Mul m -> branch(id, "×", "\\times", 2, SyntaxTools.Associativity.LEFT, m.factors(), counter, variables, value, text);
             case Expr.Pow p -> branch(id, "^", "^", 4, SyntaxTools.Associativity.RIGHT, List.of(p.base(), p.exponent()), counter, variables, value, text);
@@ -250,6 +250,7 @@ public final class TreeModel {
             case EI -> "\\operatorname{Ei}";
             case LI -> "\\operatorname{li}";
             case FACTORIAL -> "!";
+            case DIGAMMA -> "\\psi";
             case FLOOR -> "\\lfloor\\cdot\\rfloor";
             case CEIL -> "\\lceil\\cdot\\rceil";
             case ROUND -> "\\lfloor\\cdot\\rceil";

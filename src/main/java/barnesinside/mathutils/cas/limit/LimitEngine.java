@@ -174,8 +174,58 @@ final class LimitEngine {
         if (result.isEmpty()) result = product(f, c, depth);
         if (result.isEmpty()) result = difference(f, c, depth);
         if (result.isEmpty()) result = exponentialForm(f, c, depth);
+        if (result.isEmpty()) result = termwise(f, c, depth);
         if (result.isEmpty() && !c.isInfinite() && c.direction() == Limits.Direction.BOTH) result = sides(f, c, depth);
         return result.orElse(UNSOLVED);
+    }
+
+    /**
+     * Suma cuyos sumandos tienen límite por separado (cada uno indeterminado a su manera, como
+     * {@code x²e^(-x) + 2e^(-x)}) o producto de una constante por un factor con límite. Los
+     * límites infinitos solo se combinan si tienen el mismo signo.
+     */
+    private Optional<Outcome> termwise(Expr f, Context c, int depth) {
+        List<Expr> parts;
+        if (f instanceof Expr.Add sum) {
+            parts = sum.terms();
+        } else if (f instanceof Expr.Mul m && m.factors().stream().filter(t -> !t.isFreeOf(x)).count() == 1
+                && m.factors().stream().anyMatch(t -> t.isFreeOf(x))) {
+            parts = m.factors();
+        } else {
+            return Optional.empty();
+        }
+        boolean sum = f instanceof Expr.Add;
+        Optional<Expr> done = trace.attempt(Rule.LIMIT_ALGEBRA, f, params(c), () -> {
+            List<Expr> values = new ArrayList<>();
+            int infinity = 0;
+            for (Expr part : parts) {
+                if (part.isFreeOf(x)) {
+                    values.add(part);
+                    continue;
+                }
+                Optional<Expr> limit = valueOf(solve(part, c, depth + 1));
+                if (limit.isEmpty()) return Optional.empty();
+                int sign = infinitySign(limit.get());
+                if (sign == 0) {
+                    values.add(limit.get());
+                } else if (sum) {
+                    if (infinity != 0 && infinity != sign) return Optional.empty();
+                    infinity = sign;
+                } else {
+                    infinity = sign;
+                }
+            }
+            if (infinity == 0) return Optional.of(sum ? Expr.add(values) : Expr.mul(values));
+            if (sum) return Optional.of(infinity(infinity));
+            int sign = infinity;
+            for (Expr value : values) {
+                int s = constantSign(value);
+                if (s == 0) return Optional.empty();
+                sign *= s;
+            }
+            return Optional.of(infinity(sign));
+        });
+        return done.map(Value::new);
     }
 
     private Map<String, Expr> params(Context c) {

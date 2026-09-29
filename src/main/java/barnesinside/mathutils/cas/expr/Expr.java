@@ -30,7 +30,7 @@ public sealed interface Expr permits Expr.Num, Expr.Const, Expr.Sym, Expr.Add, E
 
     /** Constantes con nombre. */
     record Const(Kind kind) implements Expr {
-        public enum Kind {PI, E, INFINITY}
+        public enum Kind {PI, E, INFINITY, EULER_GAMMA}
 
         @Override
         public String toString() {
@@ -94,6 +94,8 @@ public sealed interface Expr permits Expr.Num, Expr.Const, Expr.Sym, Expr.Add, E
     Expr PI = new Const(Const.Kind.PI);
     Expr E = new Const(Const.Kind.E);
     Expr INFINITY = new Const(Const.Kind.INFINITY);
+    /** La constante de Euler–Mascheroni γ ≈ 0,5772. */
+    Expr EULER_GAMMA = new Const(Const.Kind.EULER_GAMMA);
 
     // ---------------------------------------------------------------- Constructores
 

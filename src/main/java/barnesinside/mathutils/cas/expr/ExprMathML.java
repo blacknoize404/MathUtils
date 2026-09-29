@@ -66,6 +66,7 @@ final class ExprMathML {
                 case PI -> "<mi>&#x3C0;</mi>";
                 case E -> "<mi>e</mi>";
                 case INFINITY -> "<mi>&#x221E;</mi>";
+                case EULER_GAMMA -> "<mi>&#x3B3;</mi>";
             };
             case Expr.Sym s -> name(s.name());
             case Expr.Func f -> function(f);

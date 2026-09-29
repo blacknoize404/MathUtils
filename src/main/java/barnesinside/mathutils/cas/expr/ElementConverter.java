@@ -85,6 +85,7 @@ public final class ElementConverter {
                 case PI -> new Const(Math.PI);
                 case E -> new Const(Math.E);
                 case INFINITY -> new Const(Double.POSITIVE_INFINITY);
+                case EULER_GAMMA -> new Const(barnesinside.mathutils.special.Special.EULER_GAMMA);
             };
             case Expr.Sym s -> new Var(s.name());
             case Expr.Add a -> {

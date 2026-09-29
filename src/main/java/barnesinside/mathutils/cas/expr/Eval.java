@@ -24,6 +24,7 @@ public final class Eval {
                 case PI -> Math.PI;
                 case E -> Math.E;
                 case INFINITY -> Double.POSITIVE_INFINITY;
+                case EULER_GAMMA -> Special.EULER_GAMMA;
             };
             case Expr.Sym s -> {
                 Double v = env.get(s.name());
@@ -84,6 +85,7 @@ public final class Eval {
             case FLOOR -> Math.floor(x);
             case CEIL -> Math.ceil(x);
             case ROUND -> Math.signum(x) * Math.floor(Math.abs(x) + 0.5);
+            case DIGAMMA -> Special.digamma(x);
         };
     }
 }

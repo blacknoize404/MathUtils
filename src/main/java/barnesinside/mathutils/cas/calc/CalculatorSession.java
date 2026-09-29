@@ -120,8 +120,11 @@ public final class CalculatorSession {
      */
     private Result evaluateExpression(String input, String source, int offset) {
         Expr value;
+        boolean approximated;
         try {
-            value = substituteVariables(ExprParser.parse(source, functions, angleUnit));
+            ExprParser.Parsed parsed = ExprParser.parseDetailed(source, functions, angleUnit, variables);
+            value = substituteVariables(parsed.expr());
+            approximated = parsed.approximate();
         } catch (ExpressionParseException e) {
             return error(input, cleanMessage(e), e.getPosition() + offset);
         } catch (ArithmeticException e) {
@@ -136,7 +139,10 @@ public final class CalculatorSession {
                 }
             }
             variables.put("ans", value);
-            return new Result(input, Status.OK, value, numeric, value.toString(), formatDecimal(value, numeric), value.toLatex(), null, null);
+            String decimal = formatDecimal(value, numeric);
+            // Un resultado que viene de una aproximación numérica no tiene forma exacta: se muestra el decimal
+            if (approximated) return new Result(input, Status.OK, value, numeric, decimal, decimal, decimal, null, null);
+            return new Result(input, Status.OK, value, numeric, value.toString(), decimal, value.toLatex(), null, null);
         }
 
         variables.put("ans", value);
@@ -219,7 +225,7 @@ public final class CalculatorSession {
         }
 
         try {
-            ExprParser.parse(source, functions, angleUnit);
+            ExprParser.check(source, functions, angleUnit);
             return new Validation(true, null, null);
         } catch (ExpressionParseException e) {
             return new Validation(false, cleanMessage(e), e.getPosition() + offset);

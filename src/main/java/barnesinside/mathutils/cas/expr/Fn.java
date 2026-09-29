@@ -18,7 +18,9 @@ public enum Fn {
     /** El techo {@code ⌈x⌉}: el menor entero que no es menor que x. */
     CEIL("ceil"),
     /** El redondeo {@code ⌊x⌉}: el entero más cercano; las mitades van al más lejano de cero. */
-    ROUND("round");
+    ROUND("round"),
+    /** La función digamma {@code ψ(x) = Γ'(x) / Γ(x)}. */
+    DIGAMMA("digamma");
 
     private final String symbol;
 

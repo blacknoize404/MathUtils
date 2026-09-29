@@ -3,6 +3,7 @@ package barnesinside.mathutils.cas.integral;
 import barnesinside.mathutils.cas.expr.Equivalence;
 import barnesinside.mathutils.cas.expr.Eval;
 import barnesinside.mathutils.cas.expr.Expr;
+import barnesinside.mathutils.cas.expr.Fn;
 import barnesinside.mathutils.cas.expr.Rational;
 import barnesinside.mathutils.cas.limit.Limits;
 import barnesinside.mathutils.cas.steps.Rule;
@@ -41,6 +42,9 @@ final class DefiniteIntegrals {
         extras.put("lower", lower);
         extras.put("upper", upper);
 
+        // Extremos con parámetros (0 a b): se integra con la antiderivada y se contrasta en valores de prueba
+        if (!lower.variables().isEmpty() || !upper.variables().isEmpty()) return parametric(f, v, lower, upper);
+
         double a;
         double b;
         try {
@@ -61,6 +65,14 @@ final class DefiniteIntegrals {
         }
 
         double approximation = Double.NaN;
+        boolean withParameters = f.variables().stream().anyMatch(name -> !name.equals(v));
+        if (withParameters) {
+            // Con parámetros no hay un único valor que contrastar: se comprueba en varios valores de prueba
+            if (outcome.value() != null && !sampledAgree(f, v, lower, upper, outcome.value())) {
+                outcome = Outcome.of(Solution.Status.UNSOLVED, outcome.steps());
+            }
+            return new Solution(Solution.Kind.INTEGRAL, outcome.status(), f, outcome.value(), outcome.steps(), v, 1, extras);
+        }
         if (outcome.status() != Solution.Status.DOES_NOT_EXIST) {
             approximation = numeric(f, v, a, b);
             if (outcome.value() != null) {
@@ -141,7 +153,7 @@ final class DefiniteIntegrals {
             }
             double a = Eval.value(lower.substitute(env));
             double b = Eval.value(upper.substitute(env));
-            if (!Double.isFinite(a) || !Double.isFinite(b) || Math.abs(b - a) < 1e-9) continue;
+            if (Double.isNaN(a) || Double.isNaN(b) || Math.abs(b - a) < 1e-9) continue;
 
             double exact = Eval.value(value, numbers);
             double numeric = a < b ? numeric(f.substitute(env), v, a, b) : -numeric(f.substitute(env), v, b, a);
@@ -159,6 +171,13 @@ final class DefiniteIntegrals {
     // ================================================================ Resolución
 
     private static Outcome compute(Expr f, String v, Expr lower, Expr upper, double a, double b, IntegralMethod method) {
+        Outcome outcome = byAntiderivative(f, v, lower, upper, a, b, method);
+        if (outcome.status() == Solution.Status.SOLVED) return outcome;
+        // Lo que la antiderivada no alcanza (exponente simbólico, logaritmo) se resuelve con la función gamma
+        return gammaForm(f, v, a, b).orElse(outcome);
+    }
+
+    private static Outcome byAntiderivative(Expr f, String v, Expr lower, Expr upper, double a, double b, IntegralMethod method) {
         List<Step> steps = new ArrayList<>();
 
         if (a == b && Double.isFinite(a)) {
@@ -302,6 +321,75 @@ final class DefiniteIntegrals {
         steps.addAll(found);
         if (infinity != 0) return infinity > 0 ? Expr.INFINITY : Expr.neg(Expr.INFINITY);
         return Expr.add(finite);
+    }
+
+    // ================================================================ Integrales de tipo gamma
+
+    /**
+     * {@code C·x^p·e^(-kx)·(ln x)^m} entre 0 e infinito, con {@code k > 0} racional, {@code m} 0 o 1 y
+     * {@code p} constante (puede llevar parámetros). Vale {@code C·p!/k^(p+1)} si {@code m = 0} y
+     * {@code C·p!/k^(p+1)·(ψ(p+1) − ln k)} si {@code m = 1}; se supone {@code p > -1} para que converja.
+     */
+    private static Optional<Outcome> gammaForm(Expr f, String v, double a, double b) {
+        if (a != 0 || b != Double.POSITIVE_INFINITY) return Optional.empty();
+        Expr x = Expr.sym(v);
+
+        List<Expr> constants = new ArrayList<>();
+        List<Expr> exponents = new ArrayList<>();
+        Expr rate = null;
+        int logs = 0;
+        for (Expr factor : f instanceof Expr.Mul m ? m.factors() : List.of(f)) {
+            if (factor.isFreeOf(v)) {
+                constants.add(factor);
+            } else if (factor.equals(x)) {
+                exponents.add(Expr.ONE);
+            } else if (factor instanceof Expr.Pow p && p.base().equals(x) && p.exponent().isFreeOf(v)) {
+                exponents.add(p.exponent());
+            } else if (factor instanceof Expr.Pow p && p.base().equals(Expr.E)) {
+                if (rate != null) return Optional.empty();
+                Expr k = decay(p.exponent(), x, v);
+                if (k == null) return Optional.empty();
+                rate = k;
+            } else if (factor instanceof Expr.Func fn && fn.fn() == Fn.LN && fn.arg().equals(x)) {
+                logs++;
+            } else if (factor instanceof Expr.Pow p && p.base() instanceof Expr.Func fn && fn.fn() == Fn.LN
+                    && fn.arg().equals(x) && p.exponent().equals(Expr.ONE)) {
+                logs++;
+            } else {
+                return Optional.empty();
+            }
+        }
+        if (rate == null || logs > 1) return Optional.empty();
+
+        Expr p = Expr.add(exponents);
+        Expr shifted = Expr.add(p, Expr.ONE);
+        Expr scale = Expr.mul(Expr.mul(constants), Expr.func(Fn.FACTORIAL, p), Expr.pow(rate, Expr.neg(shifted)));
+        Expr value = logs == 0
+                ? scale
+                : Expr.mul(scale, Expr.sub(Expr.func(Fn.DIGAMMA, shifted), Expr.ln(rate)));
+        Map<String, Expr> params = new LinkedHashMap<>();
+        params.put("x", x);
+        params.put("p", p);
+        params.put("k", rate);
+        params.put("value", value);
+        List<Step> steps = new ArrayList<>();
+        steps.add(new Step(logs == 0 ? Rule.INT_GAMMA : Rule.INT_GAMMA_LOG, f, value, params, List.of()));
+        return Optional.of(new Outcome(Solution.Status.SOLVED, value, steps));
+    }
+
+    /** {@code k} si el exponente es {@code -k·x} con {@code k > 0} racional; {@code null} si no tiene esa forma. */
+    private static Expr decay(Expr exponent, Expr x, String v) {
+        if (!(exponent instanceof Expr.Mul m)) return null;
+        List<Expr> rest = new ArrayList<>();
+        boolean hasX = false;
+        for (Expr factor : m.factors()) {
+            if (factor.equals(x) && !hasX) hasX = true;
+            else if (factor.isFreeOf(v)) rest.add(factor);
+            else return null;
+        }
+        if (!hasX) return null;
+        Expr k = Expr.neg(Expr.mul(rest));
+        return k instanceof Expr.Num n && n.value().signum() > 0 ? k : null;
     }
 
     // ================================================================ Simetría

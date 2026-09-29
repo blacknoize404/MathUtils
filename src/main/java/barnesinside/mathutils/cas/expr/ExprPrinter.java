@@ -55,6 +55,7 @@ final class ExprPrinter {
                 case PI -> "pi";
                 case E -> "e";
                 case INFINITY -> "oo";
+                case EULER_GAMMA -> "γ";
             };
             case Expr.Sym s -> s.name();
             case Expr.Func f -> f.fn() == Fn.FACTORIAL ? postfix(f.arg()) : f.fn().symbol() + "(" + print(f.arg()) + ")";
