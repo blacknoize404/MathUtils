@@ -174,7 +174,10 @@ final class DefiniteIntegrals {
         Outcome outcome = byAntiderivative(f, v, lower, upper, a, b, method);
         if (outcome.status() == Solution.Status.SOLVED) return outcome;
         // Lo que la antiderivada no alcanza (exponente simbólico, logaritmo) se resuelve con la función gamma
-        return gammaForm(f, v, a, b).orElse(outcome);
+        Optional<Outcome> gamma = gammaForm(f, v, a, b);
+        if (gamma.isPresent()) return gamma.get();
+        if (outcome.status() == Solution.Status.UNSOLVED) return absolutePieces(f, v, a, b, method).orElse(outcome);
+        return outcome;
     }
 
     private static Outcome byAntiderivative(Expr f, String v, Expr lower, Expr upper, double a, double b, IntegralMethod method) {
@@ -323,6 +326,141 @@ final class DefiniteIntegrals {
         return Expr.add(finite);
     }
 
+    // ================================================================ Valor absoluto
+
+    /**
+     * Una integral con {@code |g|}, con {@code g} de primer o segundo grado de ceros racionales: se parte el intervalo donde
+     * {@code g} se anula y en cada trozo el valor absoluto es {@code g} o {@code -g}.
+     */
+    private static Optional<Outcome> absolutePieces(Expr f, String v, double a, double b, IntegralMethod method) {
+        Expr.Func abs = firstAbsolute(f);
+        if (abs == null) return Optional.empty();
+        Expr g = abs.arg();
+        Optional<barnesinside.mathutils.cas.poly.Polynomial> polynomial = barnesinside.mathutils.cas.poly.Polynomial.from(g, v);
+        if (polynomial.isEmpty() || polynomial.get().degree() < 1 || polynomial.get().degree() > 2) return Optional.empty();
+        List<Rational> roots = rationalRoots(polynomial.get());
+
+        List<Rational> cuts = new ArrayList<>();
+        for (Rational r : roots) {
+            double d = r.doubleValue();
+            if (d > a + 1e-12 && d < b - 1e-12 && !cuts.contains(r)) cuts.add(r);
+        }
+        cuts.sort(Rational::compareTo);
+        List<Expr> bounds = new ArrayList<>();
+        List<Double> values = new ArrayList<>();
+        bounds.add(a == Double.NEGATIVE_INFINITY ? Expr.neg(Expr.INFINITY) : a == Double.POSITIVE_INFINITY ? Expr.INFINITY : null);
+        values.add(a);
+        for (Rational r : cuts) {
+            bounds.add(Expr.num(r));
+            values.add(r.doubleValue());
+        }
+        bounds.add(null);
+        values.add(b);
+
+        List<Step> steps = new ArrayList<>();
+        steps.add(new Step(Rule.INT_SPLIT_ABSOLUTE, null, null, Map.of("x", Expr.sym(v), "g", g), List.of()));
+        Expr total = Expr.ZERO;
+        for (int i = 0; i + 1 < values.size(); i++) {
+            double p = values.get(i);
+            double q = values.get(i + 1);
+            double mid = Double.isInfinite(p) ? q - 1 : Double.isInfinite(q) ? p + 1 : (p + q) / 2;
+            double gm = polynomial.get().evaluate(Rational.fromDouble(mid)).doubleValue();
+            if (gm == 0) return Optional.empty();
+            Expr signed = gm > 0 ? g : Expr.neg(g);
+            Expr piece = replace(f, abs, signed);
+            Expr lower = i == 0 ? lowerBoundExpr(a, bounds.get(0)) : bounds.get(i);
+            Expr upper = i + 2 == values.size() ? upperBoundExpr(b) : bounds.get(i + 1);
+            Solution solved = solve(piece, v, lower, upper, method);
+            steps.add(new Step(Rule.INT_ABSOLUTE_PIECE, piece, solved.result(),
+                    Map.of("x", Expr.sym(v), "g", g, "p", lower, "q", upper, "h", signed,
+                            "sign", Expr.sym(gm > 0 ? "+" : "−")), solved.steps()));
+            if (solved.status() == Solution.Status.DOES_NOT_EXIST) return Optional.of(Outcome.of(Solution.Status.DOES_NOT_EXIST, steps));
+            if (!solved.isSolved()) return Optional.empty();
+            total = Expr.add(total, solved.result());
+        }
+        if (values.size() > 2) steps.add(new Step(Rule.INT_ADD_PIECES, null, total, Map.of(), List.of()));
+        return Optional.of(new Outcome(Solution.Status.SOLVED, total, steps));
+    }
+
+    private static Expr lowerBoundExpr(double a, Expr given) {
+        return given != null ? given : Expr.num(Rational.fromDouble(a));
+    }
+
+    private static Expr upperBoundExpr(double b) {
+        return Double.isInfinite(b) ? Expr.INFINITY : Expr.num(Rational.fromDouble(b));
+    }
+
+    private static List<Rational> rationalRoots(barnesinside.mathutils.cas.poly.Polynomial p) {
+        List<Rational> roots = new ArrayList<>();
+        if (p.degree() == 1) {
+            roots.add(p.coefficient(0).negate().divide(p.coefficient(1)));
+            return roots;
+        }
+        Rational c = p.coefficient(0);
+        Rational bb = p.coefficient(1);
+        Rational aa = p.coefficient(2);
+        Rational disc = bb.multiply(bb).subtract(Rational.of(4).multiply(aa).multiply(c));
+        if (disc.signum() < 0) return roots;
+        double sqrt = Math.sqrt(disc.doubleValue());
+        Rational root = Rational.fromDouble(sqrt);
+        if (!root.multiply(root).equals(disc)) return roots;
+        Rational twoA = Rational.of(2).multiply(aa);
+        roots.add(bb.negate().add(root).divide(twoA));
+        roots.add(bb.negate().subtract(root).divide(twoA));
+        return roots;
+    }
+
+    /** Los ceros de lo que va dentro de cada valor absoluto de primer o segundo grado con ceros racionales. */
+    private static List<Double> absoluteZeros(Expr e, String v) {
+        List<Double> zeros = new ArrayList<>();
+        collectAbsoluteZeros(e, v, zeros);
+        return zeros;
+    }
+
+    private static void collectAbsoluteZeros(Expr e, String v, List<Double> out) {
+        switch (e) {
+            case Expr.Func fn -> {
+                if (fn.fn() == Fn.ABS) {
+                    barnesinside.mathutils.cas.poly.Polynomial.from(fn.arg(), v)
+                            .filter(p -> p.degree() >= 1 && p.degree() <= 2)
+                            .ifPresent(p -> rationalRoots(p).forEach(r -> out.add(r.doubleValue())));
+                }
+                collectAbsoluteZeros(fn.arg(), v, out);
+            }
+            case Expr.Add a -> a.terms().forEach(t -> collectAbsoluteZeros(t, v, out));
+            case Expr.Mul m -> m.factors().forEach(t -> collectAbsoluteZeros(t, v, out));
+            case Expr.Pow p -> {
+                collectAbsoluteZeros(p.base(), v, out);
+                collectAbsoluteZeros(p.exponent(), v, out);
+            }
+            default -> { }
+        }
+    }
+
+    private static Expr.Func firstAbsolute(Expr e) {
+        return switch (e) {
+            case Expr.Func fn -> fn.fn() == Fn.ABS && !fn.arg().variables().isEmpty() ? fn : firstAbsolute(fn.arg());
+            case Expr.Add a -> a.terms().stream().map(DefiniteIntegrals::firstAbsolute).filter(java.util.Objects::nonNull).findFirst().orElse(null);
+            case Expr.Mul m -> m.factors().stream().map(DefiniteIntegrals::firstAbsolute).filter(java.util.Objects::nonNull).findFirst().orElse(null);
+            case Expr.Pow p -> {
+                Expr.Func inBase = firstAbsolute(p.base());
+                yield inBase != null ? inBase : firstAbsolute(p.exponent());
+            }
+            default -> null;
+        };
+    }
+
+    private static Expr replace(Expr e, Expr target, Expr by) {
+        if (e.equals(target)) return by;
+        return switch (e) {
+            case Expr.Func fn -> Expr.func(fn.fn(), replace(fn.arg(), target, by));
+            case Expr.Add a -> Expr.add(a.terms().stream().map(t -> replace(t, target, by)).toList());
+            case Expr.Mul m -> Expr.mul(m.factors().stream().map(t -> replace(t, target, by)).toList());
+            case Expr.Pow p -> Expr.pow(replace(p.base(), target, by), replace(p.exponent(), target, by));
+            default -> e;
+        };
+    }
+
     // ================================================================ Integrales de tipo gamma
 
     /**
@@ -373,7 +511,22 @@ final class DefiniteIntegrals {
         params.put("k", rate);
         params.put("value", value);
         List<Step> steps = new ArrayList<>();
-        steps.add(new Step(logs == 0 ? Rule.INT_GAMMA : Rule.INT_GAMMA_LOG, f, value, params, List.of()));
+        // La deducción, paso a paso: cambio de escala si k ≠ 1, definición de Γ y, con ln x, la derivada respecto al exponente
+        List<Step> derivation = new ArrayList<>();
+        Expr plain = Expr.mul(Expr.func(Fn.FACTORIAL, p), Expr.pow(rate, Expr.neg(shifted)));
+        if (!rate.isOne()) derivation.add(new Step(Rule.INT_GAMMA_SCALE, null, null, params, List.of()));
+        if (logs == 0) {
+            Map<String, Expr> definition = new LinkedHashMap<>(params);
+            definition.put("u", Expr.func(Fn.FACTORIAL, p));
+            derivation.add(new Step(Rule.INT_GAMMA_DEFINITION, null, null, definition, List.of()));
+        } else {
+            Map<String, Expr> derive = new LinkedHashMap<>(params);
+            derivation.add(new Step(Rule.INT_GAMMA_PARAMETER, null, null, derive, List.of()));
+            Map<String, Expr> digamma = new LinkedHashMap<>(params);
+            digamma.put("u", Expr.mul(plain, Expr.sub(Expr.func(Fn.DIGAMMA, shifted), Expr.ln(rate))));
+            derivation.add(new Step(Rule.INT_GAMMA_DIGAMMA, null, null, digamma, List.of()));
+        }
+        steps.add(new Step(logs == 0 ? Rule.INT_GAMMA : Rule.INT_GAMMA_LOG, f, value, params, derivation));
         return Optional.of(new Outcome(Solution.Status.SOLVED, value, steps));
     }
 
@@ -461,6 +614,8 @@ final class DefiniteIntegrals {
         for (Singularities.Point p : found.points()) {
             if (p.value() > a + 1e-12 && p.value() < b - 1e-12) interior.add(p.value());
         }
+        // Donde un valor absoluto se anula la función tiene un pico: se parte ahí para que la cuadratura converja
+        for (Double cut : absoluteZeros(f, v)) if (cut > a + 1e-12 && cut < b - 1e-12 && !interior.contains(cut)) interior.add(cut);
         try {
             return Quadrature.integrate(x -> Eval.value(f, Map.of(v, x)), a, b, interior);
         } catch (RuntimeException e) {

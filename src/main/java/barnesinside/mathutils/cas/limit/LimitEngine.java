@@ -151,6 +151,7 @@ final class LimitEngine {
         switch (lv.kind()) {
             case FINITE -> {
                 if (isSubstitution(f, c, lv.value())) specialValues(f, c);
+                else if (c.isInfinite()) knownValues(f, c);
                 trace.leaf(isSubstitution(f, c, lv.value()) ? Rule.LIMIT_DIRECT : Rule.LIMIT_ALGEBRA, f, lv.value(), params(c));
                 return new Value(lv.value());
             }
@@ -171,7 +172,9 @@ final class LimitEngine {
         Optional<Outcome> result = Optional.empty();
         if (c.isInfinite()) result = rationalAtInfinity(f, c).map(Value::new);
         if (result.isEmpty() && c.isInfinite()) result = dominantTerms(f, c).map(Value::new);
+        if (result.isEmpty() && c.isInfinite()) result = commonBase(f, c, depth);
         if (result.isEmpty()) result = quotient(f, c, depth);
+        if (result.isEmpty() && c.isInfinite()) result = divideDominant(f, c, depth);
         if (result.isEmpty()) result = product(f, c, depth);
         if (result.isEmpty()) result = difference(f, c, depth);
         if (result.isEmpty()) result = exponentialForm(f, c, depth);
@@ -248,6 +251,104 @@ final class LimitEngine {
                 // Sin valor exacto: no se explica
             }
         }
+    }
+
+    /**
+     * En el infinito, las funciones de argumento infinito con límite conocido (arctan, tanh, erf, e^x): un paso por cada una,
+     * antes de combinar los resultados.
+     */
+    private void knownValues(Expr f, Context c) {
+        List<Expr> found = new ArrayList<>();
+        collectInfinite(f, found);
+        for (Expr e : found) {
+            try {
+                Expr arg = e instanceof Expr.Func fn ? fn.arg() : ((Expr.Pow) e).exponent();
+                LV la = evaluate(arg, c);
+                if (!la.isInf()) continue;
+                LV lv = evaluate(e, c);
+                if (lv.kind() != Kind.FINITE && !lv.isInf()) continue;
+                Expr after = lv.kind() == Kind.FINITE ? lv.value() : infinity(lv.sign());
+                Expr limit = infinity(la.sign());
+                Expr before = e instanceof Expr.Func fn ? new Expr.Func(fn.fn(), limit) : new Expr.Pow(Expr.E, limit);
+                trace.leaf(Rule.LIMIT_KNOWN_VALUE, before, after, Trace.params("u", before, "v", after));
+            } catch (ArithmeticException ex) {
+                // Sin explicación
+            }
+        }
+    }
+
+    private void collectInfinite(Expr e, List<Expr> out) {
+        switch (e) {
+            case Expr.Func fn -> {
+                if ((fn.fn() == Fn.ATAN || fn.fn() == Fn.TANH || fn.fn() == Fn.ERF) && !fn.arg().isFreeOf(x) && !out.contains(fn)) out.add(fn);
+                collectInfinite(fn.arg(), out);
+            }
+            case Expr.Pow p -> {
+                if (p.base().equals(Expr.E) && !p.exponent().isFreeOf(x) && !out.contains(p)) out.add(p);
+                collectInfinite(p.base(), out);
+                collectInfinite(p.exponent(), out);
+            }
+            case Expr.Add a -> a.terms().forEach(t -> collectInfinite(t, out));
+            case Expr.Mul m -> m.factors().forEach(t -> collectInfinite(t, out));
+            default -> { }
+        }
+    }
+
+    /** {@code a^x / b^x = (a/b)^x}: potencias de bases numéricas con el mismo exponente (o el opuesto). */
+    private Optional<Outcome> commonBase(Expr f, Context c, int depth) {
+        if (!(f instanceof Expr.Mul m)) return Optional.empty();
+        List<Expr> factors = m.factors();
+        for (int i = 0; i < factors.size(); i++) {
+            for (int j = i + 1; j < factors.size(); j++) {
+                if (!(factors.get(i) instanceof Expr.Pow p) || !(factors.get(j) instanceof Expr.Pow q)) continue;
+                if (!(p.base() instanceof Expr.Num) || !(q.base() instanceof Expr.Num) || p.exponent().isFreeOf(x)) continue;
+                Expr joined;
+                if (p.exponent().equals(q.exponent())) joined = Expr.pow(Expr.mul(p.base(), q.base()), p.exponent());
+                else if (p.exponent().equals(Expr.neg(q.exponent()))) joined = Expr.pow(Expr.div(p.base(), q.base()), p.exponent());
+                else continue;
+                List<Expr> rest = new ArrayList<>(factors);
+                rest.remove(j);
+                rest.set(i, joined);
+                Expr rewritten = Expr.mul(rest);
+                if (rewritten.equals(f)) continue;
+                Optional<Expr> done = trace.attempt(Rule.LIMIT_COMMON_BASE, f, params(c, "after", rewritten),
+                        () -> valueOf(solve(rewritten, c, depth + 1)));
+                if (done.isPresent()) return done.map(Value::new);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Cociente en el infinito con términos acotados (sen x, cos x): se divide numerador y denominador entre la mayor potencia de
+     * {@code x} y lo acotado entre algo que crece tiende a 0.
+     */
+    private Optional<Outcome> divideDominant(Expr f, Context c, int depth) {
+        Algebra.Fraction fraction = Algebra.fraction(f);
+        if (fraction.denominator().isOne()) return Optional.empty();
+        int k = Math.max(highestPower(fraction.numerator()), highestPower(fraction.denominator()));
+        if (k <= 0) return Optional.empty();
+        Expr divisor = Expr.pow(xs, Expr.num(k));
+        Expr rewritten = Expr.div(Expand.expand(Expr.div(fraction.numerator(), divisor)), Expand.expand(Expr.div(fraction.denominator(), divisor)));
+        if (rewritten.equals(f)) return Optional.empty();
+        Optional<Expr> done = trace.attempt(Rule.LIMIT_DIVIDE_DOMINANT, f, params(c, "p", divisor, "after", rewritten),
+                () -> valueOf(solve(rewritten, c, depth + 1)));
+        return done.map(Value::new);
+    }
+
+    /** La mayor potencia entera de {@code x} entre los términos (0 si no hay). */
+    private int highestPower(Expr e) {
+        List<Expr> terms = e instanceof Expr.Add a ? a.terms() : List.of(e);
+        int best = 0;
+        for (Expr term : terms) {
+            List<Expr> factors = term instanceof Expr.Mul m ? m.factors() : List.of(term);
+            for (Expr factor : factors) {
+                if (factor.equals(xs)) best = Math.max(best, 1);
+                else if (factor instanceof Expr.Pow p && p.base().equals(xs) && p.exponent() instanceof Expr.Num n && n.value().isInteger()
+                        && n.value().signum() > 0) best = Math.max(best, n.value().numerator().intValueExact());
+            }
+        }
+        return best;
     }
 
     private static void collectSpecial(Expr e, List<Expr.Func> out) {
@@ -331,8 +432,12 @@ final class LimitEngine {
      */
     private Optional<Expr> dominantTerms(Expr f, Context c) {
         Expr g = c.infinity() < 0 ? f.substitute(x, Expr.neg(xs)) : f;
+        leadSteps = new ArrayList<>();
         Optional<Lead> lead = leading(g);
+        List<Expr[]> collected = leadSteps;
+        leadSteps = null;
         if (lead.isEmpty()) return Optional.empty();
+        for (Expr[] pair : collected) trace.leaf(Rule.LIMIT_LEADING_TERM, pair[0], pair[1], params(c, "before", pair[0], "after", pair[1]));
 
         Expr coefficient = lead.get().coefficient();
         Rational exponent = lead.get().exponent();
@@ -350,6 +455,9 @@ final class LimitEngine {
         trace.leaf(Rule.LIMIT_DOMINANT_TERMS, f, result, params(c, "c", coefficient, "p", Expr.num(exponent)));
         return Optional.of(result);
     }
+
+    /** Los términos de mayor grado que se van encontrando al analizar una función en el infinito, para explicarlos. */
+    private List<Expr[]> leadSteps;
 
     private Optional<Lead> leading(Expr e) {
         if (e.isFreeOf(x)) {
@@ -395,6 +503,9 @@ final class LimitEngine {
 
                 Expr sum = Expr.ZERO;
                 for (Lead l : leads) if (l.exponent().equals(max)) sum = Expr.add(sum, l.coefficient());
+                if (leadSteps != null && !sum.isZero() && a.terms().size() > 1) {
+                    leadSteps.add(new Expr[]{a, Expr.mul(sum, Expr.pow(xs, Expr.num(max)))});
+                }
                 return sum.isZero() ? Optional.empty() : Optional.of(new Lead(sum, max));
             }
             default -> {
@@ -520,11 +631,21 @@ final class LimitEngine {
         if (sum.terms().size() == 2 && (hasSquareRoot(sum.terms().get(0)) || hasSquareRoot(sum.terms().get(1)))) {
             Expr a = sum.terms().get(0);
             Expr b = sum.terms().get(1);
-            Expr conjugated = Expr.div(Expand.expand(Expr.sub(Expr.pow(a, Expr.num(2)), Expr.pow(b, Expr.num(2)))), Expr.sub(a, b));
-            Optional<Expr> done = trace.attempt(Rule.LIMIT_CONJUGATE, f, params(c), () -> valueOf(solve(conjugated, c, depth + 1)));
+            Expr numerator = Expand.expand(Expr.sub(Expr.pow(a, Expr.num(2)), Expr.pow(b, Expr.num(2))));
+            Expr conjugated = Expr.div(numerator, Expr.sub(a, b));
+            Optional<Expr> done = trace.attempt(Rule.LIMIT_CONJUGATE, f, params(c), () -> {
+                conjugateNumeratorStep(a, b, numerator);
+                return valueOf(solve(conjugated, c, depth + 1));
+            });
             return done.map(Value::new);
         }
         return Optional.empty();
+    }
+
+    /** El paso de A² − B²: lo que sale de multiplicar por el conjugado, sin simplificar y simplificado. */
+    private void conjugateNumeratorStep(Expr a, Expr b, Expr numerator) {
+        Expr raw = new Expr.Add(List.of(new Expr.Pow(a, Expr.num(2)), new Expr.Mul(List.of(Expr.MINUS_ONE, new Expr.Pow(b, Expr.num(2))))));
+        trace.leaf(Rule.LIMIT_CONJUGATE_NUMERATOR, raw, numerator, Trace.params("x", xs));
     }
 
     /** Un factor de la forma ∞ − ∞ con raíces dentro de un producto: se racionaliza ese factor. */
@@ -542,7 +663,11 @@ final class LimitEngine {
             for (Expr other : product.factors()) parts.add(other == factor ? rationalized : other);
             Expr rewritten = Expr.mul(parts);
 
-            Optional<Expr> done = trace.attempt(Rule.LIMIT_CONJUGATE, f, params(c), () -> valueOf(solve(rewritten, c, depth + 1)));
+            Expr numerator = Expand.expand(Expr.sub(Expr.pow(a, Expr.num(2)), Expr.pow(b, Expr.num(2))));
+            Optional<Expr> done = trace.attempt(Rule.LIMIT_CONJUGATE, f, params(c), () -> {
+                conjugateNumeratorStep(a, b, numerator);
+                return valueOf(solve(rewritten, c, depth + 1));
+            });
             if (done.isPresent()) return done.map(Value::new);
         }
         return Optional.empty();
@@ -583,6 +708,11 @@ final class LimitEngine {
         trace.attempt(Rule.LIMIT_SIDES, f, params(c), () -> {
             Outcome left = solve(f, c.withDirection(Limits.Direction.LEFT), depth + 1);
             Outcome right = solve(f, c.withDirection(Limits.Direction.RIGHT), depth + 1);
+            Optional<Expr> oneSided = oneSidedDomain(f, c, left, right);
+            if (oneSided.isPresent()) {
+                holder[0] = left instanceof Value ? left : right;
+                return oneSided;
+            }
             if (left instanceof Value l && right instanceof Value r) {
                 if (l.value().equals(r.value())) {
                     holder[0] = l;
@@ -595,6 +725,25 @@ final class LimitEngine {
             return Optional.empty();
         });
         return holder[0] instanceof Unsolved ? Optional.empty() : Optional.of(holder[0]);
+    }
+
+    /**
+     * La función solo existe en reales a un lado del punto (x·ln x en 0): el límite es el del lado donde existe. Se mira numéricamente
+     * si al otro lado no está definida.
+     */
+    private Optional<Expr> oneSidedDomain(Expr f, Context c, Outcome left, Outcome right) {
+        if (c.isInfinite() || (left instanceof Value) == (right instanceof Value)) return Optional.empty();
+        boolean leftWorks = left instanceof Value;
+        if (!(c.point() instanceof Expr.Num) && !(c.point().variables().isEmpty())) return Optional.empty();
+        double point = numeric(c.point());
+        if (Double.isNaN(point)) return Optional.empty();
+        for (double offset : new double[]{1e-3, 1e-5, 1e-7}) {
+            double value = Eval.value(f, Map.of(x, leftWorks ? point + offset : point - offset));
+            if (!Double.isNaN(value)) return Optional.empty();
+        }
+        Outcome kept = leftWorks ? left : right;
+        trace.leaf(Rule.LIMIT_DOMAIN_ONE_SIDE, f, ((Value) kept).value(), params(c));
+        return Optional.of(((Value) kept).value());
     }
 
     private static Optional<Expr> valueOf(Outcome outcome) {
@@ -801,6 +950,7 @@ final class LimitEngine {
                 default -> LV.IND;
             };
         }
+        if (la.kind() == Kind.UNSIGNED_INF && (fn == Fn.SIN || fn == Fn.COS)) return LV.OSC;
         return LV.IND;
     }
 

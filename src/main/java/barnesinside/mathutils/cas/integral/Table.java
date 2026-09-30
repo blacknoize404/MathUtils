@@ -146,6 +146,63 @@ final class Table {
         return Optional.empty();
     }
 
+    /**
+     * La deducción de las fórmulas de tabla que no son de un solo paso (fracciones parciales, sustituciones trigonométricas o
+     * hiperbólicas): los pasos que llevan del integrando a la antiderivada. Vacía si la fórmula se cita tal cual.
+     */
+    static java.util.List<barnesinside.mathutils.cas.steps.Step> derivation(Hit hit, Expr f, Expr x) {
+        Expr t = Expr.sym("t");
+        Map<String, Expr> params = new java.util.LinkedHashMap<>(hit.params());
+        params.put("t", t);
+        java.util.List<barnesinside.mathutils.cas.steps.Step> steps = new java.util.ArrayList<>();
+        switch (hit.rule()) {
+            case INT_LOG_FORM -> {
+                Expr a = hit.params().get("a");
+                Expr split = new Expr.Mul(java.util.List.of(Expr.div(Expr.ONE, Expr.mul(Expr.num(2), a)),
+                        new Expr.Add(java.util.List.of(Expr.div(Expr.ONE, Expr.sub(x, a)),
+                                new Expr.Mul(java.util.List.of(Expr.MINUS_ONE, Expr.div(Expr.ONE, Expr.add(x, a))))))));
+                steps.add(step(Rule.INT_FORM_PARTIAL_FRACTIONS, f, split, params));
+                steps.add(step(Rule.INT_FORM_COMBINE_LOGS, split, hit.antiderivative(), params));
+            }
+            case INT_ROOT_DIFFERENCE_FORM -> {
+                Expr c = hit.params().get("c");
+                Expr inT = Expr.mul(c, Expr.pow(Expr.cos(t), Expr.num(2)));
+                Expr integrated = Expr.mul(Expr.div(c, Expr.num(2)), Expr.add(t, Expr.mul(Expr.sin(t), Expr.cos(t))));
+                steps.add(step(Rule.INT_FORM_TRIG_SUBSTITUTION, null, inT, params));
+                steps.add(step(Rule.INT_FORM_COS_SQUARED, inT, integrated, params));
+                steps.add(step(Rule.INT_FORM_BACK_SUBSTITUTION, integrated, hit.antiderivative(), params));
+            }
+            case INT_ROOT_SUM_FORM -> {
+                Expr c = hit.params().get("c");
+                if (c instanceof Expr.Num n && n.value().signum() > 0) {
+                    Expr inT = Expr.mul(c, Expr.pow(Expr.func(Fn.COSH, t), Expr.num(2)));
+                    Expr integrated = Expr.mul(Expr.div(c, Expr.num(2)), Expr.add(t, Expr.mul(Expr.func(Fn.SINH, t), Expr.func(Fn.COSH, t))));
+                    steps.add(step(Rule.INT_FORM_HYPERBOLIC_SUBSTITUTION, null, inT, params));
+                    steps.add(step(Rule.INT_FORM_HYPERBOLIC_SQUARED, inT, integrated, params));
+                    steps.add(step(Rule.INT_FORM_HYPERBOLIC_BACK, integrated, hit.antiderivative(), params));
+                }
+            }
+            case INT_ASINH_FORM -> {
+                Expr c = hit.params().get("c");
+                if (c instanceof Expr.Num n && n.value().signum() > 0) {
+                    steps.add(step(Rule.INT_FORM_HYPERBOLIC_SUBSTITUTION, null, Expr.ONE, params));
+                    steps.add(step(Rule.INT_FORM_HYPERBOLIC_BACK, t, hit.antiderivative(), params));
+                }
+            }
+            default -> { }
+        }
+        return steps;
+    }
+
+    private static barnesinside.mathutils.cas.steps.Step step(Rule rule, Expr before, Expr after, Map<String, Expr> params) {
+        if (before == null) {
+            // Un cambio de variable no es una igualdad: el nuevo integrando va en el texto del paso
+            params = new java.util.LinkedHashMap<>(params);
+            params.put("u", after);
+        }
+        return new barnesinside.mathutils.cas.steps.Step(rule, before, after, params, java.util.List.of());
+    }
+
     private static Optional<Hit> hit(Rule rule, Expr antiderivative, Map<String, Expr> params) {
         return Optional.of(new Hit(rule, antiderivative, params));
     }

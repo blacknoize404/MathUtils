@@ -167,7 +167,7 @@ class DerivativesTest {
         assert product.rule() == Rule.DIFF_PRODUCT;
         assert product.params().get("f").equals(p("x^2"));
         assert product.params().get("g").equals(p("sin(x)"));
-        assert product.substeps().size() == 2;
+        assert product.substeps().size() >= 2 : "las dos derivadas y, si hace falta, la simplificación";
         assert product.substeps().get(0).rule() == Rule.DIFF_POWER;
         assert product.substeps().get(1).rule() == Rule.DIFF_SIN;
     }
@@ -178,7 +178,7 @@ class DerivativesTest {
         Step chain = s.steps().get(0);
         assert chain.rule() == Rule.DIFF_CHAIN;
         assert chain.params().get("u").equals(p("x^2"));
-        assert chain.substeps().size() == 2;
+        assert chain.substeps().size() >= 2;
 
         Step outer = chain.substeps().get(0);
         assert outer.rule() == Rule.DIFF_SIN;

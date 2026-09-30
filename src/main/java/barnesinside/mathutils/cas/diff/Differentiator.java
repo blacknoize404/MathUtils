@@ -70,13 +70,22 @@ final class Differentiator {
         };
     }
 
+    /**
+     * El resultado de aplicar una regla, con un paso «Simplificar» que enseña la expresión tal como sale de la regla (sin
+     * simplificar) cuando la forma simplificada se escribe distinto.
+     */
+    private Expr simplified(Expr raw, Expr result) {
+        if (!raw.toString().equals(result.toString())) trace.leaf(Rule.SIMPLIFY, raw, result, Trace.params("x", x));
+        return result;
+    }
+
     // ---------------------------------------------------------------- Suma
 
     private Expr sum(Expr.Add a) {
         return trace.step(Rule.DIFF_SUM, a, Trace.params("x", x), () -> {
             List<Expr> derivatives = new ArrayList<>();
             for (Expr term : a.terms()) derivatives.add(diff(term));
-            return Expr.add(derivatives);
+            return simplified(derivatives.size() > 1 ? new Expr.Add(derivatives) : derivatives.get(0), Expr.add(derivatives));
         });
     }
 
@@ -91,7 +100,10 @@ final class Differentiator {
             Expr c = Expr.mul(constants);
             Expr f = Expr.mul(varying);
             return trace.step(Rule.DIFF_CONSTANT_MULTIPLE, m, Trace.params("x", x, "c", c, "f", f),
-                    () -> Expr.mul(c, diff(f)));
+                    () -> {
+                        Expr df = diff(f);
+                        return simplified(new Expr.Mul(List.of(c, df)), Expr.mul(c, df));
+                    });
         }
 
         // Factores con potencia negativa forman el denominador
@@ -111,7 +123,10 @@ final class Differentiator {
             return trace.step(Rule.DIFF_QUOTIENT, m, Trace.params("x", x, "f", f, "g", g), () -> {
                 Expr df = diff(f);
                 Expr dg = diff(g);
-                return Expr.div(Expr.sub(Expr.mul(df, g), Expr.mul(f, dg)), Expr.pow(g, Expr.num(2)));
+                Expr raw = new Expr.Mul(List.of(
+                        new Expr.Add(List.of(new Expr.Mul(List.of(df, g)), new Expr.Mul(List.of(Expr.MINUS_ONE, new Expr.Mul(List.of(f, dg)))))),
+                        new Expr.Pow(new Expr.Pow(g, Expr.num(2)), Expr.MINUS_ONE)));
+                return simplified(raw, Expr.div(Expr.sub(Expr.mul(df, g), Expr.mul(f, dg)), Expr.pow(g, Expr.num(2))));
             });
         }
 
@@ -121,7 +136,8 @@ final class Differentiator {
         return trace.step(Rule.DIFF_PRODUCT, m, Trace.params("x", x, "f", first, "g", rest), () -> {
             Expr df = diff(first);
             Expr dg = diff(rest);
-            return Expr.add(Expr.mul(df, rest), Expr.mul(first, dg));
+            Expr raw = new Expr.Add(List.of(new Expr.Mul(List.of(df, rest)), new Expr.Mul(List.of(first, dg))));
+            return simplified(raw, Expr.add(Expr.mul(df, rest), Expr.mul(first, dg)));
         });
     }
 
@@ -161,7 +177,9 @@ final class Differentiator {
         return trace.step(Rule.DIFF_POWER_GENERAL, p, Trace.params("x", x, "f", base, "g", exponent), () -> {
             Expr dg = diff(exponent);
             Expr df = diff(base);
-            return Expr.mul(p, Expr.add(Expr.mul(dg, Expr.ln(base)), Expr.div(Expr.mul(exponent, df), base)));
+            Expr raw = new Expr.Mul(List.of(p, new Expr.Add(List.of(new Expr.Mul(List.of(dg, new Expr.Func(Fn.LN, base))),
+                    new Expr.Mul(List.of(new Expr.Mul(List.of(exponent, df)), new Expr.Pow(base, Expr.MINUS_ONE)))))));
+            return simplified(raw, Expr.mul(p, Expr.add(Expr.mul(dg, Expr.ln(base)), Expr.div(Expr.mul(exponent, df), base))));
         });
     }
 
@@ -254,7 +272,8 @@ final class Differentiator {
             trace.leaf(outerRule, outerBefore, outerAfter, params);
 
             Expr innerDerivative = diff(inner);
-            return Expr.mul(outerAfter.substitute(uName, inner), innerDerivative);
+            Expr outer = outerAfter.substitute(uName, inner);
+            return simplified(new Expr.Mul(List.of(outer, innerDerivative)), Expr.mul(outer, innerDerivative));
         });
     }
 }

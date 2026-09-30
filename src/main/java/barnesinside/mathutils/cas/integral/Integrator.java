@@ -192,7 +192,13 @@ final class Integrator {
         Optional<Table.Hit> hit = Table.lookup(f, v);
         if (hit.isEmpty()) return Optional.empty();
         Table.Hit h = hit.get();
-        return Optional.of(trace.leaf(h.rule(), f, h.antiderivative(), h.params()));
+        java.util.List<barnesinside.mathutils.cas.steps.Step> derivation = Table.derivation(h, f, Expr.sym(v));
+        if (derivation.isEmpty()) return Optional.of(trace.leaf(h.rule(), f, h.antiderivative(), h.params()));
+        // Una fórmula que no es de un solo paso lleva su deducción dentro
+        return Optional.of(trace.step(h.rule(), f, h.params(), () -> {
+            for (barnesinside.mathutils.cas.steps.Step s : derivation) trace.leaf(s.rule(), s.before(), s.after(), s.params());
+            return h.antiderivative();
+        }));
     }
 
     // ================================================================ Trigonométricas
