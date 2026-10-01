@@ -19,6 +19,8 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
 
     private final Map<String, UserFunction> userFunctions;
     private final AngleUnit angleUnit;
+    /** Nombres de más de una letra que son variables declaradas: esos no se separan en letras. */
+    private final java.util.Set<String> declared;
 
     public ExprBuilder() {
         this(Map.of(), AngleUnit.RADIANS);
@@ -29,8 +31,14 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
      * @param angleUnit     unidad de los ángulos de entrada y de salida de las funciones trigonométricas
      */
     public ExprBuilder(Map<String, UserFunction> userFunctions, AngleUnit angleUnit) {
+        this(userFunctions, angleUnit, java.util.Set.of());
+    }
+
+    /** @param declared variables ya declaradas, de las que {@code xy} puede ser una sola y no el producto {@code x·y} */
+    public ExprBuilder(Map<String, UserFunction> userFunctions, AngleUnit angleUnit, java.util.Set<String> declared) {
         this.userFunctions = Map.copyOf(userFunctions);
         this.angleUnit = angleUnit;
+        this.declared = java.util.Set.copyOf(declared);
     }
 
     @Override
@@ -50,6 +58,13 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
         if (lower.equals("oo") || lower.equals("inf") || lower.equals("infinity") || name.equals("∞")) return Expr.INFINITY;
         if (name.equals("γ") || lower.equals("euler_gamma")) return Expr.EULER_GAMMA;
         if (isFunction(name)) throw new IllegalArgumentException("Falta '(' tras la función '" + name + "'");
+        // xy, abc: letras seguidas son un producto, como se escribe a mano (salvo una variable declarada con ese nombre)
+        if (name.length() >= 2 && name.length() <= 3 && name.chars().allMatch(Character::isLetter) && !name.equals("ans")
+                && !declared.contains(name) && !userFunctions.containsKey(name)) {
+            Expr product = Expr.ONE;
+            for (char c : name.toCharArray()) product = Expr.mul(product, variable(String.valueOf(c)));
+            return product;
+        }
         return Expr.sym(name);
     }
 

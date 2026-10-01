@@ -69,7 +69,8 @@ public final class ExprParser {
     public static Parsed parseDetailed(String source, Map<String, UserFunction> userFunctions, AngleUnit angleUnit,
                                        Map<String, Expr> values) {
         NestedCalculus.Expansion nested = NestedCalculus.expand(source, true, values, userFunctions, angleUnit);
-        Expr expr = ExpressionParser.parse(FunctionPowers.rewrite(nested.text()), new ExprBuilder(userFunctions, angleUnit), true);
+        Expr expr = ExpressionParser.parse(FunctionPowers.rewrite(nested.text()),
+                new ExprBuilder(userFunctions, angleUnit, values.keySet()), true);
         return new Parsed(nested.apply(expr), nested.approximate(), nested.steps());
     }
 

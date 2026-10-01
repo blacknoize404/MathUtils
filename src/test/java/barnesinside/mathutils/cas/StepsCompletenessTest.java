@@ -180,4 +180,15 @@ class StepsCompletenessTest {
         // Un resultado que depende del signo no se da sin él
         assert !Integrals.definite("exp(x*y)", "x", "0", "oo").isSolved();
     }
+
+    @Test
+    void lettersWrittenTogetherAreAProductUnlessTheNameIsDeclared() {
+        assert barnesinside.mathutils.cas.expr.ExprParser.parse("xy").equals(barnesinside.mathutils.cas.expr.ExprParser.parse("x*y"));
+        assert barnesinside.mathutils.cas.expr.ExprParser.parse("e^(-xy)").equals(barnesinside.mathutils.cas.expr.ExprParser.parse("e^(-x*y)"));
+        assert barnesinside.mathutils.cas.expr.ExprParser.parse("rate").variables().equals(java.util.Set.of("rate")) : "los nombres largos siguen siendo una variable";
+        assert barnesinside.mathutils.cas.expr.ExprParser.parse("xy", java.util.Map.of(), barnesinside.mathutils.cas.expr.AngleUnit.RADIANS,
+                java.util.Map.of("xy", barnesinside.mathutils.cas.expr.Expr.ONE)).variables().equals(java.util.Set.of("xy")) : "salvo una declarada";
+        Solution s = Integrals.definite("x·e^(−xy)", "x", "0", "∞");
+        assert s.isSolved() && s.result().equals(barnesinside.mathutils.cas.expr.ExprParser.parse("1/y^2")) : s.status();
+    }
 }
