@@ -94,8 +94,13 @@ public final class Derivatives {
                         : trace.step(Rule.DIFF_ORDER, before, Trace.params("x", variableExpr, "k", Expr.num(degree)),
                         () -> withMethod(trace, differentiator, asProduct, method, before, variable));
             }
-            return new Solution(Solution.Kind.DERIVATIVE, Solution.Status.SOLVED, f, current,
-                    trace.steps(), variable, order);
+            List<barnesinside.mathutils.cas.steps.Step> steps = new ArrayList<>(trace.steps());
+            Expr polished = barnesinside.mathutils.cas.expr.Polish.best(current);
+            if (!polished.equals(current)) {
+                steps.add(new barnesinside.mathutils.cas.steps.Step(Rule.SIMPLIFY, current, polished, Trace.params("x", variableExpr), List.of()));
+                current = polished;
+            }
+            return new Solution(Solution.Kind.DERIVATIVE, Solution.Status.SOLVED, f, current, steps, variable, order);
         } catch (Trace.BudgetExceededException | UnsupportedOperationException e) {
             return new Solution(Solution.Kind.DERIVATIVE, Solution.Status.UNSOLVED, f, null,
                     trace.steps(), variable, order);

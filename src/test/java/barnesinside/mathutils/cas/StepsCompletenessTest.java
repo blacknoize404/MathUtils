@@ -3,7 +3,9 @@ package barnesinside.mathutils.cas;
 import barnesinside.mathutils.cas.diff.Derivatives;
 import barnesinside.mathutils.cas.expr.Eval;
 import barnesinside.mathutils.cas.integral.Integrals;
+import barnesinside.mathutils.cas.integral.MultipleIntegrals;
 import barnesinside.mathutils.cas.limit.Limits;
+import barnesinside.mathutils.cas.limit.MultiLimits;
 import barnesinside.mathutils.cas.steps.Format;
 import barnesinside.mathutils.cas.steps.Rule;
 import barnesinside.mathutils.cas.steps.Solution;
@@ -111,5 +113,56 @@ class StepsCompletenessTest {
     void theGammaIntegralsCarryTheirDerivation() {
         uses(Integrals.definite("exp(-2*x)*x^z*ln(x)", "x", "0", "oo"), Rule.INT_GAMMA_LOG, Rule.INT_GAMMA_SCALE, Rule.INT_GAMMA_PARAMETER, Rule.INT_GAMMA_DIGAMMA);
         uses(Integrals.definite("exp(-x)*x^z", "x", "0", "oo"), Rule.INT_GAMMA, Rule.INT_GAMMA_DEFINITION);
+    }
+
+    private static Solution multi(String f, String... point) {
+        return MultiLimits.limit(f, List.of("x", "y"), List.of(point));
+    }
+
+    @Test
+    void aPathWhereTheFunctionDoesNotExistIsNotACounterexample() {
+        Solution s = multi("(x^2-y^2)/(x-y)", "1", "1");
+        assert s.isSolved() && Math.abs(Eval.value(s.result()) - 2) < 1e-12 : s.status() + " " + s.result();
+        uses(s, Rule.LIMIT_MULTI_CANCEL);
+    }
+
+    @Test
+    void multivariableLimitsWithBoundedFactorsInfinitesimalsAndChangesOfVariable() {
+        uses(multi("x*sin(1/y)", "0", "0"), Rule.LIMIT_MULTI_SQUEEZE);
+        uses(multi("sin(x*y)/y", "0", "0"), Rule.LIMIT_MULTI_INFINITESIMAL);
+        Solution infinite = multi("1/(x^2+y^2)", "0", "0");
+        assert infinite.isSolved() && infinite.result().toString().equals("oo") : infinite.result();
+        uses(infinite, Rule.LIMIT_MULTI_NEW_VARIABLE);
+        Solution cosine = multi("(1-cos(x*y))/(x*y)", "0", "0");
+        assert cosine.isSolved() && cosine.result().isZero() : cosine.status();
+        Solution root = multi("(x*y)/sqrt(x^2+y^2)", "0", "0");
+        assert root.isSolved() && root.result().isZero() : root.status();
+        uses(root, Rule.LIMIT_MULTI_POLAR_ZERO);
+        // Los que no tienen límite siguen sin tenerlo
+        assert multi("x*y/(x^2+y^2)", "0", "0").status() == Solution.Status.DOES_NOT_EXIST;
+        assert multi("(x^2*y^2)/(x^4+y^4)", "0", "0").status() == Solution.Status.DOES_NOT_EXIST;
+    }
+
+    @Test
+    void improperIteratedIntegralsAreSolved() {
+        Solution plain = MultipleIntegrals.iterated("exp(-x-y)", List.of(new MultipleIntegrals.Dimension("x", "0", "oo"), new MultipleIntegrals.Dimension("y", "0", "oo")));
+        assert plain.isSolved() && plain.result().isOne() : plain.status();
+        Solution gauss = MultipleIntegrals.iterated("exp(-x^2-y^2)", List.of(new MultipleIntegrals.Dimension("x", "-oo", "oo"), new MultipleIntegrals.Dimension("y", "-oo", "oo")));
+        assert gauss.isSolved() && Math.abs(Eval.value(gauss.result()) - Math.PI) < 1e-12 : gauss.status();
+        uses(gauss, Rule.INT_SPLIT_EXPONENT);
+    }
+
+    @Test
+    void integralResultsAreLeftInTheirShortestFormWithAStepThatSaysSo() {
+        Solution s = Integrals.indefinite("x^2*exp(-x)", "x");
+        assert barnesinside.mathutils.cas.expr.Equivalence.areEqual(s.result(), barnesinside.mathutils.cas.expr.ExprParser.parse("-e^(-x)*(x^2+2*x+2)")) : s.result();
+        assert s.result().toString().length() < "-(x^2*e^(-x) - 2*(-x*e^(-x) - e^(-x)))".length() : "más corta que la que da el método: " + s.result();
+        uses(s, Rule.SIMPLIFY);
+        Solution parts = Integrals.indefinite("x*exp(x)", "x");
+        assert parts.result().toString().length() <= "x*e^x - e^x".length();
+        // Lo que ya está en su forma más corta no lleva un paso de más
+        assert !rules(Integrals.indefinite("x^2", "x").steps()).contains(Rule.SIMPLIFY);
+        Solution mixed = barnesinside.mathutils.cas.diff.MultiDerivatives.mixed("exp(x*y)/x", List.of("x", "y"));
+        assert mixed.result().equals(barnesinside.mathutils.cas.expr.ExprParser.parse("y*e^(x*y)")) : mixed.result();
     }
 }

@@ -72,14 +72,16 @@ class MultiLimitsTest {
         assert uses(solved("x^2*y/(x^2 + y^2)", ORIGIN, 0), Rule.LIMIT_MULTI_POLAR_ZERO);
         solved("x*y^2/(x^2 + y^2)", ORIGIN, 0);
         solved("(x^3 + y^3)/(x^2 + y^2)", ORIGIN, 0);
-        assert uses(solved("(2*x^2 + 2*y^2)/(x^2 + y^2)", ORIGIN, 2), Rule.LIMIT_MULTI_POLAR_CONSTANT);
+        Solution constant = solved("(2*x^2 + 2*y^2)/(x^2 + y^2)", ORIGIN, 2);
+        assert uses(constant, Rule.LIMIT_MULTI_POLAR_CONSTANT) || uses(constant, Rule.LIMIT_MULTI_CANCEL) : "se cancela el factor común o se acota en polares";
         solved("(x - 1)^2*(y - 2)/((x - 1)^2 + (y - 2)^2)", List.of("1", "2"), 0);
     }
 
     @Test
     void agreeingPathsWithoutAProofGiveACandidateNotAResult() {
+        // sen(xy) se comporta como xy y queda x²y/(x² + y²), que se acota en polares
         Solution s = MultiLimits.limit("sin(x*y)/(x^2 + y^2)*x", XY, ORIGIN);
-        assert !s.isSolved() && s.result() == null : s.status() + " " + s.result();
+        assert s.isSolved() && s.result().isZero() && uses(s, Rule.LIMIT_MULTI_INFINITESIMAL) : s.status() + " " + s.result();
         Solution candidate = MultiLimits.limit("x^2*y^2/(x^2 + y^4)", XY, ORIGIN);
         if (!candidate.isSolved() && candidate.status() == Solution.Status.UNSOLVED) {
             assert candidate.extras().get("candidate") instanceof Expr || candidate.steps().isEmpty() == false;

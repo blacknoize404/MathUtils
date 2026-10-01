@@ -3,6 +3,7 @@ package barnesinside.mathutils.cas.integral;
 import barnesinside.mathutils.cas.expr.Expr;
 import barnesinside.mathutils.cas.expr.ExprParser;
 import barnesinside.mathutils.cas.expr.Fn;
+import barnesinside.mathutils.cas.expr.Polish;
 import barnesinside.mathutils.cas.poly.Polynomial;
 import barnesinside.mathutils.cas.steps.Solution;
 import barnesinside.mathutils.cas.steps.Trace;
@@ -86,8 +87,15 @@ public final class Integrals {
         try {
             Optional<Expr> result = integrator.integrate(integrand, variable, 0);
             if (result.isPresent() && Integrator.verified(integrand, result.get(), variable)) {
-                return new Solution(Solution.Kind.INTEGRAL, Solution.Status.SOLVED, integrand, result.get(),
-                        trace.steps(), variable, 1);
+                Expr raw = result.get();
+                Expr polished = Polish.best(raw);
+                java.util.List<barnesinside.mathutils.cas.steps.Step> steps = new java.util.ArrayList<>(trace.steps());
+                if (!polished.equals(raw) && Integrator.verified(integrand, polished, variable)) {
+                    steps.add(new barnesinside.mathutils.cas.steps.Step(barnesinside.mathutils.cas.steps.Rule.SIMPLIFY, raw, polished,
+                            Trace.params("x", Expr.sym(variable)), java.util.List.of()));
+                    raw = polished;
+                }
+                return new Solution(Solution.Kind.INTEGRAL, Solution.Status.SOLVED, integrand, raw, steps, variable, 1);
             }
         } catch (Trace.BudgetExceededException | ArithmeticException e) {
             // Se informa como no resuelta

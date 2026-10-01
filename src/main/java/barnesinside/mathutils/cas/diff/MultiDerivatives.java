@@ -103,7 +103,14 @@ public final class MultiDerivatives {
                         Trace.params("x", Expr.sym(variable), "k", Expr.num(k + 1), "n", Expr.num(variables.size())),
                         () -> differentiator.diff(before));
             }
-            return new Solution(Solution.Kind.DERIVATIVE, Solution.Status.SOLVED, f, current, trace.steps(),
+            List<barnesinside.mathutils.cas.steps.Step> steps = new java.util.ArrayList<>(trace.steps());
+            Expr polished = barnesinside.mathutils.cas.expr.Polish.best(current);
+            if (!polished.equals(current)) {
+                steps.add(new barnesinside.mathutils.cas.steps.Step(Rule.SIMPLIFY, current, polished,
+                        Trace.params("x", Expr.sym(variables.get(0))), List.of()));
+                current = polished;
+            }
+            return new Solution(Solution.Kind.DERIVATIVE, Solution.Status.SOLVED, f, current, steps,
                     variables.get(0), variables.size(), extras);
         } catch (Trace.BudgetExceededException e) {
             return new Solution(Solution.Kind.DERIVATIVE, Solution.Status.UNSOLVED, f, null, trace.steps(),

@@ -6,6 +6,7 @@ import barnesinside.mathutils.cas.expr.Eval;
 import barnesinside.mathutils.cas.expr.Expand;
 import barnesinside.mathutils.cas.expr.Expr;
 import barnesinside.mathutils.cas.expr.ExprParser;
+import barnesinside.mathutils.cas.expr.Fn;
 import barnesinside.mathutils.cas.expr.Rational;
 import barnesinside.mathutils.cas.steps.Rule;
 import barnesinside.mathutils.cas.steps.Solution;
@@ -58,6 +59,28 @@ public final class MultiLimits {
             return new Solution(Solution.Kind.LIMIT, Solution.Status.SOLVED, f, direct, steps, first, 1, extras);
         }
 
+        // 1b. Factor común que se anula en el punto
+        Expr cancelled = cancelCommon(f);
+        if (!cancelled.equals(f)) {
+            Solution inner = limit(cancelled, variables, point);
+            if (inner.status() != Solution.Status.UNSOLVED) {
+                List<Step> all = new ArrayList<>();
+                all.add(new Step(Rule.LIMIT_MULTI_CANCEL, f, cancelled, Map.of("after", cancelled), List.of()));
+                all.addAll(inner.steps());
+                return new Solution(Solution.Kind.LIMIT, inner.status(), f, inner.result(), all, first, 1, extras);
+            }
+        }
+
+        // 1c. Una función acotada por un factor que tiende a 0
+        Solution squeezed = squeeze(f, variables, point, first, extras);
+        if (squeezed != null) return squeezed;
+
+        // 1d. sen(g) con g tendiendo a 0, y 1e. cambio de variable u = g(x, y)
+        Solution equivalent = infinitesimal(f, variables, point, first, extras);
+        if (equivalent != null) return equivalent;
+        Solution changed = newVariable(f, variables, point, first, extras);
+        if (changed != null) return changed;
+
         // 2. Límites iterados en los dos órdenes
         Expr forward = iterated(f, variables, point, false);
         Expr backward = iterated(f, variables, point, true);
@@ -106,6 +129,158 @@ public final class MultiLimits {
             extras.put("candidate", candidate);
         }
         return new Solution(Solution.Kind.LIMIT, Solution.Status.UNSOLVED, f, null, steps, first, 1, extras);
+    }
+
+    // ================================================================ Reglas algebraicas
+
+    /** Numerador y denominador factorizados y simplificados: {@code (x²−y²)/(x−y)} pasa a {@code x+y}. */
+    private static Expr cancelCommon(Expr f) {
+        try {
+            Algebra.Fraction fraction = Algebra.fraction(f);
+            if (fraction.denominator().isOne()) return f;
+            Expr n = factored(fraction.numerator());
+            Expr d = factored(fraction.denominator());
+            Expr result = Expr.div(n, d);
+            // Solo cuenta si desapareció el denominador de verdad (si no, no se ganó nada)
+            return Algebra.fraction(result).denominator().equals(fraction.denominator()) ? f : result;
+        } catch (RuntimeException e) {
+            return f;
+        }
+    }
+
+    private static Expr factored(Expr e) {
+        Solution s = barnesinside.mathutils.cas.algebra.Factoring.factor(e);
+        return s.isSolved() && s.result() != null ? s.result() : e;
+    }
+
+    private static boolean isBounded(Expr factor) {
+        return factor instanceof Expr.Func fn && (fn.fn() == Fn.SIN || fn.fn() == Fn.COS) && fn.arg().variables().size() > 0;
+    }
+
+    /** {@code g(x, y)·sen(h)} o {@code cos(h)}: si el resto tiende a 0, el producto también. */
+    private static Solution squeeze(Expr f, List<String> variables, List<Expr> point, String first, Map<String, Expr> extras) {
+        if (!(f instanceof Expr.Mul m)) return null;
+        List<Expr> bounded = m.factors().stream().filter(MultiLimits::isBounded).toList();
+        if (bounded.isEmpty()) return null;
+        List<Expr> rest = m.factors().stream().filter(t -> !isBounded(t)).toList();
+        if (rest.isEmpty()) return null;
+        Expr other = Expr.mul(rest);
+        Solution inner = limit(other, variables, point);
+        if (!inner.isSolved() || inner.result() == null || !inner.result().isZero()) return null;
+        List<Step> steps = new ArrayList<>();
+        steps.add(new Step(Rule.LIMIT_MULTI_SQUEEZE, f, Expr.ZERO, Map.of("g", Expr.mul(bounded)), List.of()));
+        steps.addAll(inner.steps());
+        return new Solution(Solution.Kind.LIMIT, Solution.Status.SOLVED, f, Expr.ZERO, steps, first, 1, extras);
+    }
+
+    /** {@code sen(g)·R} con {@code g → 0}: el límite es el de {@code g·R} (porque sen u / u → 1). */
+    private static Solution infinitesimal(Expr f, List<String> variables, List<Expr> point, String first, Map<String, Expr> extras) {
+        List<Expr> factors = f instanceof Expr.Mul m ? m.factors() : List.of(f);
+        for (int i = 0; i < factors.size(); i++) {
+            if (!(factors.get(i) instanceof Expr.Func fn) || fn.fn() != Fn.SIN || fn.arg().variables().isEmpty()) continue;
+            Expr g = fn.arg();
+            Expr atPoint = substituteAll(g, variables, point);
+            if (atPoint == null || !atPoint.isZero()) continue;
+            List<Expr> rest = new ArrayList<>(factors);
+            rest.remove(i);
+            Expr replaced = Expr.mul(g, Expr.mul(rest));
+            Solution inner = limit(replaced, variables, point);
+            if (inner.status() == Solution.Status.UNSOLVED) continue;
+            List<Step> steps = new ArrayList<>();
+            steps.add(new Step(Rule.LIMIT_MULTI_INFINITESIMAL, f, replaced, Map.of("g", g, "after", replaced), List.of()));
+            steps.addAll(inner.steps());
+            return new Solution(Solution.Kind.LIMIT, inner.status(), f, inner.result(), steps, first, 1, extras);
+        }
+        return null;
+    }
+
+    /** Toda la función es {@code φ(g(x, y))}: el límite es el de {@code φ(u)} cuando {@code u → g(punto)}. */
+    private static Solution newVariable(Expr f, List<String> variables, List<Expr> point, String first, Map<String, Expr> extras) {
+        List<Expr> candidates = new ArrayList<>();
+        collectComposite(f, variables, candidates);
+        candidates.sort((a, b) -> Integer.compare(b.toString().length(), a.toString().length()));
+        String u = freshName(f, variables);
+        for (Expr g : candidates) {
+            Expr replaced = replaceProductPowers(Algebra.replace(f, g, Expr.sym(u)), g, u);
+            if (!replaced.variables().equals(java.util.Set.of(u))) continue;
+            Expr g0 = substituteAll(g, variables, point);
+            if (g0 == null) continue;
+            Limits.Direction direction = directionOf(g, g0, variables, point);
+            Solution inner = Limits.limit(replaced, u, g0, direction);
+            if (!inner.isSolved() && inner.status() != Solution.Status.DOES_NOT_EXIST) continue;
+            List<Step> steps = new ArrayList<>();
+            steps.add(new Step(Rule.LIMIT_MULTI_NEW_VARIABLE, f, replaced, Map.of("g", g, "a", g0, "after", replaced), List.of()));
+            steps.addAll(inner.steps());
+            return new Solution(Solution.Kind.LIMIT, inner.status(), f, inner.result(), steps, first, 1, extras);
+        }
+        return null;
+    }
+
+    /**
+     * Un producto {@code x·y} que quedó repartido en potencias sueltas ({@code x^-1·y^-1}) se vuelve a juntar como {@code u^-1}.
+     */
+    private static Expr replaceProductPowers(Expr e, Expr g, String u) {
+        if (!(e instanceof Expr.Mul m) || !(g instanceof Expr.Mul gm)) return e;
+        for (int k = -3; k <= 3; k++) {
+            if (k == 0) continue;
+            List<Expr> rest = new ArrayList<>(m.factors());
+            boolean all = true;
+            for (Expr factor : gm.factors()) {
+                Expr wanted = Expr.pow(factor, Expr.num(k));
+                if (!rest.remove(wanted)) {
+                    all = false;
+                    break;
+                }
+            }
+            if (all) {
+                rest.add(Expr.pow(Expr.sym(u), Expr.num(k)));
+                return Expr.mul(rest);
+            }
+        }
+        return e;
+    }
+
+    private static void collectComposite(Expr e, List<String> variables, List<Expr> out) {
+        long present = variables.stream().filter(v -> !e.isFreeOf(v)).count();
+        if (present >= 2 && !(e instanceof Expr.Sym) && !out.contains(e)) out.add(e);
+        switch (e) {
+            case Expr.Func fn -> collectComposite(fn.arg(), variables, out);
+            case Expr.Add a -> a.terms().forEach(t -> collectComposite(t, variables, out));
+            case Expr.Mul m -> m.factors().forEach(t -> collectComposite(t, variables, out));
+            case Expr.Pow p -> {
+                collectComposite(p.base(), variables, out);
+                collectComposite(p.exponent(), variables, out);
+            }
+            default -> { }
+        }
+    }
+
+    /** Por qué lado se acerca {@code g} a su valor en el punto (sumas de cuadrados: solo por encima, por ejemplo). */
+    private static Limits.Direction directionOf(Expr g, Expr g0, List<String> variables, List<Expr> point) {
+        try {
+            double target = Eval.value(g0);
+            boolean above = false;
+            boolean below = false;
+            double[] radii = {1e-3, 1e-4};
+            for (double r : radii) {
+                for (int k = 0; k < 16; k++) {
+                    double angle = 2 * Math.PI * k / 16;
+                    Map<String, Double> env = new HashMap<>();
+                    for (int i = 0; i < variables.size(); i++) {
+                        double base = Eval.value(point.get(i));
+                        env.put(variables.get(i), base + r * (i == 0 ? Math.cos(angle) : i == 1 ? Math.sin(angle) : 0.5 * Math.cos(angle + i)));
+                    }
+                    double v = Eval.value(g, env);
+                    if (v > target + 1e-15) above = true;
+                    else if (v < target - 1e-15) below = true;
+                }
+            }
+            if (above && !below) return Limits.Direction.RIGHT;
+            if (below && !above) return Limits.Direction.LEFT;
+        } catch (RuntimeException e) {
+            // Por ambos lados
+        }
+        return Limits.Direction.BOTH;
     }
 
     // ================================================================ Sustitución e iterados
@@ -216,6 +391,9 @@ public final class MultiLimits {
                         : Expr.mul(Expr.num(path.coefficients()[i]), Expr.pow(ts, Expr.num(path.powers()[i])));
                 env.put(variables.get(i), Expr.add(point.get(i), displacement));
             }
+            // Si el denominador se anula en todo el camino, la función no existe sobre él: no cuenta
+            Algebra.Fraction fraction = Algebra.fraction(f);
+            if (!fraction.denominator().isOne() && fraction.denominator().substitute(env).isZero()) return null;
             Solution s = Limits.limit(f.substitute(env), t, Expr.ZERO);
             return s.isSolved() ? s.result() : null;
         } catch (RuntimeException e) {
@@ -298,7 +476,29 @@ public final class MultiLimits {
             Map<String, Expr> shift = new HashMap<>();
             shift.put(variables.get(0), Expr.add(point.get(0), Expr.sym(u)));
             shift.put(variables.get(1), Expr.add(point.get(1), Expr.sym(v)));
-            Algebra.Fraction fraction = Algebra.fraction(f.substitute(shift));
+            Expr g = f.substitute(shift);
+
+            // Una raíz en el denominador, (x² + y²)^(-1/2): cuenta como un denominador de orden (1/2)·grado
+            Expr rootBase = null;
+            Rational rootPower = Rational.ZERO;
+            if (g instanceof Expr.Pow p && p.exponent() instanceof Expr.Num n && n.value().signum() < 0 && !n.value().isInteger()) {
+                rootBase = p.base();
+                rootPower = n.value().negate();
+                g = Expr.ONE;
+            } else if (g instanceof Expr.Mul m) {
+                for (Expr factor : m.factors()) {
+                    if (factor instanceof Expr.Pow p && p.exponent() instanceof Expr.Num n && n.value().signum() < 0 && !n.value().isInteger()) {
+                        rootBase = p.base();
+                        rootPower = n.value().negate();
+                        List<Expr> rest = new ArrayList<>(m.factors());
+                        rest.remove(factor);
+                        g = Expr.mul(rest);
+                        break;
+                    }
+                }
+            }
+
+            Algebra.Fraction fraction = Algebra.fraction(g);
             Map<Integer, Rational> numerator = polynomial(Expand.expand(fraction.numerator()), u, v);
             Map<Integer, Rational> denominator = polynomial(Expand.expand(fraction.denominator()), u, v);
             if (numerator == null || denominator == null) return null;
@@ -312,13 +512,32 @@ public final class MultiLimits {
             Map<Integer, Rational> lowD = lowest(denominator, q);
             if (!definite(lowD)) return null;
 
+            // El orden efectivo del denominador suma el de la raíz
+            Rational order = Rational.of(q);
+            if (rootBase != null) {
+                Map<Integer, Rational> root = polynomial(Expand.expand(rootBase), u, v);
+                if (root == null) return null;
+                root.values().removeIf(Rational::isZero);
+                if (root.isEmpty()) return null;
+                int rq = root.keySet().stream().mapToInt(MultiLimits::degree).min().orElse(0);
+                if (!definite(lowest(root, rq))) return null;
+                order = order.add(rootPower.multiply(Rational.of(rq)));
+            }
+
             Map<String, Expr> params = new LinkedHashMap<>();
             params.put("p", Expr.num(p));
-            params.put("q", Expr.num(q));
-            if (p > q) return new Polar(Rule.LIMIT_MULTI_POLAR_ZERO, Expr.ZERO, params);
-            if (p == q) {
+            params.put("q", Expr.num(order));
+            int compare = Rational.of(p).compareTo(order);
+            if (compare > 0) return new Polar(Rule.LIMIT_MULTI_POLAR_ZERO, Expr.ZERO, params);
+            if (compare == 0 && rootBase == null) {
                 Rational ratio = constantRatio(lowN, lowD);
                 if (ratio != null) return new Polar(Rule.LIMIT_MULTI_POLAR_CONSTANT, Expr.num(ratio), params);
+            }
+            if (compare < 0 && definite(lowN)) {
+                // Signo fijo en todos los ángulos: crece sin límite con ese signo
+                double sign = Math.signum(evaluate(lowN, 1, 0) == 0 ? evaluate(lowN, 0, 1) : evaluate(lowN, 1, 0))
+                        * Math.signum(evaluate(lowD, 1, 0) == 0 ? evaluate(lowD, 0, 1) : evaluate(lowD, 1, 0));
+                if (sign != 0) return new Polar(Rule.LIMIT_MULTI_POLAR_INFINITE, sign > 0 ? Expr.INFINITY : Expr.neg(Expr.INFINITY), params);
             }
             return null;
         } catch (RuntimeException e) {

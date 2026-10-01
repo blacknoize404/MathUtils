@@ -109,9 +109,13 @@ public final class MultipleIntegrals {
         // referencia: se integra con la antiderivada y se contrasta en varios valores de los parámetros
         boolean parametric = !freeParameters(f, d).isEmpty() || !d.lower().variables().isEmpty()
                 || !d.upper().variables().isEmpty();
-        return parametric
-                ? DefiniteIntegrals.parametric(f, d.variable(), d.lower(), d.upper())
-                : DefiniteIntegrals.solve(f, d.variable(), d.lower(), d.upper());
+        if (!parametric) return DefiniteIntegrals.solve(f, d.variable(), d.lower(), d.upper());
+        // Con extremos numéricos (incluso infinitos) se prueba primero la integral completa, con sus límites y su cuadratura de contraste
+        if (d.lower().variables().isEmpty() && d.upper().variables().isEmpty()) {
+            Solution full = DefiniteIntegrals.solve(f, d.variable(), d.lower(), d.upper());
+            if (full.isSolved()) return full;
+        }
+        return DefiniteIntegrals.parametric(f, d.variable(), d.lower(), d.upper());
     }
 
     private static List<String> freeParameters(Expr f, Dimension d) {

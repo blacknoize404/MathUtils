@@ -194,7 +194,8 @@ final class DefiniteIntegrals {
             return new Outcome(swapped.status(), swapped.value() == null ? null : Expr.neg(swapped.value()), steps);
         }
 
-        Singularities.Found found = Singularities.find(f, v, a, b);
+        // Con parámetros las singularidades se buscan con valores de muestra: si no hay ninguna con ellos, no se supone que haya
+        Singularities.Found found = Singularities.find(sampled(f, v), v, a, b);
         if (!found.complete()) return Outcome.of(Solution.Status.UNSOLVED, steps);
 
         Optional<Outcome> symmetric = symmetry(f, v, lower, upper, a, b, found, steps);
@@ -255,8 +256,20 @@ final class DefiniteIntegrals {
         }
         if (exact.size() > 2) steps.add(new Step(Rule.INT_ADD_PIECES, null, total, Map.of(), List.of()));
 
-        if (found.points().isEmpty() && !Double.isFinite(Eval.value(total))) return Outcome.of(Solution.Status.UNSOLVED, steps);
+        if (found.points().isEmpty() && total.variables().isEmpty() && !Double.isFinite(Eval.value(total))) return Outcome.of(Solution.Status.UNSOLVED, steps);
         return new Outcome(Solution.Status.SOLVED, total, steps);
+    }
+
+    /** El integrando con un valor de muestra en cada parámetro (los de siempre si no tiene). */
+    private static Expr sampled(Expr f, String v) {
+        Map<String, Expr> env = new LinkedHashMap<>();
+        double[] samples = {0.73, 1.37, 2.11, 0.41};
+        int k = 0;
+        for (String name : f.variables()) {
+            if (name.equals(v)) continue;
+            env.put(name, Expr.num(Rational.fromDouble(samples[k++ % samples.length])));
+        }
+        return env.isEmpty() ? f : f.substitute(env);
     }
 
     private static Outcome diverges(List<Step> steps, Expr at) {
@@ -265,6 +278,14 @@ final class DefiniteIntegrals {
     }
 
     private static boolean isInfinite(Expr e) {
+        if (!e.variables().isEmpty()) {
+            // Con parámetros se mira con valores de muestra
+            try {
+                return Double.isInfinite(Eval.value(sampled(e, "")));
+            } catch (RuntimeException ex) {
+                return false;
+            }
+        }
         double value = Eval.value(e);
         return Double.isInfinite(value);
     }
@@ -281,7 +302,7 @@ final class DefiniteIntegrals {
         if (!singular) {
             try {
                 Expr direct = f.substitute(v, point);
-                if (Double.isFinite(Eval.value(direct))) return direct;
+                if (!direct.variables().isEmpty() || Double.isFinite(Eval.value(direct))) return direct;
             } catch (RuntimeException e) {
                 // Se prueba con el límite
             }

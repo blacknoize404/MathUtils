@@ -269,7 +269,7 @@ class IntegralsTest {
     void failedAttemptsLeaveNoSteps() {
         Solution s = Integrals.indefinite("x*e^x", "x");
         // Solo el paso de partes (con sus subpasos): nada de sustituciones descartadas
-        assert s.steps().size() == 1;
+        assert s.steps().stream().filter(st -> st.rule() != Rule.SIMPLIFY).count() == 1 : s.steps();
         assert flatten(s.steps()).stream().noneMatch(st -> st.rule() == Rule.INT_SUBSTITUTION);
     }
 

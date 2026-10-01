@@ -96,6 +96,7 @@ final class Integrator {
             } else {
                 result = constant(f, v);
                 if (result.isEmpty()) result = sum(f, v, depth);
+                if (result.isEmpty()) result = splitExponent(f, v, depth);
                 if (result.isEmpty()) result = constantMultiple(f, v, depth);
                 if (result.isEmpty()) result = table(f, v);
                 if (result.isEmpty()) result = reduction(f, v, depth);
@@ -123,6 +124,7 @@ final class Integrator {
         switch (method) {
             case LINEARITY -> {
                 result = sum(f, v, depth);
+                if (result.isEmpty()) result = splitExponent(f, v, depth);
                 if (result.isEmpty()) result = constantMultiple(f, v, depth);
             }
             case TABLE -> result = table(f, v);
@@ -172,6 +174,19 @@ final class Integrator {
             }
             return Optional.of(Expr.add(parts));
         });
+    }
+
+    /** {@code e^(a + g(x)) = e^a·e^g(x)}: la parte del exponente que no depende de la variable sale como constante. */
+    private Optional<Expr> splitExponent(Expr f, String v, int depth) {
+        if (!(f instanceof Expr.Pow p) || !p.base().equals(Expr.E) || !(p.exponent() instanceof Expr.Add sum)) return Optional.empty();
+        List<Expr> free = new ArrayList<>();
+        List<Expr> varying = new ArrayList<>();
+        for (Expr term : sum.terms()) (term.isFreeOf(v) ? free : varying).add(term);
+        if (free.isEmpty() || varying.isEmpty()) return Optional.empty();
+        Expr constant = Expr.exp(Expr.add(free));
+        Expr rest = Expr.exp(Expr.add(varying));
+        return trace.attempt(Rule.INT_SPLIT_EXPONENT, f, params(v, "c", constant, "f", rest),
+                () -> integrate(rest, v, depth + 1).map(inner -> Expr.mul(constant, inner)));
     }
 
     private Optional<Expr> constantMultiple(Expr f, String v, int depth) {
