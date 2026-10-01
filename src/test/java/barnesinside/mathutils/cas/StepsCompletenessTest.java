@@ -165,4 +165,19 @@ class StepsCompletenessTest {
         Solution mixed = barnesinside.mathutils.cas.diff.MultiDerivatives.mixed("exp(x*y)/x", List.of("x", "y"));
         assert mixed.result().equals(barnesinside.mathutils.cas.expr.ExprParser.parse("y*e^(x*y)")) : mixed.result();
     }
+
+    @Test
+    void aParameterWhoseSignDecidesConvergenceIsAssumedPositiveAndItIsSaid() {
+        Solution s = Integrals.definite("x*exp(-x*y)", "x", "0", "oo");
+        assert s.isSolved() && s.result().equals(barnesinside.mathutils.cas.expr.ExprParser.parse("1/y^2")) : s.status() + " " + s.result();
+        uses(s, Rule.INT_ASSUME_POSITIVE);
+        assert s.extras().get("condition").toString().equals("y > 0") : s.extras();
+        // Con las integrales de fuera que aseguran el signo se resuelve entera; si el signo no está asegurado, no se inventa
+        Solution outer = MultipleIntegrals.iterated("x*exp(-x*y)", List.of(new MultipleIntegrals.Dimension("x", "0", "oo"), new MultipleIntegrals.Dimension("y", "1", "2")));
+        assert outer.isSolved() && Math.abs(Eval.value(outer.result()) - 0.5) < 1e-12 : outer.status();
+        Solution negative = MultipleIntegrals.iterated("x*exp(-x*y)", List.of(new MultipleIntegrals.Dimension("x", "0", "oo"), new MultipleIntegrals.Dimension("y", "-2", "-1")));
+        assert !negative.isSolved() : "y negativa: la integral diverge, no se da un valor";
+        // Un resultado que depende del signo no se da sin él
+        assert !Integrals.definite("exp(x*y)", "x", "0", "oo").isSolved();
+    }
 }

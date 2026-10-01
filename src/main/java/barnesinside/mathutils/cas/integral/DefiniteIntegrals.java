@@ -38,6 +38,48 @@ final class DefiniteIntegrals {
     }
 
     static Solution solve(Expr f, String v, Expr lower, Expr upper, IntegralMethod method) {
+        Solution plain = solve(f, v, lower, upper, method, null);
+        return plain;
+    }
+
+    /**
+     * @param positive parámetros que se pueden suponer positivos (los extremos de las integrales de fuera, por ejemplo);
+     *                 {@code null} deja que se suponga lo necesario cuando la integral solo converge así, y lo dice en un paso
+     */
+    static Solution solve(Expr f, String v, Expr lower, Expr upper, IntegralMethod method, java.util.Set<String> positive) {
+        Solution result = solveOnce(f, v, lower, upper, method, positive == null ? java.util.Set.of() : positive);
+        if (result.isSolved() || result.status() == Solution.Status.DOES_NOT_EXIST) return result;
+
+        // Un parámetro cuyo signo decide si converge: se supone positivo
+        java.util.Set<String> parameters = new java.util.TreeSet<>(f.variables());
+        parameters.remove(v);
+        parameters.removeAll(lower.variables());
+        parameters.removeAll(upper.variables());
+        boolean infinite = containsInfinity(lower) || containsInfinity(upper);
+        if (parameters.isEmpty() || !infinite) return result;
+
+        // Sin información de fuera se supone lo que haga falta (y se dice); con ella, solo lo que las integrales de fuera aseguran
+        java.util.Set<String> assumed = new java.util.TreeSet<>(parameters);
+        if (positive != null) assumed.retainAll(positive);
+        if (assumed.isEmpty()) return result;
+        Solution retry = barnesinside.mathutils.cas.limit.Assumptions.whilePositive(assumed,
+                () -> solveOnce(f, v, lower, upper, method, assumed));
+        if (!retry.isSolved()) return result;
+        List<Step> steps = new ArrayList<>();
+        for (String name : assumed) {
+            steps.add(new Step(Rule.INT_ASSUME_POSITIVE, null, null, Map.of("p", Expr.sym(name)), List.of()));
+        }
+        steps.addAll(retry.steps());
+        Map<String, Expr> extras = new LinkedHashMap<>(retry.extras());
+        extras.put("condition", Expr.sym(String.join(", ", assumed.stream().map(n -> n + " > 0").toList())));
+        return new Solution(retry.kind(), retry.status(), retry.problem(), retry.result(), steps, retry.variable(), retry.order(), extras);
+    }
+
+    private static boolean containsInfinity(Expr e) {
+        return e.equals(Expr.INFINITY) || e.equals(Expr.neg(Expr.INFINITY));
+    }
+
+    private static Solution solveOnce(Expr f, String v, Expr lower, Expr upper, IntegralMethod method, java.util.Set<String> positive) {
         Map<String, Expr> extras = new LinkedHashMap<>();
         extras.put("lower", lower);
         extras.put("upper", upper);
@@ -68,7 +110,7 @@ final class DefiniteIntegrals {
         boolean withParameters = f.variables().stream().anyMatch(name -> !name.equals(v));
         if (withParameters) {
             // Con parámetros no hay un único valor que contrastar: se comprueba en varios valores de prueba
-            if (outcome.value() != null && !sampledAgree(f, v, lower, upper, outcome.value())) {
+            if (outcome.value() != null && !sampledAgree(f, v, lower, upper, outcome.value(), positive)) {
                 outcome = Outcome.of(Solution.Status.UNSOLVED, outcome.steps());
             }
             return new Solution(Solution.Kind.INTEGRAL, outcome.status(), f, outcome.value(), outcome.steps(), v, 1, extras);
@@ -133,6 +175,10 @@ final class DefiniteIntegrals {
      * entre los límites correspondientes debe coincidir. Hace falta al menos un punto válido.
      */
     private static boolean sampledAgree(Expr f, String v, Expr lower, Expr upper, Expr value) {
+        return sampledAgree(f, v, lower, upper, value, java.util.Set.of());
+    }
+
+    private static boolean sampledAgree(Expr f, String v, Expr lower, Expr upper, Expr value, java.util.Set<String> positive) {
         java.util.Set<String> names = new java.util.TreeSet<>(f.variables());
         names.addAll(lower.variables());
         names.addAll(upper.variables());
@@ -147,7 +193,9 @@ final class DefiniteIntegrals {
             double low = attempt % 3 == 0 ? 0.15 : attempt % 3 == 1 ? 0.6 : -0.9;
             double high = attempt % 3 == 0 ? 0.9 : attempt % 3 == 1 ? 2.4 : -0.15;
             for (String name : names) {
+                boolean mustBePositive = positive.contains(name);
                 double sample = Math.round((low + random.nextDouble() * (high - low)) * 100) / 100.0;
+                if (mustBePositive) sample = Math.abs(sample) < 0.01 ? 0.5 : Math.abs(sample);
                 numbers.put(name, sample);
                 env.put(name, Expr.num(barnesinside.mathutils.cas.expr.Rational.fromDouble(sample)));
             }

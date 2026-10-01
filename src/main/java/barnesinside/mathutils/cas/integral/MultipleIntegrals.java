@@ -84,7 +84,7 @@ public final class MultipleIntegrals {
         Expr current = f;
         for (int i = 0; i < dimensions.size(); i++) {
             Dimension d = dimensions.get(i);
-            Solution stage = d.isDefinite() ? definiteStage(current, d) : Integrals.indefinite(current, d.variable());
+            Solution stage = d.isDefinite() ? definiteStage(current, d, nonNegativeOuter(dimensions, i)) : Integrals.indefinite(current, d.variable());
             if (!stage.isSolved()) {
                 Solution.Status status = stage.status() == Solution.Status.DOES_NOT_EXIST
                         ? Solution.Status.DOES_NOT_EXIST : Solution.Status.UNSOLVED;
@@ -104,7 +104,22 @@ public final class MultipleIntegrals {
                 dimensions.get(0).variable(), dimensions.size(), extras);
     }
 
-    private static Solution definiteStage(Expr f, Dimension d) {
+    /** Las variables de las integrales de fuera que no bajan de cero: ahí se puede suponer positivo un parámetro que lo pide. */
+    private static java.util.Set<String> nonNegativeOuter(List<Dimension> dimensions, int stage) {
+        java.util.Set<String> names = new java.util.TreeSet<>();
+        for (int k = stage + 1; k < dimensions.size(); k++) {
+            Dimension outer = dimensions.get(k);
+            if (!outer.isDefinite() || !outer.lower().variables().isEmpty()) continue;
+            try {
+                if (Eval.value(outer.lower()) >= 0) names.add(outer.variable());
+            } catch (RuntimeException e) {
+                // Sin valor: no se supone nada
+            }
+        }
+        return names;
+    }
+
+    private static Solution definiteStage(Expr f, Dimension d, java.util.Set<String> nonNegative) {
         // Con parámetros (otras variables en el integrando o en los límites) no hay cuadratura exacta de
         // referencia: se integra con la antiderivada y se contrasta en varios valores de los parámetros
         boolean parametric = !freeParameters(f, d).isEmpty() || !d.lower().variables().isEmpty()
@@ -112,7 +127,7 @@ public final class MultipleIntegrals {
         if (!parametric) return DefiniteIntegrals.solve(f, d.variable(), d.lower(), d.upper());
         // Con extremos numéricos (incluso infinitos) se prueba primero la integral completa, con sus límites y su cuadratura de contraste
         if (d.lower().variables().isEmpty() && d.upper().variables().isEmpty()) {
-            Solution full = DefiniteIntegrals.solve(f, d.variable(), d.lower(), d.upper());
+            Solution full = DefiniteIntegrals.solve(f, d.variable(), d.lower(), d.upper(), IntegralMethod.AUTO, nonNegative);
             if (full.isSolved()) return full;
         }
         return DefiniteIntegrals.parametric(f, d.variable(), d.lower(), d.upper());

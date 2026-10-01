@@ -976,6 +976,7 @@ final class LimitEngine {
 
     private static int constantSign(Expr e) {
         double v = numeric(e);
+        if (Double.isNaN(v) && !e.variables().isEmpty()) return Assumptions.sign(e);
         if (Double.isNaN(v) || v == 0) return 0;
         return v > 0 ? 1 : -1;
     }
