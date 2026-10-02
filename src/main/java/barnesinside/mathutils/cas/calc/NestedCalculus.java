@@ -353,7 +353,12 @@ public final class NestedCalculus {
             Map<String, Expr> map = new LinkedHashMap<>();
             for (int i = 0; i < params.length; i += 2) map.put((String) params[i], (Expr) params[i + 1]);
             map.put("value", s.result());
-            return new Value(s.result(), approximate, new Step(rule, null, s.result(), map, s.steps()));
+            // Con el integrando (o la función, o la expresión del límite) delante, el paso se dibuja como la operación: ∫ f dx = valor
+            if (map.containsKey("a") && map.containsKey("b")) {
+                map.put("lower", map.get("a"));
+                map.put("upper", map.get("b"));
+            }
+            return new Value(s.result(), approximate, new Step(rule, map.get("f"), s.result(), map, s.steps()));
         }
 
         private static Set<String> free(Expr f, String variable) {
