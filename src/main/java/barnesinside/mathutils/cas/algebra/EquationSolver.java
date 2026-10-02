@@ -940,6 +940,9 @@ final class EquationSolver {
      */
     private SolutionSet numeric(Expr f) {
         approximate = true;
+        // Antes de aproximar, se explica por qué no se puede despejar y qué se sabe de las raíces
+        NumericAnalysis analysis = new NumericAnalysis(rec, v, f);
+        analysis.explain();
         List<Double> roots = scan(f, -50, 50, NUMERIC_SAMPLES, MAX_NUMERIC_ROOTS);
         if (roots.size() > MAX_NUMERIC_ROOTS) {
             // Demasiadas para listarlas: se guardan las más cercanas al origen para dar una idea
@@ -951,7 +954,9 @@ final class EquationSolver {
             double rounded = Math.rint(root * 1e8) / 1e8;
             Expr value = Expr.num(Rational.fromDouble(rounded));
             values.add(value);
+            analysis.bracket(root, rounded);
             rec.note(Rule.ALG_NUMERIC_ROOT, "x", x, "x0", Expr.sym(SolutionSet.decimal(root)), "v", Expr.sym(SolutionSet.decimal(rounded)));
+            analysis.check(rounded);
         }
         return values.isEmpty() ? SolutionSet.empty() : SolutionSet.approximate(values);
     }
