@@ -942,13 +942,14 @@ final class EquationSolver {
         approximate = true;
         // Antes de aproximar, se explica por qué no se puede despejar y qué se sabe de las raíces
         NumericAnalysis analysis = new NumericAnalysis(rec, v, f);
-        analysis.explain();
         List<Double> roots = scan(f, -50, 50, NUMERIC_SAMPLES, MAX_NUMERIC_ROOTS);
         if (roots.size() > MAX_NUMERIC_ROOTS) {
             // Demasiadas para listarlas: se guardan las más cercanas al origen para dar una idea
             List<Double> near = scan(f, -10, 10, NUMERIC_SAMPLES / 2, 12);
             throw new TooManyRootsException(near.subList(0, Math.min(near.size(), 12)));
         }
+        // Con demasiadas raíces no se razona (se describen por su condición); con pocas, se explica antes de afinarlas
+        analysis.explain();
         List<Expr> values = new ArrayList<>();
         for (double root : roots) {
             double rounded = Math.rint(root * 1e8) / 1e8;
