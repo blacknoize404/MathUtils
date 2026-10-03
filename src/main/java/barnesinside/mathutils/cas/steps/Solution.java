@@ -47,7 +47,8 @@ public record Solution(Kind kind, Status status, Expr problem, Expr result, List
     }
 
     public Solution {
-        steps = List.copyOf(steps);
+        // Los pasos que se anidan terminan con un subpaso que vuelve al paso que los pedía
+        steps = status == Status.SOLVED ? List.copyOf(Closing.nested(steps)) : List.copyOf(steps);
         extras = Collections.unmodifiableMap(new LinkedHashMap<>(extras));
     }
 

@@ -10,6 +10,13 @@ public enum Rule {
 
     // ---- Generales
     SIMPLIFY(Category.GENERAL),
+    /** El último subpaso de un paso anidado: devuelve al lector al paso que pedía los subpasos, con su resultado. */
+    NEST_RETURN(Category.GENERAL),
+    NEST_RETURN_DERIVATIVE(Category.DERIVATIVE),
+    NEST_RETURN_LIMIT(Category.LIMIT),
+    NEST_RETURN_INTEGRAL(Category.INTEGRAL),
+    /** El último paso de una solución: el resultado final del problema. */
+    SOLUTION(Category.GENERAL),
 
     // ---- Derivadas
     DIFF_CONSTANT(Category.DERIVATIVE),
