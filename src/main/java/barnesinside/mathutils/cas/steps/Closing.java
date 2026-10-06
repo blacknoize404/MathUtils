@@ -24,7 +24,10 @@ final class Closing {
         List<Step> substeps = nested(step.substeps());
         Step last = substeps.getLast();
         boolean already = isReturn(last.rule()) || (last.after() != null && last.after().equals(step.after()));
-        if (!already && step.before() != null && step.after() != null) {
+        // Los pasos del álgebra no siempre traen expresiones: llevan la ecuación en que quedó la resolución
+        boolean hasEquation = (step.before() != null && step.after() != null)
+                || barnesinside.mathutils.cas.expr.Relation.fromParams(step.params()).isPresent();
+        if (!already && hasEquation) {
             substeps.add(new Step(returnRule(step.rule().category()), step.before(), step.after(), step.params(), List.of()));
         }
         return new Step(step.rule(), step.before(), step.after(), step.params(), substeps);
