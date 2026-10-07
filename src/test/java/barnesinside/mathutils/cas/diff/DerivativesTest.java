@@ -123,7 +123,10 @@ class DerivativesTest {
         Solution wrtY = Derivatives.derivative("x^2*y + y^3", "y");
         assert wrtY.result().equals(p("x^2 + 3y^2"));
         assert uses(Derivatives.derivative("x + y^2", "y"), Rule.DIFF_OTHER_VARIABLE);
-        assert uses(wrtY, Rule.DIFF_CONSTANT_MULTIPLE);
+        // La constante x² lleva otra variable: el paso explica por qué es constante
+        assert uses(wrtY, Rule.DIFF_CONSTANT_MULTIPLE_OTHER) || uses(wrtY, Rule.DIFF_CONSTANT_MULTIPLE);
+        assert uses(Derivatives.derivative("x^2*y^3", "x"), Rule.DIFF_CONSTANT_MULTIPLE_OTHER);
+        assert uses(Derivatives.derivative("3*x^2", "x"), Rule.DIFF_CONSTANT_MULTIPLE) : "una constante numérica no lleva la explicación";
     }
 
     @Test

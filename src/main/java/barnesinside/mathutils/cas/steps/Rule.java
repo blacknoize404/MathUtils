@@ -23,6 +23,10 @@ public enum Rule {
     DIFF_OTHER_VARIABLE(Category.DERIVATIVE),
     DIFF_VARIABLE(Category.DERIVATIVE),
     DIFF_CONSTANT_MULTIPLE(Category.DERIVATIVE),
+    /** Como la anterior, cuando la constante lleva otra variable (en una derivada parcial): se explica por qué es constante. */
+    DIFF_CONSTANT_MULTIPLE_OTHER(Category.DERIVATIVE),
+    /** El último paso de una cadena: se deshace el cambio {@code u = …} en lo que salió. */
+    DIFF_CHAIN_BACK(Category.GENERAL),
     DIFF_SUM(Category.DERIVATIVE),
     DIFF_POWER(Category.DERIVATIVE),
     DIFF_PRODUCT(Category.DERIVATIVE),

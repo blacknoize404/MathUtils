@@ -15,13 +15,27 @@ final class Closing {
     /** Los mismos pasos con el cierre de cada nivel anidado (idempotente: no añade uno donde ya lo hay). */
     static List<Step> nested(List<Step> steps) {
         List<Step> closed = new ArrayList<>(steps.size());
-        for (Step step : steps) closed.add(close(step));
+        for (Step step : steps) {
+            if (!noChange(step)) closed.add(close(step));
+        }
         return closed;
+    }
+
+    /** Un «Simplificar» que no cambia nada a la vista (solo se reescribe {@code + -x} como {@code - x}) no enseña nada. */
+    private static boolean noChange(Step step) {
+        if (step.rule() != Rule.SIMPLIFY || !step.substeps().isEmpty() || step.before() == null || step.after() == null) return false;
+        return shown(step.before()).equals(shown(step.after()));
+    }
+
+    private static String shown(barnesinside.mathutils.cas.expr.Expr e) {
+        return e.toString().replace(" + -", " - ").replace(" ", "");
     }
 
     private static Step close(Step step) {
         if (step.substeps().isEmpty()) return step;
         List<Step> substeps = nested(step.substeps());
+        // Con un solo subpaso no hay nada que reunir: su resultado ya se ve en «Cómo queda»
+        if (substeps.size() < 2) return new Step(step.rule(), step.before(), step.after(), step.params(), substeps);
         Step last = substeps.getLast();
         boolean already = isReturn(last.rule()) || (last.after() != null && last.after().equals(step.after()));
         // Los pasos del álgebra no siempre traen expresiones: llevan la ecuación en que quedó la resolución

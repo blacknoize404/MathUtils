@@ -99,7 +99,9 @@ final class Differentiator {
         if (!constants.isEmpty()) {
             Expr c = Expr.mul(constants);
             Expr f = Expr.mul(varying);
-            return trace.step(Rule.DIFF_CONSTANT_MULTIPLE, m, Trace.params("x", x, "c", c, "f", f),
+            // Si la constante lleva otra variable (una derivada parcial), el paso dice por qué es constante
+            Rule rule = c.variables().isEmpty() ? Rule.DIFF_CONSTANT_MULTIPLE : Rule.DIFF_CONSTANT_MULTIPLE_OTHER;
+            return trace.step(rule, m, Trace.params("x", x, "c", c, "f", f),
                     () -> {
                         Expr df = diff(f);
                         return simplified(new Expr.Mul(List.of(c, df)), Expr.mul(c, df));
@@ -273,6 +275,9 @@ final class Differentiator {
 
             Expr innerDerivative = diff(inner);
             Expr outer = outerAfter.substitute(uName, inner);
+            // Se deshace el cambio u = …: lo de fuera sale en u y aquí se vuelve a escribir en la variable
+            trace.leaf(Rule.DIFF_CHAIN_BACK, Expr.mul(outerAfter, innerDerivative), Expr.mul(outer, innerDerivative),
+                    Trace.params("u", inner));
             return simplified(new Expr.Mul(List.of(outer, innerDerivative)), Expr.mul(outer, innerDerivative));
         });
     }

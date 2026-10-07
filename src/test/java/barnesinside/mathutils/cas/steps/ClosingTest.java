@@ -12,6 +12,11 @@ class ClosingTest {
     private static boolean returns(List<Step> steps) {
         for (Step step : steps) {
             if (step.substeps().isEmpty()) continue;
+            // Con un solo subpaso no hay nada que reunir y no se añade cierre
+            if (step.substeps().size() < 2) {
+                if (!returns(step.substeps())) return false;
+                continue;
+            }
             Step last = step.substeps().getLast();
             boolean endsInResult = last.after() != null && last.after().equals(step.after());
             boolean isReturn = last.rule().name().startsWith("NEST_RETURN");
