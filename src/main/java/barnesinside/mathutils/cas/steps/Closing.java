@@ -16,9 +16,16 @@ final class Closing {
     static List<Step> nested(List<Step> steps) {
         List<Step> closed = new ArrayList<>(steps.size());
         for (Step step : steps) {
-            if (!noChange(step)) closed.add(close(step));
+            if (!noChange(step)) closed.add(named(close(step)));
         }
         return closed;
+    }
+
+    /** Un «Simplificar» recibe el nombre de lo que cambió. */
+    private static Step named(Step step) {
+        if (step.rule() != Rule.SIMPLIFY || !step.substeps().isEmpty()) return step;
+        Rule rule = Simplifications.classify(step.before(), step.after());
+        return rule == Rule.SIMPLIFY ? step : new Step(rule, step.before(), step.after(), step.params(), step.substeps());
     }
 
     /** Un «Simplificar» que no cambia nada a la vista (solo se reescribe {@code + -x} como {@code - x}) no enseña nada. */

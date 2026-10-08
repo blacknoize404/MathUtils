@@ -10,6 +10,18 @@ public enum Rule {
 
     // ---- Generales
     SIMPLIFY(Category.GENERAL),
+    /** El último paso de una resolución que no llega a un resultado: dice por qué (la integral diverge, el límite no existe…). */
+    CONCLUSION_DIVERGES(Category.GENERAL),
+    CONCLUSION_NO_LIMIT(Category.GENERAL),
+    CONCLUSION_NON_ELEMENTAL(Category.GENERAL),
+    CONCLUSION_UNSOLVED(Category.GENERAL),
+    /** Las formas concretas de simplificar: se reconocen al comparar lo de antes con lo de después (véase {@code Simplifications}). */
+    SIMPLIFY_NEUTRAL(Category.GENERAL),
+    SIMPLIFY_SIGNS(Category.GENERAL),
+    SIMPLIFY_FRACTION(Category.GENERAL),
+    SIMPLIFY_COLLECT(Category.GENERAL),
+    SIMPLIFY_NUMBERS(Category.GENERAL),
+    SIMPLIFY_ORDER(Category.GENERAL),
     /** El último subpaso de un paso anidado: devuelve al lector al paso que pedía los subpasos, con su resultado. */
     NEST_RETURN(Category.GENERAL),
     NEST_RETURN_DERIVATIVE(Category.DERIVATIVE),

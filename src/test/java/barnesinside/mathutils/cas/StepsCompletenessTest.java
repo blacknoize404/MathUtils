@@ -30,7 +30,11 @@ class StepsCompletenessTest {
 
     private static void uses(Solution s, Rule... expected) {
         List<Rule> all = rules(s.steps());
-        for (Rule r : expected) assert all.contains(r) : r + " falta en " + all;
+        for (Rule r : expected) {
+            // «Simplificar» recibe el nombre de lo que cambió (SIMPLIFY_…): cualquiera de ellos cuenta
+            boolean found = r == Rule.SIMPLIFY ? all.stream().anyMatch(x -> x.name().startsWith("SIMPLIFY")) : all.contains(r);
+            assert found : r + " falta en " + all;
+        }
     }
 
     private static Solution limit(String f, String point) {
