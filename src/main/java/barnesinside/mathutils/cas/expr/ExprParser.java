@@ -84,6 +84,22 @@ public final class ExprParser {
     }
 
     /**
+     * La expresión tal como se escribió, con los sumandos y los factores en el orden del texto (sin reordenar ni agrupar), para
+     * enseñarla en un enunciado. Es equivalente a la de {@link #parse(String)}; vacío si el texto lleva cálculos anidados o no se puede
+     * leer así.
+     */
+    public static Optional<Expr> parseTyped(String source) {
+        try {
+            if (NestedCalculus.mentions(source)) return Optional.empty();
+            Expr typed = ExpressionParser.parse(FunctionPowers.rewrite(source), new TypedExprBuilder(), true);
+            // Solo si de verdad es la misma expresión: si no, el enunciado enseñaría otra cosa
+            return Equivalence.areEqual(typed, parse(source)) ? Optional.of(typed) : Optional.empty();
+        } catch (RuntimeException unreadable) {
+            return Optional.empty();
+        }
+    }
+
+    /**
      * Como {@link #parse(String)} pero devuelve vacío en vez de lanzar la excepción.
      */
     public static Optional<Expr> tryParse(String source) {
