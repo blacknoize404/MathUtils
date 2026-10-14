@@ -469,10 +469,47 @@ final class Integrator {
 
         Expr parts = Expr.add(terms.get().stream().map(t -> t.toExpr(v)).toList());
         if (parts.equals(f)) return Optional.empty();
+        Expr factoredDenominator = factored.get().toExpr(v);
+        Optional<Expr> setup = partialSetup(factored.get(), v);
         return trace.attempt(Rule.INT_PARTIAL_FRACTIONS, f,
                 params(v, "n", fraction.numerator(), "d", fraction.denominator(),
-                        "factored", factored.get().toExpr(v), "parts", parts),
-                () -> integrate(parts, v, depth + 1));
+                        "factored", factoredDenominator, "parts", parts),
+                () -> {
+                    // Tres pasos de preparación: factorizar, plantear con coeficientes por hallar y resolverlos
+                    if (setup.isPresent()) {
+                        if (!factoredDenominator.equals(fraction.denominator())) {
+                            trace.leaf(Rule.INT_PF_FACTOR, fraction.denominator(), factoredDenominator, params(v, "d", fraction.denominator(), "factored", factoredDenominator));
+                        }
+                        trace.leaf(Rule.INT_PF_SETUP, f, setup.get(), params(v, "setup", setup.get()));
+                        trace.leaf(Rule.INT_PF_SOLVE, setup.get(), parts, params(v, "parts", parts));
+                    }
+                    return integrate(parts, v, depth + 1);
+                });
+    }
+
+    /**
+     * La fracción escrita con coeficientes por hallar: {@code A/(x - 1) + (B x + C)/(x² + 1)}. Cada factor aporta tantas fracciones como su
+     * multiplicidad, con un numerador de un grado menos que su base. Vacío si hacen falta más letras de las que hay.
+     */
+    private static Optional<Expr> partialSetup(Rationals.Factorization factored, String v) {
+        String letters = "ABCDEFGH";
+        List<String> names = new ArrayList<>();
+        for (char c : letters.toCharArray()) if (!String.valueOf(c).equals(v)) names.add(String.valueOf(c));
+        int next = 0;
+        List<Expr> terms = new ArrayList<>();
+        Expr x = Expr.sym(v);
+        for (Rationals.Factor factor : factored.factors()) {
+            for (int k = 1; k <= factor.multiplicity(); k++) {
+                List<Expr> numerator = new ArrayList<>();
+                for (int degree = factor.base().degree() - 1; degree >= 0; degree--) {
+                    if (next >= names.size()) return Optional.empty();
+                    Expr coefficient = Expr.sym(names.get(next++));
+                    numerator.add(degree == 0 ? coefficient : Expr.mul(coefficient, Expr.pow(x, degree)));
+                }
+                terms.add(Expr.div(Expr.add(numerator), Expr.pow(factor.base().toExpr(v), k)));
+            }
+        }
+        return terms.size() < 2 ? Optional.empty() : Optional.of(Expr.add(terms));
     }
 
     /**

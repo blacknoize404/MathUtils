@@ -67,6 +67,8 @@ class RationalIntegralsTest {
     void stepsDescribeTheDecomposition() {
         Solution s = check("1/(x^2-3x+2)", 3, 5);
         assert uses(s, Rule.INT_PARTIAL_FRACTIONS);
+        // La descomposición se cuenta en tres pasos: factorizar, plantear con coeficientes y resolverlos
+        assert uses(s, Rule.INT_PF_FACTOR) && uses(s, Rule.INT_PF_SETUP) && uses(s, Rule.INT_PF_SOLVE);
         s = check("(3x+2)/(x^2+x+1)", -1, 2);
         assert uses(s, Rule.INT_QUADRATIC_SPLIT);
         s = check("1/(x^2+2x+5)", -1, 2);
