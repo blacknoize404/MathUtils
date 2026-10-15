@@ -37,5 +37,6 @@ module barnesinside.mathutils {
     exports barnesinside.mathutils.cas.order;
     exports barnesinside.mathutils.cas.tree;
     exports barnesinside.mathutils.cas.calc;
+    exports barnesinside.mathutils.cas.series;
     exports barnesinside.mathutils.combinatory;
 }

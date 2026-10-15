@@ -149,6 +149,7 @@ public final class StepRenderer {
     private static String statusText(Solution s, Locale locale) {
         String key = "solution.status." + s.status().name();
         if (isDefinite(s) && Messages.has(key + ".INTEGRAL", locale)) key += ".INTEGRAL";
+        if (s.kind() == Solution.Kind.SERIES && Messages.has(key + ".SERIES", locale)) key += ".SERIES";
         return Messages.get(key, locale);
     }
 
@@ -223,6 +224,10 @@ public final class StepRenderer {
                     : (isDefinite(s) ? "∫[" + s.extras().get("lower") + ", " + s.extras().get("upper") + "] " : "∫ ")
                     + s.problem() + " d" + s.variable();
             case EQUATION, INEQUALITY -> String.valueOf(s.statement());
+            case SERIES -> "Σ[" + s.variable() + " = " + s.extras().getOrDefault("lower", Expr.ZERO) + " .. ∞] " + s.problem();
+            case TAYLOR -> "taylor[" + s.problem() + ", " + s.variable() + " = " + s.extras().getOrDefault("a", Expr.ZERO) + "]";
+            case LAURENT -> "laurent[" + s.problem() + ", " + s.variable() + " = " + s.extras().getOrDefault("a", Expr.ZERO) + "]";
+            case FOURIER -> "fourier[" + s.problem() + ", " + s.variable() + " in [" + s.extras().get("lower") + ", " + s.extras().get("upper") + "]]";
             case FACTORIZATION, EXPANSION, REWRITE -> String.valueOf(s.problem());
         };
     }
@@ -279,6 +284,10 @@ public final class StepRenderer {
                     ? "_{" + s.extras().get("lower").toLatex() + "}^{" + s.extras().get("upper").toLatex() + "}" : "")
                     + " " + s.problem().toLatex() + " \\, d" + v;
             case EQUATION, INEQUALITY -> s.statement().toLatex();
+            case SERIES -> "\\sum_{" + v + " = " + s.extras().getOrDefault("lower", Expr.ZERO).toLatex() + "}^{\\infty} " + s.problem().toLatex();
+            case TAYLOR -> "\\mathrm{Taylor}_{" + s.extras().getOrDefault("a", Expr.ZERO).toLatex() + "}\\left[" + s.problem().toLatex() + "\\right]";
+            case LAURENT -> "\\mathrm{Laurent}_{" + s.extras().getOrDefault("a", Expr.ZERO).toLatex() + "}\\left[" + s.problem().toLatex() + "\\right]";
+            case FOURIER -> "\\mathrm{Fourier}\\left[" + s.problem().toLatex() + "\\right]";
             case FACTORIZATION, EXPANSION, REWRITE -> s.problem().toLatex();
         };
     }
