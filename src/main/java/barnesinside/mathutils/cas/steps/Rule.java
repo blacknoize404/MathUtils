@@ -348,13 +348,53 @@ public enum Rule {
     FOURIER_A0(Category.GENERAL),
     FOURIER_AN(Category.GENERAL),
     FOURIER_BN(Category.GENERAL),
-    FOURIER_RESULT(Category.GENERAL);
+    FOURIER_RESULT(Category.GENERAL),
+
+    // ---- Ecuaciones diferenciales
+    ODE_INTEGRAL(Category.ODE),
+    ODE_SEPARATE(Category.ODE),
+    ODE_INTEGRATE_SIDES(Category.ODE),
+    ODE_ISOLATE(Category.ODE),
+    ODE_LINEAR_FORM(Category.ODE),
+    ODE_INTEGRATING_FACTOR(Category.ODE),
+    ODE_MULTIPLY_FACTOR(Category.ODE),
+    ODE_LINEAR_INTEGRATE(Category.ODE),
+    ODE_EXACT_FORM(Category.ODE),
+    ODE_EXACT_TEST(Category.ODE),
+    ODE_NOT_EXACT(Category.ODE),
+    ODE_EXACT_POTENTIAL(Category.ODE),
+    ODE_EXACT_FIND_G(Category.ODE),
+    ODE_EXACT_RESULT(Category.ODE),
+    ODE_EXACT_FACTOR(Category.ODE),
+    ODE_HOMOGENEOUS_TEST(Category.ODE),
+    ODE_HOMOGENEOUS_SUBSTITUTION(Category.ODE),
+    ODE_HOMOGENEOUS_BACK(Category.ODE),
+    ODE_BERNOULLI_FORM(Category.ODE),
+    ODE_BERNOULLI_SUBSTITUTION(Category.ODE),
+    ODE_BERNOULLI_BACK(Category.ODE),
+    ODE_CHAR_EQUATION(Category.ODE),
+    ODE_ROOT_REAL(Category.ODE),
+    ODE_ROOT_REPEATED(Category.ODE),
+    ODE_ROOT_COMPLEX(Category.ODE),
+    ODE_HOMOGENEOUS_SOLUTION(Category.ODE),
+    ODE_WRONSKIAN(Category.ODE),
+    ODE_VARIATION(Category.ODE),
+    ODE_UC_FORM(Category.ODE),
+    ODE_UC_SOLVE(Category.ODE),
+    ODE_GENERAL_SOLUTION(Category.ODE),
+    ODE_REDUCE_ORDER(Category.ODE),
+    ODE_SYSTEM_MATRIX(Category.ODE),
+    ODE_SYSTEM_EIGEN(Category.ODE),
+    ODE_SYSTEM_SOLUTION(Category.ODE),
+    ODE_SOLVE_FOR_DERIVATIVE(Category.ODE),
+    ODE_BRANCH(Category.ODE),
+    ODE_NOT_APPLICABLE(Category.ODE);;
 
     /**
      * Familia de la regla; el renderizador la usa para mostrar la operación
      * ({@code d/dx[...]} para derivadas, {@code ∫ ... dx} para integrales, {@code lim} para límites).
      */
-    public enum Category {GENERAL, DERIVATIVE, LIMIT, INTEGRAL, ALGEBRA}
+    public enum Category {GENERAL, DERIVATIVE, LIMIT, INTEGRAL, ALGEBRA, ODE}
 
     private final Category category;
 

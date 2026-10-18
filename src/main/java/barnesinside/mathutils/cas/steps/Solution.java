@@ -33,7 +33,7 @@ public record Solution(Kind kind, Status status, Expr problem, Expr result, List
      * {@code FACTORIZATION}, {@code EXPANSION} y {@code REWRITE} traen la expresión de partida y el resultado.
      * {@code SERIES} es la convergencia de una serie y {@code TAYLOR}, {@code LAURENT} y {@code FOURIER} sus desarrollos.
      */
-    public enum Kind {DERIVATIVE, LIMIT, INTEGRAL, EQUATION, INEQUALITY, FACTORIZATION, EXPANSION, REWRITE, SERIES, TAYLOR, LAURENT, FOURIER}
+    public enum Kind {DERIVATIVE, LIMIT, INTEGRAL, EQUATION, INEQUALITY, FACTORIZATION, EXPANSION, REWRITE, ODE, SERIES, TAYLOR, LAURENT, FOURIER}
 
     /** Estado final de la resolución. */
     public enum Status {

@@ -97,6 +97,11 @@ public final class Trace {
         return after;
     }
 
+    /** Añade un paso ya construido (por ejemplo, los de otra resolución anidada). */
+    public void add(Step step) {
+        frames.peek().add(step);
+    }
+
     /** Lanza {@link BudgetExceededException} si se agotó el tiempo. */
     public void checkBudget() {
         if (System.nanoTime() > deadlineNanos) throw new BudgetExceededException("Se agotó el tiempo disponible");

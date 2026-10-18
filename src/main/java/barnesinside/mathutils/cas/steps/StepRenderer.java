@@ -46,6 +46,7 @@ public final class StepRenderer {
     private static List<Segment> problemText(Solution s, Locale locale) {
         String base = "solution.kind." + s.kind().name();
         String key = base + (s.order() > 1 ? ".problem.order" : isDefinite(s) ? ".problem.definite" : ".problem");
+        if (s.kind() == Solution.Kind.ODE && s.extras().containsKey("system")) key = base + ".problem.system";
         if (s.kind() == Solution.Kind.LIMIT) {
             Expr direction = s.extras().get("direction");
             if (direction instanceof Expr.Num n && n.value().signum() != 0) {
@@ -224,6 +225,7 @@ public final class StepRenderer {
                     : (isDefinite(s) ? "∫[" + s.extras().get("lower") + ", " + s.extras().get("upper") + "] " : "∫ ")
                     + s.problem() + " d" + s.variable();
             case EQUATION, INEQUALITY -> String.valueOf(s.statement());
+            case ODE -> s.extras().containsKey("system") ? String.valueOf(s.statement().left()) : String.valueOf(s.statement());
             case SERIES -> "Σ[" + s.variable() + " = " + s.extras().getOrDefault("lower", Expr.ZERO) + " .. ∞] " + s.problem();
             case TAYLOR -> "taylor[" + s.problem() + ", " + s.variable() + " = " + s.extras().getOrDefault("a", Expr.ZERO) + "]";
             case LAURENT -> "laurent[" + s.problem() + ", " + s.variable() + " = " + s.extras().getOrDefault("a", Expr.ZERO) + "]";
@@ -284,12 +286,25 @@ public final class StepRenderer {
                     ? "_{" + s.extras().get("lower").toLatex() + "}^{" + s.extras().get("upper").toLatex() + "}" : "")
                     + " " + s.problem().toLatex() + " \\, d" + v;
             case EQUATION, INEQUALITY -> s.statement().toLatex();
+            case ODE -> s.extras().containsKey("system") ? s.statement().left().toString() : s.statement().toLatex();
             case SERIES -> "\\sum_{" + v + " = " + s.extras().getOrDefault("lower", Expr.ZERO).toLatex() + "}^{\\infty} " + s.problem().toLatex();
             case TAYLOR -> "\\mathrm{Taylor}_{" + s.extras().getOrDefault("a", Expr.ZERO).toLatex() + "}\\left[" + s.problem().toLatex() + "\\right]";
             case LAURENT -> "\\mathrm{Laurent}_{" + s.extras().getOrDefault("a", Expr.ZERO).toLatex() + "}\\left[" + s.problem().toLatex() + "\\right]";
             case FOURIER -> "\\mathrm{Fourier}\\left[" + s.problem().toLatex() + "\\right]";
             case FACTORIZATION, EXPANSION, REWRITE -> s.problem().toLatex();
         };
+    }
+
+    /** La solución de una ecuación diferencial: una igualdad por cada solución ({@code lhs1 = rhs1}, {@code lhs2 = rhs2}…). */
+    private static String odeResult(Solution s, boolean latex) {
+        int count = s.extras().get("count") instanceof Expr.Num n ? n.value().intValueExact() : 0;
+        List<String> parts = new java.util.ArrayList<>();
+        for (int i = 1; i <= count; i++) {
+            Expr l = s.extras().get("lhs" + i);
+            Expr r = s.extras().get("rhs" + i);
+            parts.add(latex ? l.toLatex() + " = " + r.toLatex() : l + " = " + r);
+        }
+        return String.join(latex ? ",\\; " : ", ", parts);
     }
 
     private static String resultSuffixLatex(Solution s) {
@@ -343,6 +358,8 @@ public final class StepRenderer {
         if (s.isSolved() && s.answer() != null) {
             sb.append(Messages.get("solution.result", locale)).append(": ")
                     .append(s.variable()).append(" ∈ ").append(s.answer()).append('\n');
+        } else if (s.isSolved() && s.kind() == Solution.Kind.ODE) {
+            sb.append(Messages.get("solution.result", locale)).append(": ").append(odeResult(s, false)).append('\n');
         } else if (s.isSolved()) {
             sb.append(Messages.get("solution.result", locale)).append(": ")
                     .append(resultOperationPlain(s))
@@ -392,6 +409,8 @@ public final class StepRenderer {
         sb.append("## ").append(Messages.get("solution.result", locale)).append("\n\n");
         if (s.isSolved() && s.answer() != null) {
             sb.append("$$").append(Expr.sym(s.variable()).toLatex()).append(" \\in ").append(s.answer().toLatex()).append("$$\n");
+        } else if (s.isSolved() && s.kind() == Solution.Kind.ODE) {
+            sb.append("$$").append(odeResult(s, true)).append("$$\n");
         } else if (s.isSolved()) {
             sb.append("$$").append(resultOperationLatex(s))
                     .append(" = ").append(s.result().toLatex()).append(resultSuffixLatex(s)).append("$$\n");
@@ -445,6 +464,9 @@ public final class StepRenderer {
         if (s.isSolved() && s.answer() != null) {
             sb.append("\\textbf{").append(escapeLatex(Messages.get("solution.result", locale))).append("}\n\\[")
                     .append(Expr.sym(s.variable()).toLatex()).append(" \\in ").append(s.answer().toLatex()).append("\\]\n");
+        } else if (s.isSolved() && s.kind() == Solution.Kind.ODE) {
+            sb.append("\\textbf{").append(escapeLatex(Messages.get("solution.result", locale))).append("}\n\\[")
+                    .append(odeResult(s, true)).append("\\]\n");
         } else if (s.isSolved()) {
             sb.append("\\textbf{").append(escapeLatex(Messages.get("solution.result", locale))).append("}\n\\[")
                     .append(resultOperationLatex(s))
