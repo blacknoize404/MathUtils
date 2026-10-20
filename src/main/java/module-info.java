@@ -35,6 +35,7 @@ module barnesinside.mathutils {
     exports barnesinside.mathutils.cas.diff;
     exports barnesinside.mathutils.cas.syntax;
     exports barnesinside.mathutils.cas.order;
+    exports barnesinside.mathutils.cas.ode;
     exports barnesinside.mathutils.cas.tree;
     exports barnesinside.mathutils.cas.calc;
     exports barnesinside.mathutils.cas.series;
