@@ -55,7 +55,7 @@ public final class Convergence {
     /** Estudia {@code Σ_{variable = start}^{∞} term}. {@code start} tiene que ser un entero. */
     public static Solution test(Expr term, String variable, Expr start) {
         double first = Eval.value(start);
-        if (Double.isNaN(first) || first != Math.rint(first)) throw new IllegalArgumentException("El primer índice tiene que ser un entero");
+        if (Double.isNaN(first) || Double.isInfinite(first) || first != Math.rint(first)) throw new IllegalArgumentException("El primer índice tiene que ser un entero");
         return new Run(term, variable, start, (int) first).solve();
     }
 

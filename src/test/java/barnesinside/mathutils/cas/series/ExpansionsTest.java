@@ -115,6 +115,27 @@ class ExpansionsTest {
     }
 
     @Test
+    void anInfinitePointOrIndexIsRejected() {
+        int failures = 0;
+        try {
+            Expansions.taylor("exp(x)", "x", "oo", 3);
+        } catch (IllegalArgumentException expected) {
+            failures++;
+        }
+        try {
+            Expansions.laurent("1/x", "x", "oo", 3);
+        } catch (IllegalArgumentException expected) {
+            failures++;
+        }
+        try {
+            Convergence.test("1/n", "n", "oo");
+        } catch (IllegalArgumentException expected) {
+            failures++;
+        }
+        assert failures == 3 : failures;
+    }
+
+    @Test
     void anEmptyIntervalIsRejected() {
         boolean failed = false;
         try {

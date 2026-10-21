@@ -72,6 +72,7 @@ public final class Expansions {
      */
     public static Expansion taylor(Expr f, String variable, Expr point, int degree) {
         check(degree);
+        checkPoint(point);
         Expr x = Expr.sym(variable);
         List<Step> steps = new ArrayList<>();
         steps.add(info(Rule.TAYLOR_FORMULA, f, null, "f", f, "x", x, "a", point, "N", Expr.num(degree)));
@@ -261,6 +262,7 @@ public final class Expansions {
      */
     public static Expansion laurent(Expr f, String variable, Expr point, int degree) {
         check(degree);
+        checkPoint(point);
         Expr x = Expr.sym(variable);
         List<Step> steps = new ArrayList<>();
         steps.add(info(Rule.LAURENT_FORMULA, f, null, "f", f, "x", x, "a", point, "N", Expr.num(degree)));
@@ -493,6 +495,11 @@ public final class Expansions {
     }
 
     // ================================================================ Común
+
+    private static void checkPoint(Expr point) {
+        double v = Eval.value(point);
+        if (Double.isNaN(v) || Double.isInfinite(v)) throw new IllegalArgumentException("El punto del desarrollo tiene que ser un número finito");
+    }
 
     private static void check(int terms) {
         if (terms < 0 || terms > MAX_TERMS) throw new IllegalArgumentException("El número de términos tiene que estar entre 0 y " + MAX_TERMS);
