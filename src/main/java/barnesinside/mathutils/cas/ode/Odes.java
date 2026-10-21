@@ -94,6 +94,16 @@ public final class Odes {
 
     // ================================================================ API
 
+    /** La función incógnita de la ecuación: la letra que lleva tilde ({@code y} en {@code y' = x}). */
+    public static String dependent(Relation ode) {
+        return dependentOf(ode);
+    }
+
+    /** La variable independiente: {@code x}, o {@code t} si la ecuación no tiene {@code x} pero sí {@code t}. */
+    public static String independent(Relation ode, String dependent) {
+        return independentOf(ode, dependent);
+    }
+
     public static Solution solve(String text) {
         return solve(text, OdeMethod.AUTO);
     }
