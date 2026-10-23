@@ -298,7 +298,35 @@ public enum Rule {
     POLY_MULTINOMIAL(Category.ALGEBRA),
     POLY_COLLECT(Category.ALGEBRA),
     POLY_RESULT(Category.ALGEBRA),
-    POLY_REWRITE(Category.ALGEBRA);
+    POLY_REWRITE(Category.ALGEBRA),
+
+    // ---- Ecuaciones en derivadas parciales de primer orden, por el método de las características
+    PDE_CHARACTERISTICS(Category.ALGEBRA),
+    PDE_ZERO_RATE(Category.ALGEBRA),
+    PDE_PAIR(Category.ALGEBRA),
+    PDE_SEPARABLE(Category.ALGEBRA),
+    PDE_LINEAR(Category.ALGEBRA),
+    PDE_EXPONENTIATE(Category.ALGEBRA),
+    PDE_FIRST_INTEGRAL(Category.ALGEBRA),
+    PDE_ELIMINATE(Category.ALGEBRA),
+    PDE_SUBSTITUTE(Category.ALGEBRA),
+    PDE_BACK_SUBSTITUTE(Category.ALGEBRA),
+    PDE_CHECK(Category.ALGEBRA),
+    PDE_GENERAL(Category.ALGEBRA),
+    PDE_EXPLICIT(Category.ALGEBRA),
+    PDE_DATA(Category.ALGEBRA),
+    PDE_TRANSVERSALITY(Category.ALGEBRA),
+    PDE_ON_CURVE(Category.ALGEBRA),
+    PDE_ELIMINATE_PARAMETER(Category.ALGEBRA),
+    PDE_PARTICULAR(Category.ALGEBRA),
+    PDE_PARTICULAR_EXPLICIT(Category.ALGEBRA),
+    /** Los motivos por los que no se sabe resolver: el último paso de una resolución sin resultado. */
+    PDE_NO_PAIR(Category.ALGEBRA),
+    PDE_NOT_SOLVABLE(Category.ALGEBRA),
+    PDE_CANNOT_ISOLATE(Category.ALGEBRA),
+    PDE_DEGENERATE(Category.ALGEBRA),
+    PDE_DATA_CHARACTERISTIC(Category.ALGEBRA),
+    PDE_BRANCH(Category.ALGEBRA);
 
     /**
      * Familia de la regla; el renderizador la usa para mostrar la operación
