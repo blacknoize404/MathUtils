@@ -151,10 +151,10 @@ final class EquationSolver {
     private SolutionSet squareRoot(Rational a, Rational c) {
         Expr x2 = Expr.pow(x, 2);
         if (!c.isZero()) {
-            rec.rel(Rule.ALG_ADD_TO_BOTH, new Relation(Expr.mul(Expr.num(a), x2), Op.EQ, Expr.num(c.negate())), "t", Expr.num(c.negate()));
+            Linear.addToBoth(rec, new Relation(Expr.mul(Expr.num(a), x2), Op.EQ, Expr.num(c.negate())), c.negate(), null);
         }
         Rational k = c.negate().divide(a);
-        if (!a.isOne()) rec.rel(Rule.ALG_DIVIDE_BOTH, new Relation(x2, Op.EQ, Expr.num(k)), "t", Expr.num(a));
+        Linear.divideBoth(rec, new Relation(x2, Op.EQ, Expr.num(k)), a);
         if (k.signum() < 0) {
             rec.rel(Rule.ALG_CONTRADICTION, new Relation(x2, Op.EQ, Expr.num(k)), "x", x);
             return SolutionSet.empty();
@@ -195,14 +195,12 @@ final class EquationSolver {
     private SolutionSet completeSquare(Rational a, Rational b, Rational c) {
         Expr x2 = Expr.pow(x, 2);
         if (!c.isZero()) {
-            rec.rel(Rule.ALG_ADD_TO_BOTH, new Relation(Expr.add(Expr.mul(Expr.num(a), x2), Expr.mul(Expr.num(b), x)), Op.EQ,
-                    Expr.num(c.negate())), "t", Expr.num(c.negate()));
+            Linear.addToBoth(rec, new Relation(Expr.add(Expr.mul(Expr.num(a), x2), Expr.mul(Expr.num(b), x)), Op.EQ,
+                    Expr.num(c.negate())), c.negate(), null);
         }
         Rational bb = b.divide(a);
         Rational cc = c.negate().divide(a);
-        if (!a.isOne()) {
-            rec.rel(Rule.ALG_DIVIDE_BOTH, new Relation(Expr.add(x2, Expr.mul(Expr.num(bb), x)), Op.EQ, Expr.num(cc)), "t", Expr.num(a));
-        }
+        Linear.divideBoth(rec, new Relation(Expr.add(x2, Expr.mul(Expr.num(bb), x)), Op.EQ, Expr.num(cc)), a);
         Rational k = bb.divide(Rational.of(2)).multiply(bb.divide(Rational.of(2)));
         Rational right = cc.add(k);
         rec.rel(Rule.ALG_COMPLETE_SQUARE, new Relation(Expr.add(x2, Expr.mul(Expr.num(bb), x), Expr.num(k)), Op.EQ, Expr.num(right)),

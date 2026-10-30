@@ -41,6 +41,26 @@ final class Linear {
         };
     }
 
+    /**
+     * Suma {@code amount} (por {@code x} si no es {@code null}) a los dos lados; si es negativo, el paso dice que se resta su valor absoluto
+     * («Restamos 3», no «Sumamos -3»).
+     */
+    static void addToBoth(Rec rec, Relation result, Rational amount, Expr x) {
+        Rational shown = amount.signum() < 0 ? amount.negate() : amount;
+        Expr term = x == null ? Expr.num(shown) : Expr.mul(Expr.num(shown), x);
+        rec.rel(amount.signum() < 0 ? Rule.ALG_SUBTRACT_FROM_BOTH : Rule.ALG_ADD_TO_BOTH, result, "t", term);
+    }
+
+    /**
+     * Pasa a la incógnita sola dividiendo los dos lados entre {@code factor}; si es una fracción ({@code 1/3}) se dice que se multiplica por su
+     * inverso («multiplicamos por 3», no «dividimos entre 1/3»).
+     */
+    static void divideBoth(Rec rec, Relation result, Rational factor) {
+        if (factor.isOne()) return;
+        if (!factor.isInteger()) rec.rel(Rule.ALG_MULTIPLY_BOTH, result, "t", Expr.num(Rational.ONE.divide(factor)));
+        else rec.rel(Rule.ALG_DIVIDE_BOTH, result, "t", Expr.num(factor));
+    }
+
     /** Resuelve la relación (que debe cumplir {@link #applies}) registrando los pasos. */
     static SolutionSet solve(Rec rec, Relation r, String v) {
         Expr x = Expr.sym(v);
@@ -60,16 +80,15 @@ final class Linear {
 
         // La incógnita, a la izquierda
         if (!a2.isZero()) {
-            Expr t = Expr.mul(Expr.num(a2.negate()), x);
             a1 = a1.subtract(a2);
             current = new Relation(Expr.add(Expr.mul(Expr.num(a1), x), Expr.num(b1)), op, Expr.num(b2));
-            rec.rel(Rule.ALG_ADD_TO_BOTH, current, "t", t);
+            addToBoth(rec, current, a2.negate(), x);
         }
         // Los números, a la derecha
         if (!b1.isZero()) {
             b2 = b2.subtract(b1);
             current = new Relation(Expr.mul(Expr.num(a1), x), op, Expr.num(b2));
-            rec.rel(Rule.ALG_ADD_TO_BOTH, current, "t", Expr.num(b1.negate()));
+            addToBoth(rec, current, b1.negate(), null);
         }
 
         if (a1.isZero()) {
@@ -86,7 +105,8 @@ final class Linear {
             Op divided = negative && op.isInequality() ? op.swapped() : op;
             Rule rule = negative && op.isInequality() ? Rule.ALG_DIVIDE_BOTH_NEGATIVE : Rule.ALG_DIVIDE_BOTH;
             current = new Relation(x, divided, Expr.num(b2.divide(a1)));
-            rec.rel(rule, current, "t", Expr.num(a1));
+            if (rule == Rule.ALG_DIVIDE_BOTH) divideBoth(rec, current, a1);
+            else rec.rel(rule, current, "t", Expr.num(a1));
             op = divided;
         }
         return setFor(op, Expr.num(b2.divide(a1)));

@@ -48,7 +48,23 @@ class EquationsTest {
         assertAnswer("{-1}", solve("-3x = 3"));
         assertAnswer("{3/2}", solve("2(x + 1) = 5"));
         Solution s = solve("2x + 3 = 11");
-        assert uses(s, Rule.ALG_ADD_TO_BOTH) && uses(s, Rule.ALG_DIVIDE_BOTH);
+        // Se resta 3 (no «se suma −3») y se divide entre 2
+        assert uses(s, Rule.ALG_SUBTRACT_FROM_BOTH) && uses(s, Rule.ALG_DIVIDE_BOTH) && !uses(s, Rule.ALG_ADD_TO_BOTH);
+    }
+
+    @Test
+    void theStepsSaySubtractAndMultiplyInsteadOfAddingNegativesAndDividingByFractions() {
+        // x/3 + 1 = 4: se resta 1 y se multiplica por 3, no «se divide entre 1/3»
+        Solution fraction = solve("x/3 + 1 = 4");
+        assert uses(fraction, Rule.ALG_SUBTRACT_FROM_BOTH) && uses(fraction, Rule.ALG_MULTIPLY_BOTH) && !uses(fraction, Rule.ALG_DIVIDE_BOTH) : fraction.steps();
+        // 5 − x = 2: se resta 5 y se divide entre −1
+        Solution negative = solve("5 - x = 2");
+        assert uses(negative, Rule.ALG_SUBTRACT_FROM_BOTH) && uses(negative, Rule.ALG_DIVIDE_BOTH);
+        // 3x − 5 = 2x + 7: se resta 2x y se suma 5 (aquí sí suma)
+        Solution both = solve("3x - 5 = 2x + 7");
+        assert uses(both, Rule.ALG_SUBTRACT_FROM_BOTH) && uses(both, Rule.ALG_ADD_TO_BOTH);
+        assertAnswer("{3}", solve("x/3 + 1 = 2"));
+        assertAnswer("{9}", fraction);
     }
 
     @Test
