@@ -1,6 +1,6 @@
 # El proyecto compila para Java 27, que JitPack aún no trae entre sus «jdk»: se instala con SDKMAN
 before_install:
-  - sdk install java 27-open
-  - sdk use java 27-open
+  - sdk install java 27.0.0.0+35-tem
+  - sdk use java 27.0.0.0+35-tem
 install:
   - mvn -B -DskipTests -Dmaven.javadoc.skip=true install
