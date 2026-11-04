@@ -125,7 +125,7 @@ public final class Derivative {
     }
 
     private static MathElement first(List<MathElement> l) {
-        return l.get(0);
+        return l.getFirst();
     }
 
     private static MathElement second(List<MathElement> l) {
@@ -149,7 +149,7 @@ public final class Derivative {
 
     /** (u/v)' = (u'v − uv') / v², aplicado de izquierda a derecha para divisiones encadenadas. */
     private static MathElement quotientRule(List<MathElement> elements, String v) {
-        MathElement u = elements.get(0);
+        MathElement u = elements.getFirst();
         MathElement du = differentiate(u, v);
 
         for (MathElement divisor : elements.subList(1, elements.size())) {
@@ -192,7 +192,7 @@ public final class Derivative {
     }
 
     private static MathElement multiply(List<MathElement> factors) {
-        if (factors.size() == 1) return factors.get(0);
+        if (factors.size() == 1) return factors.getFirst();
         return new MultOperator(first(factors), second(factors), rest(factors));
     }
 

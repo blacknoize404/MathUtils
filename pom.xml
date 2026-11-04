@@ -9,7 +9,7 @@
     <version>0.10.2</version>
     <packaging>jar</packaging>
 
-    <name>BI.MathUtils</name>
+    <name>MathUtils</name>
     <description>Librería de matemáticas simbólicas y numéricas con soluciones paso a paso.</description>
 
     <licenses>

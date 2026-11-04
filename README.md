@@ -21,7 +21,7 @@ Plain Java evaluates math eagerly. You pass values in and get a number out, so t
 You build formulas by chaining methods on the `Function` class, so there are no strings to get wrong.
 ```java
 Var x = new Var("x");
-Function f = new Function(x).sin().pow(2).mult(3).add(new Cos(x)); // 3·sin²(x) + cos(x)
+Function f = new Function<>(x).sin().pow(2).mult(3).add(new Cos(x)); // 3·sin²(x) + cos(x)
 double y = f.eval(new Evaluation("x", Math.PI)); // → 3·0 + (-1) = -1
 ```
 - **Lazy evaluation with variable substitution:** values are computed on demand from the immutable `Evaluation` record.
@@ -125,7 +125,7 @@ i.render(Locale.ENGLISH, Format.LATEX);
 
 ### Using it from another project
 
-The library is published through [JitPack](https://jitpack.io/#blacknoize404/BI.MathUtils) from each release tag:
+The library is published through [JitPack](https://jitpack.io/#blacknoize404/MathUtils) from each release tag:
 
 ```xml
 <repositories>
@@ -137,7 +137,7 @@ The library is published through [JitPack](https://jitpack.io/#blacknoize404/BI.
 
 <dependency>
   <groupId>com.github.blacknoize404</groupId>
-  <artifactId>BI.MathUtils</artifactId>
+  <artifactId>MathUtils</artifactId>
   <version>v0.8.2</version>
 </dependency>
 ```
