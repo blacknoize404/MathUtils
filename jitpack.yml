@@ -1,10 +1,4 @@
-# El proyecto compila para Java 27, que JitPack aún no trae entre sus «jdk»: se instala con SDKMAN.
-# La clave jdk se deja aunque no sea la 27: es lo que hace que las etiquetas se construyan en la imagen «latest» (sin ella, en la antigua,
-# con Java 8, donde SDKMAN no consigue descargar).
 jdk:
-  - openjdk25
-before_install:
-  - for i in 1 2 3 4; do sdk install java 27.0.0.0+35-tem && break; sleep 15; done
-  - sdk use java 27.0.0.0+35-tem
+  - openjdk21
 install:
   - mvn -B -DskipTests -Dmaven.javadoc.skip=true install

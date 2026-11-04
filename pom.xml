@@ -6,7 +6,7 @@
 
     <groupId>io.github.blacknoize404</groupId>
     <artifactId>mathutils-core</artifactId>
-    <version>0.10.2</version>
+    <version>0.10.3</version>
     <packaging>jar</packaging>
 
     <name>MathUtils</name>
@@ -21,7 +21,7 @@
     </licenses>
 
     <properties>
-        <maven.compiler.release>27</maven.compiler.release>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.11.0</junit.version>
     </properties>
