@@ -417,7 +417,39 @@ public enum Rule {
     PDE_CANNOT_ISOLATE(Category.ALGEBRA),
     PDE_DEGENERATE(Category.ALGEBRA),
     PDE_DATA_CHARACTERISTIC(Category.ALGEBRA),
-    PDE_BRANCH(Category.ALGEBRA);
+        PDE_BRANCH(Category.ALGEBRA),
+
+    // ---- Métodos de conteo (combinatoria)
+    /** El método elegido: su nombre es el título y el texto dice cuándo se usa y cuál es la fórmula. */
+    COUNT_SUM(Category.GENERAL),
+    COUNT_PRODUCT(Category.GENERAL),
+    COUNT_PERMUTATION(Category.GENERAL),
+    COUNT_VARIATION(Category.GENERAL),
+    COUNT_VARIATION_REP(Category.GENERAL),
+    COUNT_COMBINATION(Category.GENERAL),
+    COUNT_COMBINATION_REP(Category.GENERAL),
+    COUNT_MULTINOMIAL(Category.GENERAL),
+    COUNT_CIRCULAR(Category.GENERAL),
+    COUNT_NECKLACE(Category.GENERAL),
+    COUNT_BINOMIAL(Category.GENERAL),
+    COUNT_BINOMIAL_EXPAND(Category.GENERAL),
+    COUNT_INCLUSION(Category.GENERAL),
+    COUNT_DERANGEMENT(Category.GENERAL),
+    COUNT_CATALAN(Category.GENERAL),
+    COUNT_STIRLING(Category.GENERAL),
+    COUNT_PARTITIONS(Category.GENERAL),
+    /** Los pasos de cálculo que comparten los métodos. */
+    COUNT_SUBSTITUTE(Category.GENERAL),
+    COUNT_REDUCE(Category.GENERAL),
+    COUNT_EXPAND_PRODUCT(Category.GENERAL),
+    COUNT_CANCEL(Category.GENERAL),
+    COUNT_MULTIPLY(Category.GENERAL),
+    COUNT_DIVIDE(Category.GENERAL),
+    COUNT_TERMS(Category.GENERAL),
+    COUNT_LEVEL(Category.GENERAL),
+    COUNT_COEFFICIENT(Category.GENERAL),
+    COUNT_COMPUTE(Category.GENERAL),
+    COUNT_RESULT(Category.GENERAL);
 
     /**
      * Familia de la regla; el renderizador la usa para mostrar la operación

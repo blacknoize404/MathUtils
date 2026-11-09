@@ -231,7 +231,7 @@ public final class StepRenderer {
             case LAURENT -> "laurent[" + s.problem() + ", " + s.variable() + " = " + s.extras().getOrDefault("a", Expr.ZERO) + "]";
             case FOURIER -> "fourier[" + s.problem() + ", " + s.variable() + " in [" + s.extras().get("lower") + ", " + s.extras().get("upper") + "]]";
             case PDE -> String.valueOf(s.extras().get("l"));
-            case FACTORIZATION, EXPANSION, REWRITE -> String.valueOf(s.problem());
+            case FACTORIZATION, EXPANSION, REWRITE, COUNTING -> String.valueOf(s.problem());
         };
     }
 
@@ -293,7 +293,7 @@ public final class StepRenderer {
             case LAURENT -> "\\mathrm{Laurent}_{" + s.extras().getOrDefault("a", Expr.ZERO).toLatex() + "}\\left[" + s.problem().toLatex() + "\\right]";
             case FOURIER -> "\\mathrm{Fourier}\\left[" + s.problem().toLatex() + "\\right]";
             case PDE -> s.extras().get("l").toLatex();
-            case FACTORIZATION, EXPANSION, REWRITE -> s.problem().toLatex();
+            case FACTORIZATION, EXPANSION, REWRITE, COUNTING -> s.problem().toLatex();
         };
     }
 
