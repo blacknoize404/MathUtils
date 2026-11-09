@@ -105,6 +105,57 @@ public final class ExactMatrix {
         return new ExactMatrix(out, rows, other.cols);
     }
 
+    /** La matriz identidad de {@code n}×{@code n}. */
+    public static ExactMatrix identity(int n) {
+        if (n < 1) throw new IllegalArgumentException("El tamaño tiene que ser positivo");
+        Expr[][] out = new Expr[n][n];
+        for (int i = 0; i < n; i++) for (int j = 0; j < n; j++) out[i][j] = i == j ? Expr.ONE : Expr.ZERO;
+        return new ExactMatrix(out, n, n);
+    }
+
+    /** Esta matriz con las columnas de {@code other} a su derecha (la matriz ampliada {@code [A | B]}). */
+    public ExactMatrix augment(ExactMatrix other) {
+        if (rows != other.rows) throw new IllegalArgumentException("Las dos matrices necesitan las mismas filas");
+        Expr[][] out = new Expr[rows][cols + other.cols];
+        for (int i = 0; i < rows; i++) {
+            System.arraycopy(cells[i], 0, out[i], 0, cols);
+            System.arraycopy(other.cells[i], 0, out[i], cols, other.cols);
+        }
+        return new ExactMatrix(out, rows, cols + other.cols);
+    }
+
+    /** Las columnas desde {@code from} (incluida) hasta {@code to} (excluida). */
+    public ExactMatrix columns(int from, int to) {
+        if (from < 0 || to > cols || from >= to) throw new IllegalArgumentException("Columnas fuera de rango");
+        Expr[][] out = new Expr[rows][to - from];
+        for (int i = 0; i < rows; i++) System.arraycopy(cells[i], from, out[i], 0, to - from);
+        return new ExactMatrix(out, rows, to - from);
+    }
+
+    /**
+     * La reducción por filas de {@code [A | I]}: si {@code A} es invertible, a la derecha queda su inversa y los pasos enseñan cómo se llega.
+     * {@code null} si no es cuadrada o no es invertible.
+     */
+    public RowReduction.Result inversion() {
+        if (!isSquare()) return null;
+        RowReduction.Result result = RowReduction.reduce(augment(identity(rows)));
+        for (int i = 0; i < rows; i++) if (result.pivots().size() <= i || result.pivots().get(i) != i) return null;
+        return result;
+    }
+
+    /** La inversa, o {@code null} si no es cuadrada o no es invertible. */
+    public ExactMatrix inverse() {
+        RowReduction.Result result = inversion();
+        return result == null ? null : result.reduced().columns(cols, 2 * cols);
+    }
+
+    /** Si las dos matrices son iguales: entrada a entrada, con el mismo criterio de cero que la reducción (exacto o dentro de la precisión). */
+    public boolean sameAs(ExactMatrix other) {
+        if (other.rows != rows || other.cols != cols) return false;
+        for (int i = 0; i < rows; i++) for (int j = 0; j < cols; j++) if (!isZero(Expr.sub(cells[i][j], other.cells[i][j]))) return false;
+        return true;
+    }
+
     /** Una copia con la fila {@code row} cambiada. */
     ExactMatrix withRow(int row, List<Expr> values) {
         Expr[][] out = new Expr[rows][];
