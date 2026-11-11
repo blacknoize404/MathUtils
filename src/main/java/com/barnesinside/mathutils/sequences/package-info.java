@@ -1,0 +1,1 @@
+package com.barnesinside.mathutils.sequences;

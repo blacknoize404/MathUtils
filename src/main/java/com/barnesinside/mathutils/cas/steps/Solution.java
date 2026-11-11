@@ -1,0 +1,90 @@
+package com.barnesinside.mathutils.cas.steps;
+
+import com.barnesinside.mathutils.cas.expr.Expr;
+import com.barnesinside.mathutils.cas.expr.Relation;
+import com.barnesinside.mathutils.cas.expr.SolutionSet;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+/**
+ * Resultado de resolver un problema paso a paso.
+ *
+ * @param kind     tipo de problema
+ * @param status   si se resolvió o por qué no
+ * @param problem  expresión del problema (la función que se deriva, el integrando, la función de un límite)
+ * @param result   resultado, o {@code null} si el estado no es {@link Status#SOLVED}
+ * @param steps    árbol de pasos de la resolución
+ * @param variable variable respecto a la que se opera
+ * @param order    orden de la derivada (1 para el resto de problemas)
+ * @param extras   datos propios del tipo de problema: {@code a} (punto de un límite) y
+ *                 {@code direction} (1 por la derecha, -1 por la izquierda, 0 por ambos lados)
+ * @param statement la ecuación o inecuación que se resuelve, o {@code null} en los demás problemas
+ * @param answer   conjunto de soluciones de una ecuación o inecuación, o {@code null} en los demás problemas
+ */
+public record Solution(Kind kind, Status status, Expr problem, Expr result, List<Step> steps, String variable,
+                       int order, Map<String, Expr> extras, Relation statement, SolutionSet answer) {
+
+    /**
+     * Tipo de problema. {@code EQUATION} e {@code INEQUALITY} traen el enunciado y el conjunto de soluciones;
+     * {@code FACTORIZATION}, {@code EXPANSION} y {@code REWRITE} traen la expresión de partida y el resultado.
+     * {@code COUNTING} es un problema de conteo (combinatoria); {@code problem} es su enunciado escrito y {@code result} el número de casos. {@code SERIES} es la convergencia de una serie y {@code TAYLOR}, {@code LAURENT} y {@code FOURIER} sus desarrollos.
+     */
+    public enum Kind {DERIVATIVE, LIMIT, INTEGRAL, EQUATION, INEQUALITY, FACTORIZATION, EXPANSION, REWRITE, ODE, SERIES, TAYLOR, LAURENT, FOURIER, PDE, COUNTING}
+
+    /** Estado final de la resolución. */
+    public enum Status {
+        /** Se obtuvo un resultado verificado. */
+        SOLVED,
+        /** El resultado existe pero no se puede escribir con funciones elementales. */
+        NON_ELEMENTAL,
+        /** El límite no existe (por ejemplo, los límites laterales son distintos). */
+        DOES_NOT_EXIST,
+        /** El motor no supo resolverlo (nunca devuelve un resultado dudoso). */
+        UNSOLVED
+    }
+
+    public Solution {
+        // Los pasos que se anidan terminan con un subpaso que vuelve al paso que los pedía
+        steps = status == Status.SOLVED ? List.copyOf(Closing.nested(steps)) : List.copyOf(steps);
+        extras = Collections.unmodifiableMap(new LinkedHashMap<>(extras));
+    }
+
+    public Solution(Kind kind, Status status, Expr problem, Expr result, List<Step> steps, String variable,
+                    int order, Map<String, Expr> extras) {
+        this(kind, status, problem, result, steps, variable, order, extras, null, null);
+    }
+
+    public Solution(Kind kind, Status status, Expr problem, Expr result, List<Step> steps, String variable,
+                    int order) {
+        this(kind, status, problem, result, steps, variable, order, Map.of(), null, null);
+    }
+
+    /**
+     * La misma resolución con unos pasos delante (por ejemplo, los de las integrales que llevaba escritas la expresión y que se
+     * resolvieron antes). Sin pasos, devuelve la misma.
+     */
+    public Solution withPrelude(List<Step> prelude) {
+        if (prelude == null || prelude.isEmpty()) return this;
+        List<Step> all = new java.util.ArrayList<>(prelude);
+        all.addAll(steps);
+        return new Solution(kind, status, problem, result, all, variable, order, extras, statement, answer);
+    }
+
+    public boolean isSolved() {
+        return status == Status.SOLVED;
+    }
+
+    /** Renderiza la resolución completa (enunciado, pasos y resultado). */
+    public String render(Locale locale, Format format) {
+        return StepRenderer.render(this, locale, format);
+    }
+
+    @Override
+    public String toString() {
+        return render(Locale.forLanguageTag("es"), Format.PLAIN);
+    }
+}

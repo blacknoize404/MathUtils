@@ -1,2 +1,0 @@
-
-package barnesinside.mathutils.series;

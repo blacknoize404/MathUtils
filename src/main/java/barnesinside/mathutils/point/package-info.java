@@ -1,1 +1,0 @@
-package barnesinside.mathutils.point;
