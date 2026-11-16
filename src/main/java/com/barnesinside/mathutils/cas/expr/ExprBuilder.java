@@ -18,10 +18,11 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
     private static final Set<Fn> INVERSE_TRIGONOMETRIC = Set.of(Fn.ASIN, Fn.ACOS, Fn.ATAN);
     /** Siglas de conteo tal y como se escriben en los libros; solo mayúsculas: {@code c}, {@code v} o {@code p} siguen siendo variables. */
     private static final Set<String> COUNTING_SIGLAS = Set.of("C", "P", "V", "M", "VR", "PR", "CR", "PC");
-    /** Los mismos cálculos con nombre en palabra (insensibles a mayúsculas, como el resto de funciones). */
+    /** Los mismos cálculos con nombre en palabra (insensibles a mayúsculas, como el resto de funciones);
+     *  {@code var} se deja fuera a propósito: es el nombre habitual de la varianza. */
     private static final Set<String> COUNTING_NAMES = Set.of(
             "comb", "choose", "binom", "binomial", "perm", "permutation",
-            "var", "arr", "varr", "permr", "multinom", "combr", "circ", "circular", "cat", "catalan",
+            "arr", "varr", "permr", "multinom", "combr", "circ", "circular", "cat", "catalan",
             "vr", "pr", "cr", "pc");
 
     private final Map<String, UserFunction> userFunctions;
@@ -163,7 +164,7 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
                 expect(name, args, 2);
                 yield Expr.div(fact(args.get(0)), fact(Expr.sub(args.get(0), args.get(1))));
             }
-            case "V", "var", "arr" -> {
+            case "V", "arr" -> {
                 expect(name, args, 2);
                 yield Expr.div(fact(args.get(0)), fact(Expr.sub(args.get(0), args.get(1))));
             }

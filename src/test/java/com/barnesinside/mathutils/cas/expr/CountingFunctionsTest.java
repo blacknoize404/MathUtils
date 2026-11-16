@@ -29,7 +29,7 @@ class CountingFunctionsTest {
         assert parse("comb(10, 2)").equals(Expr.num(45));
         assert parse("choose(10, 2)").equals(Expr.num(45)) && parse("binom(10, 2)").equals(Expr.num(45));
         assert parse("perm(10, 4)").equals(Expr.num(5040)) && parse("permutation(10, 4)").equals(Expr.num(5040));
-        assert parse("var(10, 4)").equals(Expr.num(5040)) && parse("arr(10, 4)").equals(Expr.num(5040));
+        assert parse("arr(10, 4)").equals(Expr.num(5040)) : "var queda para la varianza, arr sí son variaciones";
         assert parse("varr(10, 4)").equals(Expr.num(10000)) && parse("vr(10, 4)").equals(Expr.num(10000));
         assert parse("combr(4, 3)").equals(Expr.num(20)) && parse("cr(4, 3)").equals(Expr.num(20));
         assert parse("circ(5)").equals(Expr.num(24)) && parse("pc(5)").equals(Expr.num(24));
