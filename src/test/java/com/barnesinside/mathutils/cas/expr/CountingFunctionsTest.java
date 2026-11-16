@@ -72,6 +72,22 @@ class CountingFunctionsTest {
     }
 
     @Test
+    void aDeclaredNameIsAVariableAndTheCallIsStillTheFunction() {
+        // M = 30 (límite de una suma, un punto…) convive con M(6,3,2,1): la llamada manda
+        CalculatorSession session = new CalculatorSession();
+        session.evaluate("M = 30");
+        CalculatorSession.Result r = session.evaluate("M + 1");
+        assert r.status() == CalculatorSession.Status.OK && r.exact().equals(Expr.num(31)) : r;
+        r = session.evaluate("M(6,3,2,1)");
+        assert r.status() == CalculatorSession.Status.OK && r.exact().equals(Expr.num(60)) : r;
+        r = session.evaluate("C(M, 2)");
+        assert r.status() == CalculatorSession.Status.OK && r.exact().equals(Expr.num(435)) : r;
+        // Sin declarar, la sigla suelta se reconoce como función y lo dice
+        r = new CalculatorSession().evaluate("P");
+        assert r.isError() && r.message().contains("'(") : r.message();
+    }
+
+    @Test
     void badCallsAreExplained() {
         assert ExprParser.tryParse("C(10)").isEmpty() : "faltan argumentos";
         assert ExprParser.tryParse("C(2, 5)").isEmpty() : "k > n pediría el factorial de un negativo";

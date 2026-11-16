@@ -65,7 +65,10 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
         if (name.equals("e") || name.equals("E")) return Expr.E;
         if (lower.equals("oo") || lower.equals("inf") || lower.equals("infinity") || name.equals("∞")) return Expr.INFINITY;
         if (name.equals("γ") || lower.equals("euler_gamma")) return Expr.EULER_GAMMA;
-        if (isFunction(name)) throw new IllegalArgumentException("Falta '(' tras la función '" + name + "'");
+        // Un nombre declarado es variable aunque coincida con una función (M = 30 y M(6,3,2,1) conviven)
+        if (isFunction(name) && !declared.contains(name)) {
+            throw new IllegalArgumentException("Falta '(' tras la función '" + name + "'");
+        }
         // xy, abc: letras seguidas son un producto, como se escribe a mano (salvo una variable declarada con ese nombre)
         if (name.length() >= 2 && name.length() <= 3 && name.chars().allMatch(Character::isLetter) && !name.equals("ans")
                 && !declared.contains(name) && !userFunctions.containsKey(name)) {
