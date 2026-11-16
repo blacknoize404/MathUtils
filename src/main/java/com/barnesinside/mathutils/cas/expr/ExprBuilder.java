@@ -16,6 +16,13 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
     private static final Set<String> SPECIAL_FUNCTIONS = Set.of("sqrt", "cbrt", "exp", "log", "root", "pow");
     private static final Set<Fn> DIRECT_TRIGONOMETRIC = Set.of(Fn.SIN, Fn.COS, Fn.TAN, Fn.COT, Fn.SEC, Fn.CSC);
     private static final Set<Fn> INVERSE_TRIGONOMETRIC = Set.of(Fn.ASIN, Fn.ACOS, Fn.ATAN);
+    /** Siglas de conteo tal y como se escriben en los libros; solo mayúsculas: {@code c}, {@code v} o {@code p} siguen siendo variables. */
+    private static final Set<String> COUNTING_SIGLAS = Set.of("C", "P", "V", "M", "VR", "PR", "CR", "PC");
+    /** Los mismos cálculos con nombre en palabra (insensibles a mayúsculas, como el resto de funciones). */
+    private static final Set<String> COUNTING_NAMES = Set.of(
+            "comb", "choose", "binom", "binomial", "perm", "permutation",
+            "var", "arr", "varr", "permr", "multinom", "combr", "circ", "circular", "cat", "catalan",
+            "vr", "pr", "cr", "pc");
 
     private final Map<String, UserFunction> userFunctions;
     private final AngleUnit angleUnit;
@@ -101,6 +108,8 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
 
         String lower = name.toLowerCase();
         try {
+            Expr counted = counting(name, args);
+            if (counted != null) return counted;
             switch (lower) {
                 case "sqrt" -> {
                     return Expr.sqrt(one(name, args));
@@ -135,6 +144,70 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
         }
     }
 
+    /**
+     * Conteo combinatorio, escrito como en los libros: {@code C(n, k)}, {@code P(n)}, {@code P(n, k)},
+     * {@code V(n, k)}, {@code VR(n, k)}, {@code CR(n, k)}, {@code PC(n)}, los multinomiales
+     * {@code M(n; r1, …, rk)} y {@code Cat(n)}. Se deshacen en factoriales y potencias, así que
+     * sirven igual con números que con variables. {@code null} si el nombre no es de conteo.
+     */
+    private Expr counting(String name, List<Expr> args) {
+        String key = COUNTING_SIGLAS.contains(name) ? name : name.toLowerCase();
+        return switch (key) {
+            case "C", "comb", "choose", "binom", "binomial" -> {
+                expect(name, args, 2);
+                Expr n = args.get(0), k = args.get(1);
+                yield Expr.div(fact(n), Expr.mul(fact(k), fact(Expr.sub(n, k))));
+            }
+            case "P", "perm", "permutation" -> {
+                if (args.size() == 1) yield fact(args.get(0));
+                expect(name, args, 2);
+                yield Expr.div(fact(args.get(0)), fact(Expr.sub(args.get(0), args.get(1))));
+            }
+            case "V", "var", "arr" -> {
+                expect(name, args, 2);
+                yield Expr.div(fact(args.get(0)), fact(Expr.sub(args.get(0), args.get(1))));
+            }
+            case "VR", "vr", "varr" -> {
+                expect(name, args, 2);
+                yield Expr.pow(args.get(0), args.get(1));
+            }
+            case "CR", "cr", "combr" -> {
+                expect(name, args, 2);
+                Expr n = args.get(0), k = args.get(1);
+                yield Expr.div(fact(Expr.sub(Expr.add(n, k), Expr.ONE)),
+                        Expr.mul(fact(k), fact(Expr.sub(n, Expr.ONE))));
+            }
+            case "PC", "pc", "circ", "circular" -> {
+                expect(name, args, 1);
+                yield fact(Expr.sub(args.get(0), Expr.ONE));
+            }
+            case "M", "PR", "pr", "permr", "multinom" -> {
+                if (args.size() < 2) throw new IllegalArgumentException(
+                        "La función '" + name + "' espera al menos 2 argumentos y recibió " + args.size());
+                Expr denominator = Expr.ONE;
+                for (int i = 1; i < args.size(); i++) denominator = Expr.mul(denominator, fact(args.get(i)));
+                yield Expr.div(fact(args.get(0)), denominator);
+            }
+            case "cat", "catalan" -> {
+                expect(name, args, 1);
+                Expr n = args.get(0);
+                yield Expr.div(fact(Expr.mul(Expr.num(2), n)),
+                        Expr.mul(Expr.mul(fact(n), fact(n)), Expr.add(n, Expr.ONE)));
+            }
+            default -> null;
+        };
+    }
+
+    /** {@code n!} sobre el árbol: se pliega si el argumento es un entero no negativo. */
+    private static Expr fact(Expr arg) {
+        return Expr.func(Fn.FACTORIAL, arg);
+    }
+
+    /** {@code true} si el nombre llama a un cálculo de conteo ({@code C}, {@code VR}, {@code comb}…). */
+    public static boolean isCountingFunction(String name) {
+        return COUNTING_SIGLAS.contains(name) || COUNTING_NAMES.contains(name.toLowerCase());
+    }
+
     /** Aplica la unidad de ángulo: las directas convierten la entrada a radianes y las inversas la salida. */
     private Expr trigonometric(Fn fn, Expr argument) {
         if (angleUnit == AngleUnit.RADIANS) return Expr.func(fn, argument);
@@ -146,7 +219,8 @@ public final class ExprBuilder implements TreeBuilder<Expr> {
 
     @Override
     public boolean isFunction(String name) {
-        return userFunctions.containsKey(name) || SPECIAL_FUNCTIONS.contains(name.toLowerCase()) || Fn.bySymbol(name).isPresent();
+        return userFunctions.containsKey(name) || SPECIAL_FUNCTIONS.contains(name.toLowerCase())
+                || Fn.bySymbol(name).isPresent() || isCountingFunction(name);
     }
 
     private static Expr one(String name, List<Expr> args) {

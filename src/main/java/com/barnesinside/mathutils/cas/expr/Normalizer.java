@@ -126,12 +126,50 @@ final class Normalizer {
             }
         }
 
+        if (cancelFactorials(out)) remerge = true;
+
         if (remerge) {
             List<Expr> again = new ArrayList<>(out);
             again.add(new Expr.Num(k));
             return mulNoRemerge(again);
         }
         return finishMul(k, out);
+    }
+
+    /**
+     * {@code a!/b!} con {@code a − b} un entero conocido es un producto descendente:
+     * {@code n!/(n − 2)! = n·(n − 1)}. Devuelve {@code true} si simplificó una pareja.
+     */
+    private static boolean cancelFactorials(List<Expr> out) {
+        for (int i = 0; i < out.size(); i++) {
+            Expr up = factorialArg(out.get(i), true);
+            if (up == null) continue;
+            for (int j = 0; j < out.size(); j++) {
+                if (i == j) continue;
+                Expr down = factorialArg(out.get(j), false);
+                if (down == null) continue;
+                Expr difference = add(List.of(up, mul(List.of(Expr.MINUS_ONE, down)))).expand();
+                if (!(difference instanceof Expr.Num d) || !d.value().isInteger()) continue;
+                int gap = d.value().numerator().intValue();
+                if (Math.abs(gap) > MAX_FACTORIAL) continue;
+                Expr top = gap > 0 ? up : down;
+                List<Expr> factors = new ArrayList<>();
+                for (int t = 0; t < Math.abs(gap); t++) factors.add(add(List.of(top, new Expr.Num(Rational.of(-t)))));
+                Expr product = factors.isEmpty() ? Expr.ONE : mul(factors);
+                out.set(i, gap > 0 ? product : pow(product, Expr.MINUS_ONE));
+                out.remove(j);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** El argumento de un factorial escrito en el numerador ({@code a!}) o en el denominador ({@code a!^-1}). */
+    private static Expr factorialArg(Expr factor, boolean numerator) {
+        if (numerator && factor instanceof Expr.Func f && f.fn() == Fn.FACTORIAL) return f.arg();
+        if (!numerator && factor instanceof Expr.Pow p && p.base() instanceof Expr.Func f && f.fn() == Fn.FACTORIAL
+                && p.exponent() instanceof Expr.Num e && e.value().equals(Rational.MINUS_ONE)) return f.arg();
+        return null;
     }
 
     /** Segunda pasada tras un re-aplanado; agrupa de nuevo hasta que no haya cambios. */

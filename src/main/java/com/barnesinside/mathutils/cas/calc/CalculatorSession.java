@@ -3,6 +3,7 @@ package com.barnesinside.mathutils.cas.calc;
 import com.barnesinside.mathutils.cas.expr.AngleUnit;
 import com.barnesinside.mathutils.cas.expr.Eval;
 import com.barnesinside.mathutils.cas.expr.Expr;
+import com.barnesinside.mathutils.cas.expr.ExprBuilder;
 import com.barnesinside.mathutils.cas.expr.ExprParser;
 import com.barnesinside.mathutils.cas.expr.Fn;
 import com.barnesinside.mathutils.cas.expr.UserFunction;
@@ -192,7 +193,7 @@ public final class CalculatorSession {
     /** Devuelve un mensaje si el nombre no se puede usar, o {@code null} si es válido. */
     private static String checkName(String name) {
         String lower = name.toLowerCase(Locale.ROOT);
-        if (RESERVED.contains(lower) || Fn.bySymbol(name).isPresent()) {
+        if (RESERVED.contains(lower) || Fn.bySymbol(name).isPresent() || ExprBuilder.isCountingFunction(name)) {
             return "'" + name + "' es un nombre reservado. Elige otro. Ejemplo: a";
         }
         return null;
