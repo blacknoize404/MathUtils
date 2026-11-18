@@ -88,6 +88,39 @@ class CountingFunctionsTest {
     }
 
     @Test
+    void theEdgesOfPascalsTriangleHold() {
+        // C(n,0) = C(n,n) = P(n,0) = 1 y 0! = 1
+        assert parse("C(10, 0)").equals(Expr.num(1));
+        assert parse("C(10, 10)").equals(Expr.num(1));
+        assert parse("P(10, 0)").equals(Expr.num(1));
+        assert parse("C(0, 0)").equals(Expr.num(1)) && parse("0!").equals(Expr.num(1));
+        assert parse("M(5, 5)").equals(Expr.num(1)) : "todo de un solo tipo";
+    }
+
+    @Test
+    void factorialFractionsWrittenByHandAlsoSolve() {
+        // La fórmula del temario, escrita a mano con factoriales sueltos
+        assert parse("10!/(2!*8!)").equals(Expr.num(45));
+        assert parse("5!/3!").equals(Expr.num(20));
+        Expr e = parse("(n + 1)!/n!");
+        assert e.substitute("n", Expr.num(7)).equals(Expr.num(8)) : "(n+1)!/n! = n+1: " + e;
+        assert !e.toString().contains("!") : e.toString();
+    }
+
+    @Test
+    void composedArgumentsAndPowersSimplify() {
+        Expr c = parse("C(n + 1, 2)");
+        assert c.substitute("n", Expr.num(9)).equals(Expr.num(45)) : "C(n+1,2) con n=9: " + c;
+        assert !c.toString().contains("!") : c.toString();
+        assert parse("P(n, n - 1)").substitute("n", Expr.num(5)).equals(Expr.num(120)) : "P(n,n-1) = n!";
+        assert parse("VR(n, 3)").substitute("n", Expr.num(5)).equals(Expr.num(125)) : "n^3 con la variable";
+        assert parse("PC(n)").substitute("n", Expr.num(6)).equals(Expr.num(120));
+        CalculatorSession session = new CalculatorSession();
+        session.evaluate("n = 5");
+        assert session.evaluate("VR(n, 2)").exact().equals(Expr.num(25));
+    }
+
+    @Test
     void badCallsAreExplained() {
         assert ExprParser.tryParse("C(10)").isEmpty() : "faltan argumentos";
         assert ExprParser.tryParse("C(2, 5)").isEmpty() : "k > n pediría el factorial de un negativo";
